@@ -1,118 +1,190 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { BandsRepository } from './bands.repository';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CacheService } from '../../cache/cache.service';
+import { BandsRepository } from './bands.repository';
 import { CreateBandDto, UpdateBandDto, BandQueryDto } from './dto';
-import { CACHE_KEYS, CACHE_TTL, PaginatedResponse, BandWithVideoCount } from '@hbcu-band-hub/shared';
 
 @Injectable()
 export class BandsService {
   constructor(
-    private repository: BandsRepository,
-    private cache: CacheService,
+    private readonly bandsRepository: BandsRepository,
+    private readonly cacheService: CacheService,
+    private readonly configService: ConfigService,
   ) {}
 
-  async findAll(query: BandQueryDto): Promise<PaginatedResponse<BandWithVideoCount>> {
-    const result = await this.repository.findAll(query);
-
-    return {
-      data: result.data as BandWithVideoCount[],
-      meta: {
-        total: result.total,
-        page: result.page,
-        limit: result.limit,
-        totalPages: Math.ceil(result.total / result.limit),
-        hasNextPage: result.page * result.limit < result.total,
-        hasPreviousPage: result.page > 1,
-      },
-    };
-  }
-
-  async findById(id: string) {
-    // Check cache first
-    const cacheKey = CACHE_KEYS.BAND_BY_ID(id);
-    const cached = await this.cache.get<BandWithVideoCount>(cacheKey);
+  async findAll(query: BandQueryDto) {
+    // Create a cache key from the query parameters
+    const cacheKey = `bands:${JSON.stringify(query)}`;
     
+    // Try to get from cache first
+    const cached = await this.cacheService.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const band = await this.repository.findById(id);
+    // Fetch from database
+    const result = await this.bandsRepository.findMany(query);
+
+    // Cache for 10 minutes
+    await this.cacheService.set(cacheKey, result, 600);
+
+    return result;
+  }
+
+  async findById(id: string) {
+    const cacheKey = `band:${id}`;
     
+    // Try cache first
+    const cached = await this.cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Fetch from database
+    const band = await this.bandsRepository.findById(id);
     if (!band) {
       throw new NotFoundException(`Band with ID ${id} not found`);
     }
 
-    const result = {
-      ...band,
-      videoCount: band._count.videos,
-    };
+    // Cache for 30 minutes
+    await this.cacheService.set(cacheKey, band, 1800);
 
-    // Cache for 5 minutes
-    await this.cache.set(cacheKey, result, CACHE_TTL.MEDIUM);
-
-    return result;
+    return band;
   }
 
   async findBySlug(slug: string) {
-    // Check cache first
-    const cacheKey = CACHE_KEYS.BAND_BY_SLUG(slug);
-    const cached = await this.cache.get<BandWithVideoCount>(cacheKey);
+    const cacheKey = `band:slug:${slug}`;
     
+    // Try cache first
+    const cached = await this.cacheService.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const band = await this.repository.findBySlug(slug);
-    
+    // Fetch from database
+    const band = await this.bandsRepository.findBySlug(slug);
     if (!band) {
       throw new NotFoundException(`Band with slug "${slug}" not found`);
     }
 
-    const result = {
-      ...band,
-      videoCount: band._count.videos,
-    };
+    // Cache for 30 minutes
+    await this.cacheService.set(cacheKey, band, 1800);
 
-    // Cache for 5 minutes
-    await this.cache.set(cacheKey, result, CACHE_TTL.MEDIUM);
-
-    return result;
-  }
-
-  async create(dto: CreateBandDto) {
-    const band = await this.repository.create(dto);
-    
-    // Invalidate list cache
-    await this.cache.delPattern('bands:*');
-    
     return band;
   }
 
-  async update(id: string, dto: UpdateBandDto) {
-    // Verify band exists
-    const existingBand = await this.findById(id);
-    
-    const band = await this.repository.update(id, dto);
-    
-    // Invalidate caches
-    await this.cache.del(CACHE_KEYS.BAND_BY_ID(id));
-    await this.cache.del(CACHE_KEYS.BAND_BY_SLUG(existingBand.slug));
-    if (band.slug !== existingBand.slug) {
-      await this.cache.del(CACHE_KEYS.BAND_BY_SLUG(band.slug));
+  async create(data: CreateBandDto) {
+    // Generate slug from name
+    const slug = this.generateSlug(data.name);
+
+    // Check if slug already exists
+    try {
+      await this.findBySlug(slug);
+      throw new BadRequestException(`Band with slug "${slug}" already exists`);
+    } catch (error) {
+      // If NotFoundException, that's good - slug is available
+      if (!(error instanceof NotFoundException)) {
+        throw error;
+      }
     }
-    await this.cache.delPattern('bands:list*');
-    
+
+    const createData = {
+      ...data,
+      slug,
+    };
+
+    const band = await this.bandsRepository.create(createData);
+
+    // Invalidate related caches
+    await this.invalidateBandsCaches();
+
+    return band;
+  }
+
+  async update(id: string, data: UpdateBandDto) {
+    // Check if band exists
+    const existing = await this.bandsRepository.findById(id);
+    if (!existing) {
+      throw new NotFoundException(`Band with ID ${id} not found`);
+    }
+
+    // Create a mutable copy of the update data
+    const updateData: UpdateBandDto & { slug?: string } = { ...data };
+
+    // If name is being updated, regenerate slug
+    if (data.name && data.name !== existing.name) {
+      updateData.slug = this.generateSlug(data.name);
+      
+      // Check if new slug conflicts with existing band
+      try {
+        const conflicting = await this.bandsRepository.findBySlug(updateData.slug);
+        if (conflicting && conflicting.id !== id) {
+          throw new BadRequestException(`Band with slug "${updateData.slug}" already exists`);
+        }
+      } catch (error) {
+        // If NotFoundException, that's good - slug is available
+        if (!(error instanceof NotFoundException)) {
+          throw error;
+        }
+      }
+    }
+
+    const band = await this.bandsRepository.update(id, updateData);
+
+    // Invalidate caches
+    await this.invalidateBandsCaches();
+    await this.cacheService.del(`band:${id}`);
+    await this.cacheService.del(`band:slug:${existing.slug}`);
+
     return band;
   }
 
   async delete(id: string) {
-    const band = await this.findById(id);
-    
-    await this.repository.delete(id);
-    
+    // Check if band exists
+    const existing = await this.bandsRepository.findById(id);
+    if (!existing) {
+      throw new NotFoundException(`Band with ID ${id} not found`);
+    }
+
+    await this.bandsRepository.delete(id);
+
     // Invalidate caches
-    await this.cache.del(CACHE_KEYS.BAND_BY_ID(id));
-    await this.cache.del(CACHE_KEYS.BAND_BY_SLUG(band.slug));
-    await this.cache.delPattern('bands:*');
+    await this.invalidateBandsCaches();
+    await this.cacheService.del(`band:${id}`);
+    await this.cacheService.del(`band:slug:${existing.slug}`);
+
+    return { message: 'Band deleted successfully' };
+  }
+
+  async getStats() {
+    const cacheKey = 'bands:stats';
+    
+    const cached = await this.cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const stats = await this.bandsRepository.getBandStats();
+
+    // Cache stats for 1 hour
+    await this.cacheService.set(cacheKey, stats, 3600);
+
+    return stats;
+  }
+
+  private generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  private async invalidateBandsCaches() {
+    // Clear all band list caches
+    const patterns = ['bands:*', 'bands:stats'];
+    
+    for (const pattern of patterns) {
+      await this.cacheService.delPattern(pattern);
+    }
   }
 }

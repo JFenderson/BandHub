@@ -1,174 +1,240 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
 import { Prisma } from '@prisma/client';
-import { BandQueryDto, CreateBandDto, UpdateBandDto } from './dto';
-import { generateSlug } from '@hbcu-band-hub/shared';
+import { DatabaseService } from '../../database/database.service'; // Change from PrismaService
+import { BandQueryDto } from './dto';
 
 @Injectable()
 export class BandsRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly db: DatabaseService) {} // Change from PrismaService
 
-  async findAll(query: BandQueryDto) {
-    const { 
-      conference, 
-      state, 
-      isActive, 
-      isFeatured, 
-      search, 
-      page = 1, 
-      limit = 20, 
-      sortBy = 'name', 
-      sortOrder = 'asc' 
+  async findMany(query: BandQueryDto) {
+    const {
+      conference,
+      state,
+      search,
+      isFeatured,
+      sortBy = 'name',
+      sortOrder = 'asc',
+      page = 1,
+      limit = 20,
     } = query;
 
+    // Build the where clause
     const where: Prisma.BandWhereInput = {};
 
+    // Conference filtering
     if (conference) {
       where.conference = conference;
     }
 
+    // State filtering
     if (state) {
       where.state = state;
     }
 
-    if (isActive !== undefined) {
-      where.isActive = isActive;
-    }
-
+    // Featured filtering
     if (isFeatured !== undefined) {
       where.isFeatured = isFeatured;
     }
 
+    // Search functionality
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { schoolName: { contains: search, mode: 'insensitive' } },
-        { city: { contains: search, mode: 'insensitive' } },
+        {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          schoolName: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          city: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
       ];
     }
 
-    const skip = (page - 1) * limit;
-
+    // Sorting
     const orderBy: Prisma.BandOrderByWithRelationInput = {};
     orderBy[sortBy] = sortOrder;
 
+    // Pagination
+    const skip = (page - 1) * limit;
+
+    // Execute the query
     const [bands, total] = await Promise.all([
-      this.prisma.band.findMany({
+      this.db.band.findMany({
         where,
+        orderBy,
         skip,
         take: limit,
-        orderBy,
         include: {
           _count: {
-            select: { videos: true },
+            select: {
+              videos: {
+                where: {
+                  isHidden: false, // Only count visible videos
+                },
+              },
+            },
           },
         },
       }),
-      this.prisma.band.count({ where }),
+      this.db.band.count({ where }),
     ]);
 
     return {
-      data: bands.map((band) => ({
-        ...band,
-        videoCount: band._count.videos,
-      })),
-      total,
-      page,
-      limit,
+      data: bands,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
   async findById(id: string) {
-    return this.prisma.band.findUnique({
+    return this.db.band.findUnique({
       where: { id },
       include: {
+        videos: {
+          where: {
+            isHidden: false,
+          },
+          orderBy: {
+            publishedAt: 'desc',
+          },
+          take: 10, // Latest 10 videos
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
         _count: {
-          select: { videos: true },
+          select: {
+            videos: {
+              where: {
+                isHidden: false,
+              },
+            },
+          },
         },
       },
     });
   }
 
   async findBySlug(slug: string) {
-    return this.prisma.band.findUnique({
+    return this.db.band.findUnique({
       where: { slug },
       include: {
+        videos: {
+          where: {
+            isHidden: false,
+          },
+          orderBy: {
+            publishedAt: 'desc',
+          },
+          take: 10,
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
         _count: {
-          select: { videos: true },
+          select: {
+            videos: {
+              where: {
+                isHidden: false,
+              },
+            },
+          },
         },
       },
     });
   }
 
-  async create(data: CreateBandDto) {
-    const slug = generateSlug(data.name);
-    
-    return this.prisma.band.create({
-      data: {
-        name: data.name,
-        slug,
-        schoolName: data.schoolName,
-        city: data.city,
-        state: data.state,
-        conference: data.conference,
-        logoUrl: data.logoUrl,
-        bannerUrl: data.bannerUrl,
-        description: data.description,
-        foundedYear: data.foundedYear,
-        youtubeChannelId: data.youtubeChannelId,
-        youtubePlaylistIds: data.youtubePlaylistIds ?? [],
+  async create(data: Prisma.BandCreateInput) {
+    return this.db.band.create({
+      data,
+      include: {
+        _count: {
+          select: {
+            videos: true,
+          },
+        },
       },
     });
   }
 
-  async update(id: string, data: UpdateBandDto) {
-    const updateData: Prisma.BandUpdateInput = {};
-
-    // Only include fields that are provided
-    if (data.name !== undefined) {
-      updateData.name = data.name;
-      updateData.slug = generateSlug(data.name);
-    }
-    if (data.schoolName !== undefined) updateData.schoolName = data.schoolName;
-    if (data.city !== undefined) updateData.city = data.city;
-    if (data.state !== undefined) updateData.state = data.state;
-    if (data.conference !== undefined) updateData.conference = data.conference;
-    if (data.logoUrl !== undefined) updateData.logoUrl = data.logoUrl;
-    if (data.bannerUrl !== undefined) updateData.bannerUrl = data.bannerUrl;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.foundedYear !== undefined) updateData.foundedYear = data.foundedYear;
-    if (data.youtubeChannelId !== undefined) updateData.youtubeChannelId = data.youtubeChannelId;
-    if (data.youtubePlaylistIds !== undefined) updateData.youtubePlaylistIds = data.youtubePlaylistIds;
-    if (data.isActive !== undefined) updateData.isActive = data.isActive;
-    if (data.isFeatured !== undefined) updateData.isFeatured = data.isFeatured;
-
-    return this.prisma.band.update({
+  async update(id: string, data: Prisma.BandUpdateInput) {
+    return this.db.band.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...data,
+        updatedAt: new Date(),
+      },
+      include: {
+        _count: {
+          select: {
+            videos: true,
+          },
+        },
+      },
     });
   }
 
   async delete(id: string) {
-    return this.prisma.band.delete({
+    return this.db.band.delete({
       where: { id },
     });
   }
 
-  async findAllForSync() {
-    return this.prisma.band.findMany({
-      where: {
-        isActive: true,
-        OR: [
-          { youtubeChannelId: { not: null } },
-          { youtubePlaylistIds: { isEmpty: false } },
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        youtubeChannelId: true,
-        youtubePlaylistIds: true,
-      },
-    });
+  async getBandStats() {
+    const [total, withVideos, byConference] = await Promise.all([
+      this.db.band.count(),
+      this.db.band.count({
+        where: {
+          videos: {
+            some: {
+              isHidden: false,
+            },
+          },
+        },
+      }),
+      this.db.band.groupBy({
+        by: ['conference'],
+        _count: true,
+        where: {
+          conference: {
+            not: null,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      total,
+      withVideos,
+      withoutVideos: total - withVideos,
+      byConference,
+    };
   }
 }
