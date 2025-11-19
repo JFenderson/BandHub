@@ -7,6 +7,7 @@
     "libs/*"
   ],
   "scripts": {
+    "setup": "npm install && npm run build -w @hbcu-band-hub/shared && npm run db:generate && npm run db:migrate && npm run db:seed",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "start": "turbo run start",

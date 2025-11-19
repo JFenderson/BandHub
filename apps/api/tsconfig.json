@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "declaration": false,
+    "incremental": true,
+    "paths": {
+      "@hbcu-band-hub/shared": ["../../../libs/shared/dist"],
+      "@hbcu-band-hub/shared/*": ["../../../libs/shared/dist/*"]
+    }
+  },
+  "include": ["./**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*.spec.ts"]
+}
