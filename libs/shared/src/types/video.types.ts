@@ -4,21 +4,24 @@ export interface Video {
   title: string;
   description: string | null;
   thumbnailUrl: string;
-  duration: number; // seconds
+  duration: number;
   publishedAt: Date;
   viewCount: number;
-  bandId: string;
-  opponentBandId: string | null;
-  categoryId: string | null;
+  likeCount: number;
   eventName: string | null;
   eventYear: number | null;
   tags: string[];
   isHidden: boolean;
+  hideReason: string | null;
+  qualityScore: number;
+  bandId: string;
+  opponentBandId: string | null;
+  categoryId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface VideoWithRelations extends Video {
+export interface VideoWithRelations extends Omit<Video, 'bandId' | 'opponentBandId' | 'categoryId'> {
   band: {
     id: string;
     name: string;
@@ -51,4 +54,15 @@ export interface VideoFilters {
 export interface VideoSortOptions {
   field: 'publishedAt' | 'viewCount' | 'title' | 'createdAt';
   direction: 'asc' | 'desc';
+}
+
+export interface UpdateVideoInput {
+  categoryId?: string | null;
+  opponentBandId?: string | null;
+  eventName?: string | null;
+  eventYear?: number | null;
+  tags?: string[];
+  isHidden?: boolean;
+  hideReason?: string | null;
+  qualityScore?: number;
 }

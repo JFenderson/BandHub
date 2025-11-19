@@ -36,6 +36,9 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  },
   "packageManager": "npm@10.8.0",
   "description": "",
   "main": "index.js",
