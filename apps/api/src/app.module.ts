@@ -10,6 +10,9 @@ import { SearchModule } from './modules/search/search.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HealthModule } from './health/health.module';
 import { SyncModule } from './modules/sync/sync.module';
+import { BandsSeedService } from './database/seeds/bands.seed';
+import { CategoriesSeedService } from './database/seeds/categories.seed';
+
 
 @Module({
   imports: [
@@ -33,6 +36,7 @@ import { SyncModule } from './modules/sync/sync.module';
  SyncModule,
     // Utilities
     HealthModule,
+    CategoriesSeedService,
   ],
 })
 export class AppModule {}
