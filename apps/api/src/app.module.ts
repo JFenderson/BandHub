@@ -9,6 +9,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { SearchModule } from './modules/search/search.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HealthModule } from './health/health.module';
+import { SyncModule } from './modules/sync/sync.module';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { HealthModule } from './health/health.module';
     CategoriesModule,
     SearchModule,
     AdminModule,
-
+ SyncModule,
     // Utilities
     HealthModule,
   ],

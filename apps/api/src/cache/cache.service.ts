@@ -8,15 +8,16 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   constructor(private configService: ConfigService) {}
 
-  onModuleInit() {
+  async onModuleInit() {
     this.client = new Redis({
-      host: this.configService.get<string>('REDIS_HOST', 'localhost'),
-      port: this.configService.get<number>('REDIS_PORT', 6379),
-      password: this.configService.get<string>('REDIS_PASSWORD') || undefined,
+      host: this.configService.get('REDIS_HOST', 'localhost'),
+      port: this.configService.get('REDIS_PORT', 6379),
+      password: this.configService.get('REDIS_PASSWORD'),
+      maxRetriesPerRequest: null, // Add this for BullMQ compatibility
     });
 
-    this.client.on('error', (err) => {
-      console.error('Redis connection error:', err);
+    this.client.on('error', (error) => {
+      console.error('Redis connection error:', error);
     });
 
     this.client.on('connect', () => {
