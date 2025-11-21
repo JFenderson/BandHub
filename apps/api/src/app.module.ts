@@ -12,21 +12,20 @@ import { HealthModule } from './health/health.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { BandsSeedService } from './database/seeds/bands.seed';
 import { CategoriesSeedService } from './database/seeds/categories.seed';
+import { PrismaModule } from '@hbcu-band-hub/prisma';
 
 
 @Module({
   imports: [
-    // Configuration - loads .env variables
     ConfigModule.forRoot({
-      isGlobal: true, // Available everywhere without importing
-      envFilePath: '../../.env', // Path relative to apps/api
+      isGlobal: true,
     }),
 
     // Core infrastructure
     DatabaseModule,
     CacheModule,
     QueueModule,
-
+PrismaModule,
     // Feature modules
     BandsModule,
     VideosModule,
@@ -36,7 +35,10 @@ import { CategoriesSeedService } from './database/seeds/categories.seed';
  SyncModule,
     // Utilities
     HealthModule,
-    CategoriesSeedService,
+  ],
+    providers: [
+    CategoriesSeedService, // ← It should be here, not in imports
+    // ... other providers
   ],
 })
 export class AppModule {}

@@ -1,214 +1,301 @@
-import { google } from 'googleapis';
+import { Injectable, Logger } from '@nestjs/common';
+import { google, youtube_v3 } from 'googleapis';
+import { ConfigService } from '@nestjs/config';
+import { YouTubeVideoMetadata } from '@hbcu-band-hub/shared/types';
 
-export interface YouTubeVideo {
-  id: string;
-  title: string;
-  description: string;
-  publishedAt: string;
-  duration: string;
-  thumbnailUrl: string;
-  viewCount: number;
-  likeCount: number;
-  channelId: string;
-  channelTitle: string;
+// Custom error types for better error handling upstream
+export class YouTubeQuotaExceededError extends Error {
+  constructor() {
+    super('YouTube API quota exceeded');
+    this.name = 'YouTubeQuotaExceededError';
+  }
 }
 
-export interface YouTubeSearchResult {
-  videos: YouTubeVideo[];
-  nextPageToken?: string;
-  totalResults: number;
+export class YouTubeRateLimitError extends Error {
+  retryAfter: number;
+  
+  constructor(retryAfter: number) {
+    super(`YouTube API rate limited. Retry after ${retryAfter}ms`);
+    this.name = 'YouTubeRateLimitError';
+    this.retryAfter = retryAfter;
+  }
 }
 
+@Injectable()
 export class YouTubeService {
-  private youtube;
-  private apiKey: string;
-  private quotaUsed: number = 0;
-  private quotaLimit: number;
-
-  constructor(apiKey: string, quotaLimit: number = 10000) {
-    this.apiKey = apiKey;
-    this.quotaLimit = quotaLimit;
+  private youtube: youtube_v3.Youtube;
+  private readonly logger = new Logger(YouTubeService.name);
+  
+  // Track API usage to avoid hitting limits
+  private apiCallCount = 0;
+  private lastResetTime = Date.now();
+  private readonly MAX_CALLS_PER_MINUTE = 60;  // Conservative limit
+  
+  constructor(private configService: ConfigService) {
     this.youtube = google.youtube({
       version: 'v3',
-      auth: apiKey,
+      auth: this.configService.get<string>('YOUTUBE_API_KEY'),
     });
   }
-
-  getQuotaUsage() {
-    return {
-      used: this.quotaUsed,
-      remaining: this.quotaLimit - this.quotaUsed,
-      limit: this.quotaLimit,
-    };
-  }
-
-  private addQuotaCost(cost: number) {
-    this.quotaUsed += cost;
-    console.log(`📊 YouTube quota used: ${this.quotaUsed}/${this.quotaLimit}`);
-  }
-
-  async searchVideos(query: string, maxResults: number = 50, pageToken?: string): Promise<YouTubeSearchResult> {
+  
+  /**
+   * Search for videos matching band keywords
+   * This is the main discovery method for finding new videos
+   */
+  async searchVideos(params: {
+    query: string;
+    channelId?: string;
+    publishedAfter?: Date;
+    maxResults?: number;
+    pageToken?: string;
+  }): Promise<{
+    videos: YouTubeVideoMetadata[];
+    nextPageToken?: string;
+    totalResults: number;
+  }> {
+    await this.checkRateLimit();
+    
     try {
-      // Search request costs 100 quota units
-      this.addQuotaCost(100);
-
-      const response = await this.youtube.search.list({
-        part: ['snippet'],
-        q: query,
+      // First, search for video IDs
+      const searchResponse = await this.youtube.search.list({
+        part: ['id'],
+        q: params.query,
+        channelId: params.channelId,
+        publishedAfter: params.publishedAfter?.toISOString(),
+        maxResults: params.maxResults || 50,
+        pageToken: params.pageToken,
         type: ['video'],
-        maxResults,
-        pageToken,
-        order: 'relevance',
-        publishedAfter: '2020-01-01T00:00:00Z', // Only videos from 2020 onwards
+        order: 'date',  // Most recent first
+        relevanceLanguage: 'en',
+        safeSearch: 'none',
       });
-
-     const videoIds = response.data.items
-  ?.map(item => item.id?.videoId)
-  .filter((id): id is string => typeof id === 'string') || [];
-
+      
+      this.apiCallCount++;
+      
+      const videoIds = searchResponse.data.items
+        ?.map(item => item.id?.videoId)
+        .filter((id): id is string => !!id) || [];
+      
       if (videoIds.length === 0) {
-        return { videos: [], totalResults: 0 };
+        return {
+          videos: [],
+          nextPageToken: searchResponse.data.nextPageToken || undefined,
+          totalResults: searchResponse.data.pageInfo?.totalResults || 0,
+        };
       }
-
-      // Get detailed video information
-      const videos = await this.getVideoDetails(videoIds);
-
+      
+      // Then fetch full metadata for those videos
+      // This is more efficient than fetching everything in the search
+      const videos = await this.getVideoMetadata(videoIds);
+      
       return {
         videos,
-        nextPageToken: response.data.nextPageToken || undefined,
-        totalResults: response.data.pageInfo?.totalResults || 0,
+        nextPageToken: searchResponse.data.nextPageToken || undefined,
+        totalResults: searchResponse.data.pageInfo?.totalResults || 0,
       };
     } catch (error) {
-      console.error('YouTube search error:', error);
+      this.handleApiError(error);
       throw error;
     }
   }
-
-  async getChannelVideos(channelId: string, maxResults: number = 50, pageToken?: string): Promise<YouTubeSearchResult> {
-    try {
-      // Search request costs 100 quota units
-      this.addQuotaCost(100);
-
-      const response = await this.youtube.search.list({
-        part: ['snippet'],
-        channelId,
-        type: ['video'],
-        maxResults,
-        pageToken,
-        order: 'date',
-        publishedAfter: '2020-01-01T00:00:00Z',
-      });
-
-      const videoIds = response.data.items
-  ?.map(item => item.id?.videoId)
-  .filter((id): id is string => typeof id === 'string') || [];
-
-      if (videoIds.length === 0) {
-        return { videos: [], totalResults: 0 };
-      }
-
-      const videos = await this.getVideoDetails(videoIds);
-
-      return {
-        videos,
-        nextPageToken: response.data.nextPageToken || undefined,
-        totalResults: response.data.pageInfo?.totalResults || 0,
-      };
-    } catch (error) {
-      console.error('YouTube channel videos error:', error);
-      throw error;
-    }
-  }
-
-  async getPlaylistVideos(playlistId: string, maxResults: number = 50, pageToken?: string): Promise<YouTubeSearchResult> {
-    try {
-      // Playlist items request costs 1 quota unit
-      this.addQuotaCost(1);
-
-      const response = await this.youtube.playlistItems.list({
-        part: ['snippet'],
-        playlistId,
-        maxResults,
-        pageToken,
-      });
-
-      const videoIds = response.data.items
-  ?.map(item => item.snippet?.resourceId?.videoId)
-  .filter((id): id is string => typeof id === 'string') || [];
-
-      if (videoIds.length === 0) {
-        return { videos: [], totalResults: 0 };
-      }
-
-      const videos = await this.getVideoDetails(videoIds);
-
-      return {
-        videos,
-        nextPageToken: response.data.nextPageToken || undefined,
-        totalResults: response.data.pageInfo?.totalResults || 0,
-      };
-    } catch (error) {
-      console.error('YouTube playlist videos error:', error);
-      throw error;
-    }
-  }
-
-  private async getVideoDetails(videoIds: string[]): Promise<YouTubeVideo[]> {
-    try {
-      // Videos request costs 1 quota unit per call (not per video)
-      this.addQuotaCost(1);
-
+  
+  /**
+   * Get full metadata for specific video IDs
+   * Used both for initial fetch and for updating stats
+   */
+  async getVideoMetadata(videoIds: string[]): Promise<YouTubeVideoMetadata[]> {
+  if (videoIds.length === 0) return [];
+  
+  await this.checkRateLimit();
+  
+  try {
+    const chunks = this.chunkArray(videoIds, 50);
+    const allVideos: YouTubeVideoMetadata[] = [];
+    
+    for (const chunk of chunks) {
       const response = await this.youtube.videos.list({
         part: ['snippet', 'contentDetails', 'statistics'],
-        id: videoIds,
+        id: chunk,
       });
+      
+      this.apiCallCount++;
+      
+      const videos = response.data.items?.map(item => {
+        // Safe thumbnail mapper
+        const mapThumbnail = (thumb: youtube_v3.Schema$Thumbnail | null | undefined) => {
+          if (!thumb?.url) return undefined;
+          return {
+            url: thumb.url,
+            width: thumb.width ?? 0,
+            height: thumb.height ?? 0,
+          };
+        };
 
-      return response.data.items?.map(item => ({
-        id: item.id!,
-        title: item.snippet?.title || '',
-        description: item.snippet?.description || '',
-        publishedAt: item.snippet?.publishedAt || '',
-        duration: this.parseDuration(item.contentDetails?.duration || ''),
-        thumbnailUrl: item.snippet?.thumbnails?.maxres?.url || 
-                     item.snippet?.thumbnails?.high?.url || 
-                     item.snippet?.thumbnails?.medium?.url || '',
-        viewCount: parseInt(item.statistics?.viewCount || '0'),
-        likeCount: parseInt(item.statistics?.likeCount || '0'),
-        channelId: item.snippet?.channelId || '',
-        channelTitle: item.snippet?.channelTitle || '',
-      })) || [];
+        const video: YouTubeVideoMetadata = {
+          id: item.id!,
+          snippet: {
+            title: item.snippet?.title || '',
+            description: item.snippet?.description || null,
+            publishedAt: item.snippet?.publishedAt || new Date().toISOString(),
+            channelId: item.snippet?.channelId || '',
+            channelTitle: item.snippet?.channelTitle || '',
+            thumbnails: {
+              default: mapThumbnail(item.snippet?.thumbnails?.default),
+              medium: mapThumbnail(item.snippet?.thumbnails?.medium),
+              high: mapThumbnail(item.snippet?.thumbnails?.high),
+            },
+            tags: item.snippet?.tags || [],
+          },
+          contentDetails: {
+            duration: item.contentDetails?.duration || 'PT0S',
+          },
+          statistics: {
+            viewCount: item.statistics?.viewCount || '0',
+            likeCount: item.statistics?.likeCount || null,
+            commentCount: item.statistics?.commentCount || null,
+          },
+        };
+        
+        return video;
+      }) || [];
+      
+      allVideos.push(...videos);
+    }
+    
+    return allVideos;
+  } catch (error) {
+    this.handleApiError(error);
+    throw error;
+  }
+}
+  /**
+   * Get videos from a specific channel
+   * Used when we know a band's official YouTube channel
+   */
+  async getChannelVideos(params: {
+    channelId: string;
+    publishedAfter?: Date;
+    maxResults?: number;
+  }): Promise<YouTubeVideoMetadata[]> {
+    await this.checkRateLimit();
+    
+    try {
+      // Get the uploads playlist ID for the channel
+      const channelResponse = await this.youtube.channels.list({
+        part: ['contentDetails'],
+        id: [params.channelId],
+      });
+      
+      this.apiCallCount++;
+      
+      const uploadsPlaylistId = 
+        channelResponse.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+      
+      if (!uploadsPlaylistId) {
+        this.logger.warn(`No uploads playlist found for channel ${params.channelId}`);
+        return [];
+      }
+      
+      // Get videos from the uploads playlist
+      const playlistResponse = await this.youtube.playlistItems.list({
+        part: ['contentDetails'],
+        playlistId: uploadsPlaylistId,
+        maxResults: params.maxResults || 50,
+      });
+      
+      this.apiCallCount++;
+      
+      const videoIds = playlistResponse.data.items
+        ?.map(item => item.contentDetails?.videoId)
+        .filter((id): id is string => !!id) || [];
+      
+      // Filter by publish date if specified
+      const videos = await this.getVideoMetadata(videoIds);
+      
+      if (params.publishedAfter) {
+        return videos.filter(
+          video => new Date(video.snippet.publishedAt) >= params.publishedAfter!
+        );
+      }
+      
+      return videos;
     } catch (error) {
-      console.error('YouTube video details error:', error);
+      this.handleApiError(error);
       throw error;
     }
   }
-
-  private parseDuration(isoDuration: string): string {
-    // Convert ISO 8601 duration (PT15M33S) to seconds
-    const match = isoDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-    if (!match) return '0';
-
-    const hours = parseInt(match[1] || '0');
-    const minutes = parseInt(match[2] || '0');
-    const seconds = parseInt(match[3] || '0');
-
-    return String(hours * 3600 + minutes * 60 + seconds);
-  }
-
-  async testConnection(): Promise<boolean> {
-    try {
-      this.addQuotaCost(1);
-      
-      const response = await this.youtube.search.list({
-        part: ['snippet'],
-        q: 'test',
-        maxResults: 1,
-      });
-
-      return response.status === 200;
-    } catch (error) {
-      console.error('YouTube connection test failed:', error);
-      return false;
+  
+  /**
+   * Check if we're about to hit rate limits
+   * Implements a simple sliding window rate limiter
+   */
+  private async checkRateLimit(): Promise<void> {
+    const now = Date.now();
+    const elapsed = now - this.lastResetTime;
+    
+    // Reset counter every minute
+    if (elapsed > 60000) {
+      this.apiCallCount = 0;
+      this.lastResetTime = now;
     }
+    
+    // If we're at the limit, wait until the window resets
+    if (this.apiCallCount >= this.MAX_CALLS_PER_MINUTE) {
+      const waitTime = 60000 - elapsed + 1000;  // Add 1s buffer
+      this.logger.warn(`Rate limit approaching, waiting ${waitTime}ms`);
+      await this.sleep(waitTime);
+      this.apiCallCount = 0;
+      this.lastResetTime = Date.now();
+    }
+  }
+  
+  /**
+   * Handle YouTube API errors and convert to our error types
+   */
+  private handleApiError(error: any): never {
+    // Check for quota exceeded
+    if (error.code === 403 && error.errors?.[0]?.reason === 'quotaExceeded') {
+      this.logger.error('YouTube API quota exceeded');
+      throw new YouTubeQuotaExceededError();
+    }
+    
+    // Check for rate limiting
+    if (error.code === 429) {
+      const retryAfter = parseInt(error.headers?.['retry-after'] || '60', 10) * 1000;
+      this.logger.warn(`YouTube API rate limited, retry after ${retryAfter}ms`);
+      throw new YouTubeRateLimitError(retryAfter);
+    }
+    
+    // Log and re-throw other errors
+    this.logger.error('YouTube API error', {
+      code: error.code,
+      message: error.message,
+      errors: error.errors,
+    });
+    
+    throw error;
+  }
+  
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+  
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  
+  /**
+   * Get current API usage stats for monitoring
+   */
+  getUsageStats() {
+    return {
+      callsThisMinute: this.apiCallCount,
+      maxCallsPerMinute: this.MAX_CALLS_PER_MINUTE,
+      windowResetTime: new Date(this.lastResetTime + 60000),
+    };
   }
 }

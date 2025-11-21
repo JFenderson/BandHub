@@ -1,28 +1,23 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022"],
     "module": "commonjs",
     "moduleResolution": "node",
-    "outDir": "./dist",
-    "baseUrl": "./src",
+    "declaration": false,
+    "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "strict": true,
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "declaration": false,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
     "incremental": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
     "paths": {
-      "@hbcu-band-hub/shared": ["../../../libs/shared/dist"],
-      "@hbcu-band-hub/shared/*": ["../../../libs/shared/dist/*"]
+      "@hbcu-band-hub/shared-types": ["../../libs/shared/types/dist"],
+      "@hbcu-band-hub/prisma": ["../../libs/prisma/src"]
     }
   },
-  "include": ["./**/*"],
-  "exclude": ["node_modules", "dist", "test", "**/*.spec.ts"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }

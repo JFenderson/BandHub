@@ -1,232 +1,275 @@
+import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
+import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
+import { 
+  QueueName, 
+  JobType, 
+  SyncBandJobData, 
+  SyncJobResult,
+  ProcessVideoJobData,
+  SyncMode,
+} from '@hbcu-band-hub/shared/types';
+import { SyncJobType, SyncJobStatus } from '@prisma/client';
+import { YouTubeService, YouTubeQuotaExceededError, YouTubeRateLimitError } from '../services/youtube.service';
 import { DatabaseService } from '../services/database.service';
-import { YouTubeService } from '../services/youtube.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
-// Use your existing interface
-export interface SyncBandJobData {
-  bandId: string;
-  syncType: 'full' | 'incremental';
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
 }
 
-export class SyncBandProcessor {
+@Processor(QueueName.VIDEO_SYNC, {
+  concurrency: 3,
+})
+export class SyncBandProcessor extends WorkerHost {
+  private readonly logger = new Logger(SyncBandProcessor.name);
+  
   constructor(
-    private readonly database: DatabaseService,
-    private readonly youtube: YouTubeService,
-  ) {}
-
-  // Handle single band sync job
-  async processSingleBand(job: Job<SyncBandJobData>) {
-    const { bandId, syncType } = job.data;
-    const forceSync = syncType === 'full';
-
-    await job.updateProgress({ stage: 'starting' });
-
+    private youtubeService: YouTubeService,
+    private databaseService: DatabaseService,
+    @InjectQueue(QueueName.VIDEO_PROCESSING)
+    private videoProcessingQueue: Queue,
+  ) {
+    super();
+  }
+  
+  async process(job: Job<SyncBandJobData>): Promise<SyncJobResult> {
+    const { bandId, mode, triggeredBy } = job.data;
+    const startTime = Date.now();
+    
+    this.logger.log(`Starting sync for band ${bandId} (mode: ${mode}, triggered by: ${triggeredBy})`);
+    
+    // Create sync job record in database
+    const syncJobRecord = await this.databaseService.createSyncJob({
+      bandId,
+      jobType: mode === SyncMode.INCREMENTAL ? SyncJobType.INCREMENTAL_SYNC : SyncJobType.FULL_SYNC,
+    });
+    
+    // Update status to in progress
+    await this.databaseService.updateSyncJob(syncJobRecord.id, {
+      status: SyncJobStatus.IN_PROGRESS,
+      startedAt: new Date(),
+    });
+    
+    // Update band status
+    await this.databaseService.updateBandSyncStatus(bandId, {
+      lastSyncAt: new Date(),
+      syncStatus: 'IN_PROGRESS' as any,
+    });
+    
+    const result: SyncJobResult = {
+      bandId,
+      bandName: '',
+      videosFound: 0,
+      videosCreated: 0,
+      videosUpdated: 0,
+      videosSkipped: 0,
+      errors: [],
+      duration: 0,
+    };
+    
     try {
-      // Get band info
-      const band = await this.database.band.findUnique({
-        where: { id: bandId },
-        include: { videos: { select: { youtubeId: true } } },
-      });
-
+      // Get band details
+      const band = await this.databaseService.getBandById(bandId);
       if (!band) {
-        throw new Error(`Band with ID ${bandId} not found`);
+        throw new Error(`Band not found: ${bandId}`);
       }
-
-      console.log(`🎵 Starting ${syncType} sync for: ${band.name}`);
-
+      
+      result.bandName = band.name;
+      
+      await job.updateProgress({
+        stage: 'searching',
+        current: 0,
+        total: 100,
+        message: `Searching YouTube for ${band.name} videos`,
+      });
+      
+      // Determine search parameters
+      const publishedAfter = mode === SyncMode.INCREMENTAL && band.lastSyncAt
+        ? band.lastSyncAt
+        : undefined;
+      
+      // Build search queries
+      const searchQueries = this.buildSearchQueries(band);
+      const foundVideoIds = new Set<string>();
+      
+      for (const query of searchQueries) {
+        try {
+          const searchResult = await this.youtubeService.searchVideos({
+            query,
+            publishedAfter,
+            maxResults: job.data.maxResults || 50,
+          });
+          
+          for (const videoMetadata of searchResult.videos) {
+            if (foundVideoIds.has(videoMetadata.id)) continue;
+            foundVideoIds.add(videoMetadata.id);
+            result.videosFound++;
+            
+            try {
+              await this.videoProcessingQueue.add(
+                JobType.PROCESS_VIDEO,
+                {
+                  type: JobType.PROCESS_VIDEO,
+                  videoId: videoMetadata.id,
+                  bandId,
+                  rawMetadata: videoMetadata,
+                  isUpdate: await this.databaseService.videoExists(videoMetadata.id),
+                } as ProcessVideoJobData,
+                {
+                  priority: 3,
+                  attempts: 2,
+                  backoff: { type: 'exponential', delay: 5000 },
+                }
+              );
+            } catch (error) {
+              this.logger.error(`Failed to queue video ${videoMetadata.id}`, error);
+              result.errors.push(`Video ${videoMetadata.id}: ${getErrorMessage(error)}`);
+            }
+          }
+          
+          const progressPercent = Math.round(
+            (searchQueries.indexOf(query) + 1) / searchQueries.length * 100
+          );
+          await job.updateProgress({
+            stage: 'processing',
+            current: progressPercent,
+            total: 100,
+            message: `Processed ${result.videosFound} videos`,
+          });
+          
+        } catch (error) {
+          if (error instanceof YouTubeQuotaExceededError) {
+            this.logger.error('YouTube quota exceeded, stopping sync');
+            result.errors.push('YouTube API quota exceeded');
+            break;
+          } else if (error instanceof YouTubeRateLimitError) {
+            this.logger.warn(`Rate limited, waiting ${error.retryAfter}ms`);
+            await this.sleep(error.retryAfter);
+            searchQueries.push(query);
+          } else {
+            this.logger.error(`Search failed for query "${query}"`, error);
+            result.errors.push(`Search "${query}": ${getErrorMessage(error)}`);
+          }
+        }
+      }
+      
+      // Fetch from official channel if available
+      if (band.youtubeChannelId) {
+        await job.updateProgress({
+          stage: 'channel-fetch',
+          current: 90,
+          total: 100,
+          message: 'Fetching from official channel',
+        });
+        
+        try {
+          const channelVideos = await this.youtubeService.getChannelVideos({
+            channelId: band.youtubeChannelId,
+            publishedAfter,
+            maxResults: 50,
+          });
+          
+          for (const videoMetadata of channelVideos) {
+            if (foundVideoIds.has(videoMetadata.id)) continue;
+            foundVideoIds.add(videoMetadata.id);
+            result.videosFound++;
+            
+            await this.videoProcessingQueue.add(
+              JobType.PROCESS_VIDEO,
+              {
+                type: JobType.PROCESS_VIDEO,
+                videoId: videoMetadata.id,
+                bandId,
+                rawMetadata: videoMetadata,
+                isUpdate: await this.databaseService.videoExists(videoMetadata.id),
+              } as ProcessVideoJobData,
+              { priority: 3, attempts: 2 }
+            );
+          }
+        } catch (error) {
+          this.logger.error(`Channel fetch failed for ${band.youtubeChannelId}`, error);
+          result.errors.push(`Channel fetch: ${getErrorMessage(error)}`);
+        }
+      }
+      
+      // Update sync job record
+      await this.databaseService.updateSyncJob(syncJobRecord.id, {
+        status: SyncJobStatus.COMPLETED,
+        videosFound: result.videosFound,
+        videosAdded: result.videosCreated,
+        videosUpdated: result.videosUpdated,
+        errors: result.errors,
+        completedAt: new Date(),
+      });
+      
       // Update band status
-      await this.database.band.update({
-        where: { id: bandId },
-        data: { syncStatus: 'IN_PROGRESS' },
+      await this.databaseService.updateBandSyncStatus(bandId, {
+        lastSyncAt: new Date(),
+        syncStatus: 'COMPLETED' as any,
       });
-
-      // Determine sync strategy
-      const strategy = this.determineSyncStrategy(band);
       
-      // Fetch videos
-      const videos = await this.fetchVideos(band, strategy, job);
-      
-      // Process videos
-      const result = await this.processVideos(videos, bandId, forceSync, job);
-
-      // Update completion status
-      await this.database.band.update({
-        where: { id: bandId },
-        data: {
-          lastSyncAt: new Date(),
-          syncStatus: 'COMPLETED',
-        },
-      });
-
-      await job.updateProgress({ stage: 'complete', ...result });
-      console.log(`✅ Sync completed for ${band.name}: ${result.saved} videos`);
-
-      return result;
-
     } catch (error) {
-      await this.database.band.update({
-        where: { id: bandId },
-        data: { syncStatus: 'FAILED' },
+      this.logger.error(`Band sync failed for ${bandId}`, error);
+      result.errors.push(getErrorMessage(error));
+      
+      // Update sync job as failed
+      await this.databaseService.updateSyncJob(syncJobRecord.id, {
+        status: SyncJobStatus.FAILED,
+        errors: result.errors,
+        completedAt: new Date(),
       });
       
-      console.error(`❌ Sync failed for band ${bandId}:`, error);
+      // Update band status
+      await this.databaseService.updateBandSyncStatus(bandId, {
+        lastSyncAt: new Date(),
+        syncStatus: 'FAILED' as any,
+      });
+      
       throw error;
     }
-  }
-
-  // Handle sync all bands job
-  async processAllBands(job: Job) {
-    await job.updateProgress({ stage: 'fetching_bands' });
-
-    const bands = await this.database.band.findMany({
-      where: {
-        isActive: true,
-        OR: [
-          { youtubeChannelId: { not: null } },
-          { youtubePlaylistIds: { isEmpty: false } },
-        ],
-      },
-      select: { id: true, name: true },
-    });
-
-    console.log(`🎵 Starting bulk sync for ${bands.length} bands`);
-
-    let processed = 0;
-    let succeeded = 0;
-    let failed = 0;
-
-    for (const band of bands) {
-      try {
-        await this.processSingleBand({
-          ...job,
-          data: { bandId: band.id, syncType: 'incremental' },
-        } as Job<SyncBandJobData>);
-        
-        succeeded++;
-      } catch (error) {
-        console.error(`Failed to sync band ${band.name}:`, error);
-        failed++;
-      }
-
-      processed++;
-      await job.updateProgress({
-        stage: 'processing',
-        processed,
-        total: bands.length,
-        succeeded,
-        failed,
-      });
-    }
-
-    const result = { processed, succeeded, failed };
-    console.log(`✅ Bulk sync completed:`, result);
+    
+    result.duration = Date.now() - startTime;
+    
+    this.logger.log(
+      `Completed sync for ${result.bandName}: ` +
+      `${result.videosFound} found, ${result.videosCreated} created, ` +
+      `${result.videosUpdated} updated`
+    );
     
     return result;
   }
-
-  private determineSyncStrategy(band: any): 'channel' | 'playlist' | 'search' {
-    if (band.youtubeChannelId) return 'channel';
-    if (band.youtubePlaylistIds.length > 0) return 'playlist';
-    return 'search';
-  }
-
-  private async fetchVideos(band: any, strategy: string, job: Job) {
-    await job.updateProgress({ stage: 'fetching' });
+  
+  private buildSearchQueries(band: any): string[] {
+    const queries: string[] = [];
     
-    // Implement your video fetching logic here
-    const videos: any[] = [];
-    const maxVideos = 100;
+    queries.push(`"${band.name}" marching band`);
     
-    if (strategy === 'channel' && band.youtubeChannelId) {
-      const result = await this.youtube.getChannelVideos(band.youtubeChannelId, maxVideos);
-      videos.push(...result.videos);
-    } else if (strategy === 'playlist' && band.youtubePlaylistIds.length > 0) {
-      const result = await this.youtube.getPlaylistVideos(band.youtubePlaylistIds[0], maxVideos);
-      videos.push(...result.videos);
-    } else {
-      const query = `"${band.name}" marching band`;
-      const result = await this.youtube.searchVideos(query, maxVideos);
-      videos.push(...result.videos);
+    if (band.schoolName && band.schoolName !== band.name) {
+      queries.push(`"${band.schoolName}" marching band`);
     }
-
-    return videos;
+    
+    // Note: Your schema doesn't have an aliases field
+    // If you want this feature, add: aliases String[] to Band model
+    
+    queries.push(`"${band.name}" HBCU`);
+    
+    return queries;
   }
-
-  private async processVideos(videos: any[], bandId: string, forceSync: boolean, job: Job) {
-    let saved = 0;
-    let skipped = 0;
-    let processed = 0;
-
-    for (const video of videos) {
-      try {
-        const existing = await this.database.video.findUnique({
-          where: { youtubeId: video.id },
-        });
-
-        if (existing && !forceSync) {
-          skipped++;
-        } else {
-          await this.saveVideo(video, bandId);
-          saved++;
-        }
-
-        processed++;
-        await job.updateProgress({
-          stage: 'saving',
-          processed,
-          total: videos.length,
-          saved,
-          skipped,
-        });
-
-      } catch (error) {
-        console.error(`Failed to process video ${video.id}:`, error);
-      }
-    }
-
-    return { processed, saved, skipped };
+  
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
-
-  private async saveVideo(youtubeVideo: any, bandId: string) {
-    const videoData = {
-      youtubeId: youtubeVideo.id,
-      title: youtubeVideo.title,
-      description: youtubeVideo.description || null,
-      duration: parseInt(youtubeVideo.duration) || 0,
-      thumbnailUrl: youtubeVideo.thumbnailUrl,
-      viewCount: youtubeVideo.viewCount || 0,
-      likeCount: youtubeVideo.likeCount || 0,
-      publishedAt: new Date(youtubeVideo.publishedAt),
-      tags: this.extractTags(youtubeVideo.title, youtubeVideo.description || ''),
-      band: { connect: { id: bandId } },
-    };
-
-    await this.database.video.upsert({
-      where: { youtubeId: youtubeVideo.id },
-      create: videoData,
-      update: {
-        viewCount: youtubeVideo.viewCount || 0,
-        likeCount: youtubeVideo.likeCount || 0,
-        updatedAt: new Date(),
-      },
-    });
+  
+  @OnWorkerEvent('completed')
+  onCompleted(job: Job) {
+    this.logger.log(`Job ${job.id} completed for band ${job.data.bandId}`);
   }
-
-  private extractTags(title: string, description: string): string[] {
-    const text = `${title} ${description}`.toLowerCase();
-    const tags: string[] = [];
-
-    const commonTerms = [
-      '5th quarter', 'field show', 'stand battle', 'homecoming', 
-      'parade', 'halftime', 'battle of the bands', 'concert'
-    ];
-
-    commonTerms.forEach(term => {
-      if (text.includes(term)) {
-        tags.push(term.replace(/\s+/g, '-'));
-      }
-    });
-
-    return [...new Set(tags)];
+  
+  @OnWorkerEvent('failed')
+  onFailed(job: Job, error: Error) {
+    this.logger.error(`Job ${job.id} failed for band ${job.data.bandId}`, error.stack);
   }
 }

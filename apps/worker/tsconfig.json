@@ -1,21 +1,18 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022"],
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "declaration": false,
     "outDir": "./dist",
-    "strict": true,
-    "esModuleInterop": true,
+    "baseUrl": "./",
+    "incremental": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "paths": {
-      "@hbcu-band-hub/shared": ["../../libs/shared/src"]
+      "@hbcu-band-hub/shared-types": ["../../libs/shared/types/dist"],
+      "@hbcu-band-hub/prisma": ["../../libs/prisma/src"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }

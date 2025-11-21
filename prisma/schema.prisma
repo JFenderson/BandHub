@@ -47,7 +47,7 @@ model Band {
   // Relations
   videos             Video[]  @relation("BandVideos")
   opponentVideos     Video[]  @relation("OpponentBandVideos")
-
+  searchKeywords String[] @default([]) @map("search_keywords")
   // Indexes
   @@index([slug])
   @@index([schoolName])
