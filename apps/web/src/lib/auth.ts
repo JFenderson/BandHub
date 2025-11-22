@@ -3,6 +3,9 @@
  * 
  * TODO: Replace with real authentication implementation (e.g., NextAuth.js, Auth0, Clerk)
  * This is a temporary mock implementation for development purposes.
+ * 
+ * SECURITY WARNING: The mock authentication is enabled for development.
+ * Set NEXT_PUBLIC_DISABLE_MOCK_AUTH=true in production to prevent security issues.
  */
 
 export interface MockUser {
@@ -17,16 +20,23 @@ export interface MockUser {
  * Mock function to get the current user
  * 
  * TODO: Replace with real session/token validation
- * For now, this returns a mock admin user for development
+ * For now, this returns a mock admin user for development only if mock auth is enabled
  */
 export async function getCurrentUser(): Promise<MockUser | null> {
-  // MOCK: Return a mock admin user for development
-  // In production, this should:
-  // 1. Check session/cookies for authentication token
-  // 2. Validate the token
-  // 3. Fetch user from database
-  // 4. Return user or null if not authenticated
+  // Check if mock authentication is disabled (should be disabled in production)
+  const disableMockAuth = process.env.NEXT_PUBLIC_DISABLE_MOCK_AUTH === 'true';
   
+  if (disableMockAuth) {
+    // In production, this should:
+    // 1. Check session/cookies for authentication token
+    // 2. Validate the token
+    // 3. Fetch user from database
+    // 4. Return user or null if not authenticated
+    return null;
+  }
+  
+  // MOCK: Return a mock admin user for development only
+  // This should be replaced with real authentication in production
   return {
     id: 'mock-admin-id',
     email: 'admin@bandhub.com',

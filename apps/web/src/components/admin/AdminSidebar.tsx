@@ -56,7 +56,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-gray-900 text-white min-h-screen">
+    <aside className="w-64 bg-gray-900 text-white min-h-screen flex flex-col">
       {/* Logo/Brand */}
       <div className="p-6 border-b border-gray-800">
         <Link href="/" className="flex items-center space-x-2">
@@ -71,7 +71,7 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="p-4">
+      <nav className="p-4 flex-1">
         <ul className="space-y-1">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
@@ -99,7 +99,7 @@ export function AdminSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-gray-800">
         <Link
           href="/"
           className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"

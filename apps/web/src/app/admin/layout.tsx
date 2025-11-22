@@ -17,8 +17,10 @@ export default async function AdminLayout({
     await requireAdmin();
   } catch (error) {
     // TODO: Replace with redirect to login page when authentication is implemented
-    // For now, redirect to home page
-    redirect('/');
+    // For now, redirect to home page with error message in query params
+    // In production, this should redirect to a login page with returnUrl
+    console.error('Admin access denied:', error);
+    redirect('/?error=admin_access_required');
   }
 
   return (
