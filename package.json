@@ -7,6 +7,7 @@
     "libs/*"
   ],
   "scripts": {
+    "start:prod": "node dist/apps/api/src/main.js",
     "setup": "npm install && npm run build:shared && npm run db:generate && npm run db:migrate && npm run db:seed",
     "build:shared": "cd libs/shared/types && npm run build",
     "dev": "npm run build:shared && turbo run dev",
