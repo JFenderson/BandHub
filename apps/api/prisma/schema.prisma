@@ -1,0 +1,171 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Band {
+  id                 String     @id @default(cuid())
+  name               String
+  slug               String     @unique
+  schoolName         String     @map("school_name")
+  city               String
+  state              String
+  conference         String?
+  logoUrl            String?    @map("logo_url")
+  bannerUrl          String?    @map("banner_url")
+  description        String?
+  foundedYear        Int?       @map("founded_year")
+  youtubeChannelId   String?    @map("youtube_channel_id")
+  youtubePlaylistIds String[]   @map("youtube_playlist_ids")
+  lastSyncAt         DateTime?  @map("last_sync_at")
+  syncStatus         SyncStatus @default(PENDING) @map("sync_status")
+  isActive           Boolean    @default(true) @map("is_active")
+  isFeatured         Boolean    @default(false) @map("is_featured")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+  searchKeywords     String[]   @default([]) @map("search_keywords")
+  videos             Video[]    @relation("BandVideos")
+  opponentVideos     Video[]    @relation("OpponentBandVideos")
+
+  @@index([slug])
+  @@index([schoolName])
+  @@index([state])
+  @@index([conference])
+  @@index([isActive, isFeatured])
+  @@map("bands")
+}
+
+model Video {
+  id             String    @id @default(cuid())
+  youtubeId      String    @unique @map("youtube_id")
+  title          String
+  description    String?
+  thumbnailUrl   String    @map("thumbnail_url")
+  duration       Int
+  publishedAt    DateTime  @map("published_at")
+  viewCount      Int       @default(0) @map("view_count")
+  likeCount      Int       @default(0) @map("like_count")
+  eventName      String?   @map("event_name")
+  eventYear      Int?      @map("event_year")
+  tags           String[]  @default([])
+  isHidden       Boolean   @default(false) @map("is_hidden")
+  hideReason     String?   @map("hide_reason")
+  qualityScore   Int       @default(0) @map("quality_score")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  bandId         String    @map("band_id")
+  opponentBandId String?   @map("opponent_band_id")
+  categoryId     String?   @map("category_id")
+  band           Band      @relation("BandVideos", fields: [bandId], references: [id], onDelete: Cascade)
+  category       Category? @relation(fields: [categoryId], references: [id])
+  opponentBand   Band?     @relation("OpponentBandVideos", fields: [opponentBandId], references: [id])
+
+  @@index([bandId])
+  @@index([opponentBandId])
+  @@index([categoryId])
+  @@index([eventYear])
+  @@index([publishedAt(sort: Desc)])
+  @@index([viewCount(sort: Desc)])
+  @@index([isHidden])
+  @@index([bandId, categoryId])
+  @@index([bandId, eventYear])
+  @@index([title])
+  @@map("videos")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  videos      Video[]
+
+  @@index([slug])
+  @@index([sortOrder])
+  @@map("categories")
+}
+
+model AdminUser {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  name         String
+  role         AdminRole  @default(MODERATOR)
+  isActive     Boolean    @default(true) @map("is_active")
+  lastLoginAt  DateTime?  @map("last_login_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  auditLogs    AuditLog[]
+
+  @@map("admin_users")
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  action      String
+  entityType  String    @map("entity_type")
+  entityId    String    @map("entity_id")
+  changes     Json?
+  adminUserId String    @map("admin_user_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([adminUserId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model SyncJob {
+  id            String        @id @default(cuid())
+  bandId        String?       @map("band_id")
+  jobType       SyncJobType   @map("job_type")
+  status        SyncJobStatus @default(QUEUED)
+  videosFound   Int           @default(0) @map("videos_found")
+  videosAdded   Int           @default(0) @map("videos_added")
+  videosUpdated Int           @default(0) @map("videos_updated")
+  errors        String[]      @default([])
+  startedAt     DateTime?     @map("started_at")
+  completedAt   DateTime?     @map("completed_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@index([bandId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("sync_jobs")
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+}
+
+enum SyncJobType {
+  FULL_SYNC
+  INCREMENTAL_SYNC
+  SINGLE_VIDEO
+}
+
+enum SyncJobStatus {
+  QUEUED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}

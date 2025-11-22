@@ -5,7 +5,7 @@ import { AppModule } from './app.module';
 
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Global prefix for all routes
   app.setGlobalPrefix('api');
@@ -40,9 +40,15 @@ async function bootstrap() {
     .addTag('admin', 'Administrative actions')
     .build();
 
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
+
+  
   const port = process.env.API_PORT || 3001;
   await app.listen(port);
 

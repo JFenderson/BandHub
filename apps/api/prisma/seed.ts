@@ -31,7 +31,7 @@ async function main() {
       where: { slug: 'zero-quarter' },
       update: {},
       create: {
-        name: 'zero Quarter',
+        name: 'Zero Quarter',
         slug: 'zero-quarter',
         description: 'Pre-game performances in the stands before football games',
         sortOrder: 1,

@@ -9,6 +9,11 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+    UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,6 +30,8 @@ import {
   BandResponseDto,
   BandWithVideoCountDto,
 } from './dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+
 
 @ApiTags('bands')
 @Controller('bands')
@@ -99,4 +106,23 @@ export class BandsController {
   async delete(@Param('id') id: string) {
     await this.bandsService.delete(id);
   }
+
+  @Post(':id/logo')
+@UseInterceptors(FileInterceptor('logo'))
+async uploadLogo(
+  @Param('id') id: string,
+  @UploadedFile(
+    new ParseFilePipe({
+      validators: [
+        new MaxFileSizeValidator({ maxSize: 5000000 }), // 5MB
+        new FileTypeValidator({ fileType: '.(png|jpeg|jpg|gif|webp)' }),
+      ],
+    }),
+  )
+  file: Express.Multer.File,
+) {
+  const logoUrl = `/uploads/logos/${file.filename}`;
+  return this.bandsService.update(id, { logoUrl });
+}
+
 }
