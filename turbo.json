@@ -29,7 +29,11 @@
     "lint": {
       "dependsOn": [
         "^build"
-      ]
+      ],
+      "outputs": []
+    },
+    "type-check": {
+      "outputs": []
     },
     "test": {
       "dependsOn": [

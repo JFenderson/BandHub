@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { QueueName } from '@hbcu-band-hub/shared-types';
+import { QUEUE_NAMES } from '@hbcu-band-hub/shared';
 import { QueueService } from './queue.service';
 import { QueueController } from './queue.controller';
 
@@ -22,13 +22,14 @@ import { QueueController } from './queue.controller';
     
     // Register queues for job creation
     BullModule.registerQueue(
-      { name: QueueName.VIDEO_SYNC },
-      { name: QueueName.VIDEO_PROCESSING },
-      { name: QueueName.MAINTENANCE }
+      { name: QUEUE_NAMES.YOUTUBE_SYNC },
+      { name: QUEUE_NAMES.VIDEO_SYNC },      // or VIDEO_PROCESS depending on your needs
+      { name: QUEUE_NAMES.VIDEO_PROCESSING }, // or VIDEO_PROCESS
+      { name: QUEUE_NAMES.MAINTENANCE },
     ),
   ],
   providers: [QueueService],
   controllers: [QueueController],
-  exports: [QueueService],
+  exports: [QueueService, BullModule],
 })
 export class QueueModule {}

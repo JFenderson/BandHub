@@ -1,15 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, Job, JobState } from 'bullmq';
-import { 
-  QueueName, 
-  JobType, 
-  SyncBandJobData, 
+import {
+  QUEUE_NAMES,
+  JOB_NAMES,
+  JobType,
+  SyncBandJobData,
   SyncAllBandsJobData,
   CleanupVideosJobData,
   SyncMode,
   JobPriority,
-} from '@hbcu-band-hub/shared-types';
+} from '@hbcu-band-hub/shared';
 
 export interface QueueStats {
   name: string;
@@ -37,13 +38,18 @@ export interface JobInfo {
 @Injectable()
 export class QueueService {
   private readonly logger = new Logger(QueueService.name);
-  
+
   constructor(
-    @InjectQueue(QueueName.VIDEO_SYNC)
+    @InjectQueue(QUEUE_NAMES.YOUTUBE_SYNC)
+    private youtubeSyncQueue: Queue,
+    
+    @InjectQueue(QUEUE_NAMES.VIDEO_SYNC)
     private videoSyncQueue: Queue,
-    @InjectQueue(QueueName.VIDEO_PROCESSING)
+    
+    @InjectQueue(QUEUE_NAMES.VIDEO_PROCESSING)
     private videoProcessingQueue: Queue,
-    @InjectQueue(QueueName.MAINTENANCE)
+    
+    @InjectQueue(QUEUE_NAMES.MAINTENANCE)
     private maintenanceQueue: Queue,
   ) {}
   
@@ -122,71 +128,43 @@ export class QueueService {
   /**
    * Get queue statistics - supports both single queue and all queues
    */
-  async getQueueStats(queueName?: string): Promise<QueueStats | QueueStats[]> {
-    if (queueName) {
-      const queue = this.getQueue(queueName);
-      if (!queue) {
-        throw new Error(`Queue not found: ${queueName}`);
-      }
-      
-      const [waiting, active, completed, failed, delayed, paused] = await Promise.all([
+  async getAllQueues() {
+  const queues = [
+    { queue: this.youtubeSyncQueue, name: QUEUE_NAMES.YOUTUBE_SYNC },
+    { queue: this.videoSyncQueue, name: QUEUE_NAMES.VIDEO_SYNC },
+    { queue: this.videoProcessingQueue, name: QUEUE_NAMES.VIDEO_PROCESSING },
+    { queue: this.maintenanceQueue, name: QUEUE_NAMES.MAINTENANCE },
+  ];
+
+  const stats = await Promise.all(
+    queues.map(async ({ queue, name }) => {
+      const [waiting, active, completed, failed, delayed] = await Promise.all([
         queue.getWaitingCount(),
         queue.getActiveCount(),
         queue.getCompletedCount(),
         queue.getFailedCount(),
         queue.getDelayedCount(),
-        queue.isPaused(),
       ]);
-      
+
       return {
-        name: queueName,
-        waiting,
-        active,
-        completed,
-        failed,
-        delayed,
-        paused,
-      };
-    }
-    
-    // Return all queues if no specific queue requested
-    const queues = [
-      { queue: this.videoSyncQueue, name: QueueName.VIDEO_SYNC },
-      { queue: this.videoProcessingQueue, name: QueueName.VIDEO_PROCESSING },
-      { queue: this.maintenanceQueue, name: QueueName.MAINTENANCE },
-    ];
-    
-    const stats: QueueStats[] = [];
-    
-    for (const { queue, name } of queues) {
-      const [waiting, active, completed, failed, delayed, paused] = await Promise.all([
-        queue.getWaitingCount(),
-        queue.getActiveCount(),
-        queue.getCompletedCount(),
-        queue.getFailedCount(),
-        queue.getDelayedCount(),
-        queue.isPaused(),
-      ]);
-      
-      stats.push({
         name,
         waiting,
         active,
         completed,
         failed,
         delayed,
-        paused,
-      });
-    }
-    
-    return stats;
-  }
+      };
+    }),
+  );
+
+  return stats;
+}
   
   /**
    * Get job details
    */
-  async getJob(queueName: string, jobId: string): Promise<JobInfo | null> {
-    const queue = this.getQueue(queueName);
+  async getJob(QUEUE_NAMES: string, jobId: string): Promise<JobInfo | null> {
+    const queue = this.getQueue(QUEUE_NAMES);
     if (!queue) return null;
     
     const job = await queue.getJob(jobId);
@@ -212,11 +190,11 @@ export class QueueService {
    * Get recent jobs from a queue
    */
   async getJobs(
-    queueName: string,
+    QUEUE_NAMES: string,
     status: 'waiting' | 'active' | 'completed' | 'failed' | 'delayed',
     limit: number = 20
   ): Promise<JobInfo[]> {
-    const queue = this.getQueue(queueName);
+    const queue = this.getQueue(QUEUE_NAMES);
     if (!queue) return [];
     
     let jobs: Job[];
@@ -262,62 +240,62 @@ export class QueueService {
   /**
    * Retry a failed job
    */
-  async retryJob(queueName: string, jobId: string): Promise<void> {
-    const queue = this.getQueue(queueName);
-    if (!queue) throw new Error(`Queue not found: ${queueName}`);
+  async retryJob(QUEUE_NAMES: string, jobId: string): Promise<void> {
+    const queue = this.getQueue(QUEUE_NAMES);
+    if (!queue) throw new Error(`Queue not found: ${QUEUE_NAMES}`);
     
     const job = await queue.getJob(jobId);
     if (!job) throw new Error(`Job not found: ${jobId}`);
     
     await job.retry();
-    this.logger.log(`Retried job ${jobId} in queue ${queueName}`);
+    this.logger.log(`Retried job ${jobId} in queue ${QUEUE_NAMES}`);
   }
   
   /**
    * Remove a job
    */
-  async removeJob(queueName: string, jobId: string): Promise<void> {
-    const queue = this.getQueue(queueName);
-    if (!queue) throw new Error(`Queue not found: ${queueName}`);
+  async removeJob(QUEUE_NAMES: string, jobId: string): Promise<void> {
+    const queue = this.getQueue(QUEUE_NAMES);
+    if (!queue) throw new Error(`Queue not found: ${QUEUE_NAMES}`);
     
     const job = await queue.getJob(jobId);
     if (!job) throw new Error(`Job not found: ${jobId}`);
     
     await job.remove();
-    this.logger.log(`Removed job ${jobId} from queue ${queueName}`);
+    this.logger.log(`Removed job ${jobId} from queue ${QUEUE_NAMES}`);
   }
   
   /**
    * Pause a queue
    */
-  async pauseQueue(queueName: string): Promise<void> {
-    const queue = this.getQueue(queueName);
-    if (!queue) throw new Error(`Queue not found: ${queueName}`);
+  async pauseQueue(QUEUE_NAMES: string): Promise<void> {
+    const queue = this.getQueue(QUEUE_NAMES);
+    if (!queue) throw new Error(`Queue not found: ${QUEUE_NAMES}`);
     
     await queue.pause();
-    this.logger.log(`Paused queue ${queueName}`);
+    this.logger.log(`Paused queue ${QUEUE_NAMES}`);
   }
   
   /**
    * Resume a queue
    */
-  async resumeQueue(queueName: string): Promise<void> {
-    const queue = this.getQueue(queueName);
-    if (!queue) throw new Error(`Queue not found: ${queueName}`);
+  async resumeQueue(QUEUE_NAMES: string): Promise<void> {
+    const queue = this.getQueue(QUEUE_NAMES);
+    if (!queue) throw new Error(`Queue not found: ${QUEUE_NAMES}`);
     
     await queue.resume();
-    this.logger.log(`Resumed queue ${queueName}`);
+    this.logger.log(`Resumed queue ${QUEUE_NAMES}`);
   }
   
   /**
    * Drain a queue (remove all jobs)
    */
-  async drainQueue(queueName: string): Promise<void> {
-    const queue = this.getQueue(queueName);
-    if (!queue) throw new Error(`Queue not found: ${queueName}`);
+  async drainQueue(QUEUE_NAMES: string): Promise<void> {
+    const queue = this.getQueue(QUEUE_NAMES);
+    if (!queue) throw new Error(`Queue not found: ${QUEUE_NAMES}`);
     
     await queue.drain();
-    this.logger.log(`Drained queue ${queueName}`);
+    this.logger.log(`Drained queue ${QUEUE_NAMES}`);
   }
   
   /**
@@ -337,11 +315,11 @@ export class QueueService {
   
   private getQueue(name: string): Queue | null {
     switch (name) {
-      case QueueName.VIDEO_SYNC:
+      case QUEUE_NAMES.VIDEO_SYNC:
         return this.videoSyncQueue;
-      case QueueName.VIDEO_PROCESSING:
+      case QUEUE_NAMES.VIDEO_PROCESSING:
         return this.videoProcessingQueue;
-      case QueueName.MAINTENANCE:
+      case QUEUE_NAMES.MAINTENANCE:
         return this.maintenanceQueue;
       default:
         return null;

@@ -21,6 +21,15 @@ export interface Video {
   updatedAt: Date;
 }
 
+export enum VideoCategory {
+  FIFTH_QUARTER = 'FIFTH_QUARTER',
+  FIELD_SHOW = 'FIELD_SHOW',
+  STAND_BATTLE = 'STAND_BATTLE',
+  PARADE = 'PARADE',
+  PRACTICE = 'PRACTICE',
+  CONCERT_BAND = 'CONCERT_BAND',
+}
+
 export interface VideoWithRelations extends Omit<Video, 'bandId' | 'opponentBandId' | 'categoryId'> {
   band: {
     id: string;
