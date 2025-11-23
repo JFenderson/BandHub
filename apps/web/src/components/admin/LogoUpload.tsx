@@ -66,11 +66,14 @@ export default function LogoUpload({
   };
 
   const displayUrl = previewUrl || currentLogoUrl;
-  const fullImageUrl = displayUrl?.startsWith('http')
-    ? displayUrl
-    : displayUrl
-    ? `${process.env.NEXT_PUBLIC_API_URL}${displayUrl}`
-    : null;
+  
+  const getFullImageUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${process.env.NEXT_PUBLIC_API_URL}${url}`;
+  };
+  
+  const fullImageUrl = getFullImageUrl(displayUrl);
 
   return (
     <div className="space-y-3">

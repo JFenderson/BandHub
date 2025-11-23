@@ -90,9 +90,14 @@ export default function BandFormModal({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
+    let parsedValue: string | number | undefined = value;
+    if (type === 'number') {
+      parsedValue = value ? parseInt(value, 10) : undefined;
+    }
+    
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'number' ? (value ? parseInt(value, 10) : undefined) : value,
+      [name]: parsedValue,
     }));
   };
 

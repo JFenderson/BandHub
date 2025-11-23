@@ -18,6 +18,13 @@ export default function AdminBandsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const formatLocation = (city?: string | null, state?: string | null): string => {
+    if (city && state) return `${city}, ${state}`;
+    if (city) return city;
+    if (state) return state;
+    return '-';
+  };
+
   const fetchBands = useCallback(async () => {
     try {
       setLoading(true);
@@ -214,7 +221,7 @@ export default function AdminBandsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {band.city && band.state ? `${band.city}, ${band.state}` : band.city || band.state || '-'}
+                        {formatLocation(band.city, band.state)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
