@@ -39,6 +39,17 @@ async function bootstrap() {
     .addTag('categories', 'Video categories')
     .addTag('search', 'Full-text search')
     .addTag('admin', 'Administrative actions')
+    .addTag('auth', 'Authentication endpoints')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
 
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
