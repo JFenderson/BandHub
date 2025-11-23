@@ -1,4 +1,13 @@
 packages:
-  - 'apps/*'
-  - 'libs/*'
-  - 'libs/shared/types'
+  - apps/*
+  - libs/*
+  - libs/shared/types
+
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - esbuild
+  - msgpackr-extract
+  - prisma
+  - unrs-resolver
