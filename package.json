@@ -5,7 +5,7 @@
   "workspaces": [
     "apps/*",
     "libs/*",
-     "libs/shared/types"
+    "libs/shared/types"
   ],
   "scripts": {
     "start:prod": "node dist/apps/api/src/main.js",
@@ -56,7 +56,6 @@
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
-  "packageManager": "npm@10.8.0",
   "description": "",
   "main": "index.js",
   "keywords": [],
