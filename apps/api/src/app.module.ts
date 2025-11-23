@@ -14,7 +14,6 @@ import { BandsSeedService } from './database/seeds/bands.seed';
 import { CategoriesSeedService } from './database/seeds/categories.seed';
 import { PrismaModule } from '@hbcu-band-hub/prisma';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,18 +24,18 @@ import { PrismaModule } from '@hbcu-band-hub/prisma';
     DatabaseModule,
     CacheModule,
     QueueModule,
-PrismaModule,
+    PrismaModule,
     // Feature modules
     BandsModule,
     VideosModule,
     CategoriesModule,
     SearchModule,
     AdminModule,
- SyncModule,
+    SyncModule,
     // Utilities
     HealthModule,
   ],
-    providers: [
+  providers: [
     CategoriesSeedService, // ← It should be here, not in imports
     // ... other providers
   ],

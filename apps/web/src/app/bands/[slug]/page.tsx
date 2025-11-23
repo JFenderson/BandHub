@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { VideoCard } from '@/components/videos/VideoCard';
+import BandLogo from '@/components/bands/BandLogo';
 
 interface BandPageProps {
   params: {
@@ -39,11 +40,11 @@ export default async function BandPage({ params }: BandPageProps) {
             {/* Logo */}
             {band.logoUrl && (
               <div className="w-32 h-32 rounded-lg bg-white p-4 flex-shrink-0">
-                <img 
-                  src={band.logoUrl} 
-                  alt={band.name} 
-                  className="w-full h-full object-contain"
-                />
+                  <BandLogo
+            logoUrl={band.logoUrl}
+            bandName={band.name}
+            size="xl"
+          />
               </div>
             )}
 
@@ -95,9 +96,9 @@ export default async function BandPage({ params }: BandPageProps) {
               <div className="text-2xl font-bold text-gray-900">{videos.length}</div>
               <div className="text-sm text-gray-600">Videos</div>
             </div>
-            {band.founded && (
+            {band.foundedYear && (
               <div>
-                <div className="text-2xl font-bold text-gray-900">{band.founded}</div>
+                <div className="text-2xl font-bold text-gray-900">{band.foundedYear}</div>
                 <div className="text-sm text-gray-600">Founded</div>
               </div>
             )}

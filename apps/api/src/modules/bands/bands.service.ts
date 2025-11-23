@@ -3,6 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { CacheService } from '../../cache/cache.service';
 import { BandsRepository } from './bands.repository';
 import { CreateBandDto, UpdateBandDto, BandQueryDto } from './dto';
+import { PrismaService } from '../../database/prisma.service';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 
 @Injectable()
 export class BandsService {
@@ -10,6 +13,7 @@ export class BandsService {
     private readonly bandsRepository: BandsRepository,
     private readonly cacheService: CacheService,
     private readonly configService: ConfigService,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async findAll(query: BandQueryDto) {
@@ -186,5 +190,58 @@ export class BandsService {
     for (const pattern of patterns) {
       await this.cacheService.delPattern(pattern);
     }
+  }
+
+    async updateLogo(id: string, logoUrl: string) {
+    const band = await this.prismaService.band.findUnique({
+      where: { id },
+    });
+
+    if (!band) {
+      throw new NotFoundException(`Band with ID ${id} not found`);
+    }
+
+    // Delete old logo file if it exists
+    if (band.logoUrl) {
+      try {
+        const oldFilePath = join(process.cwd(), 'uploads', 'bands', band.logoUrl.split('/').pop()!);
+        await unlink(oldFilePath);
+      } catch (error) {
+        // File might not exist, that's okay
+        console.warn('Could not delete old logo:', error);
+      }
+    }
+
+    return this.prismaService.band.update({
+      where: { id },
+      data: { logoUrl },
+    });
+  }
+
+  async deleteLogo(id: string) {
+    const band = await this.prismaService.band.findUnique({
+      where: { id },
+    });
+
+    if (!band) {
+      throw new NotFoundException(`Band with ID ${id} not found`);
+    }
+
+    if (!band.logoUrl) {
+      throw new NotFoundException('Band has no logo to delete');
+    }
+
+    // Delete file from disk
+    try {
+      const filePath = join(process.cwd(), 'uploads', 'bands', band.logoUrl.split('/').pop()!);
+      await unlink(filePath);
+    } catch (error) {
+      console.warn('Could not delete logo file:', error);
+    }
+
+    return this.prismaService.band.update({
+      where: { id },
+      data: { logoUrl: null },
+    });
   }
 }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import type { Video } from '@/types/api';
+import { VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
 
 interface VideoCardProps {
   video: Video;
@@ -33,7 +34,7 @@ export function VideoCard({ video }: VideoCardProps) {
         {/* Category Badge */}
         {video.category && (
           <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
-            {video.category.name}
+            {VIDEO_CATEGORY_LABELS[video.category]}
           </div>
         )}
       </div>

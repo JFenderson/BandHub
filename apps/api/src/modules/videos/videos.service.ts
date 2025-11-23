@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { CacheService } from '../../cache/cache.service';
 import { VideosRepository } from './videos.repository';
 import { CreateVideoDto, UpdateVideoDto, VideoQueryDto } from './dto';
+import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
 export class VideosService {
@@ -10,6 +11,7 @@ export class VideosService {
     private readonly videosRepository: VideosRepository,
     private readonly cacheService: CacheService,
     private readonly configService: ConfigService,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async findAll(query: VideoQueryDto) {

@@ -4,7 +4,8 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "libs/*"
+    "libs/*",
+     "libs/shared/types"
   ],
   "scripts": {
     "start:prod": "node dist/apps/api/src/main.js",
@@ -32,9 +33,12 @@
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
+    "form-data": "^4.0.5",
+    "node-fetch": "^2.7.0",
     "prettier": "^3.3.0",
     "prisma": "^5.18.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "turbo": "^2.1.0",
     "typescript": "^5.9.3"
   },

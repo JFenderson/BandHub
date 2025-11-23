@@ -1,10 +1,24 @@
+// Video category type definition
+export type VideoCategory =
+  | 'FIFTH_QUARTER'
+  | 'FIELD_SHOW'
+  | 'STAND_BATTLE'
+  | 'PARADE'
+  | 'PRACTICE'
+  | 'CONCERT_BAND'
+  | 'HALFTIME'
+  | 'ENTRANCE'
+  | 'PREGAME'
+  | 'OTHER';
+
+// Category pattern matching for auto-categorization
 export const CATEGORY_PATTERNS: Array<{
   category: string;
   patterns: RegExp[];
   weight: number;
 }> = [
   {
-    category: '5th-quarter',
+    category: 'FIFTH_QUARTER', // Changed to match enum
     patterns: [
       /5th\s*quarter/i,
       /fifth\s*quarter/i,
@@ -14,7 +28,7 @@ export const CATEGORY_PATTERNS: Array<{
     weight: 10,
   },
   {
-    category: 'stand-battle',
+    category: 'STAND_BATTLE', // Changed to match enum
     patterns: [
       /stand\s*battle/i,
       /stands?\s*vs\.?/i,
@@ -24,7 +38,7 @@ export const CATEGORY_PATTERNS: Array<{
     weight: 9,
   },
   {
-    category: 'field-show',
+    category: 'FIELD_SHOW', // Changed to match enum
     patterns: [
       /field\s*show/i,
       /marching\s*show/i,
@@ -34,7 +48,7 @@ export const CATEGORY_PATTERNS: Array<{
     weight: 8,
   },
   {
-    category: 'halftime',
+    category: 'HALFTIME', // Changed to match enum
     patterns: [
       /half\s*time/i,
       /halftime/i,
@@ -42,7 +56,7 @@ export const CATEGORY_PATTERNS: Array<{
     weight: 7,
   },
   {
-    category: 'pregame',
+    category: 'PREGAME', // Changed to match enum
     patterns: [
       /pre\s*game/i,
       /pregame/i,
@@ -51,7 +65,16 @@ export const CATEGORY_PATTERNS: Array<{
     weight: 7,
   },
   {
-    category: 'parade',
+    category: 'ENTRANCE', // Added for completeness
+    patterns: [
+      /entrance/i,
+      /entering/i,
+      /arrival/i,
+    ],
+    weight: 6,
+  },
+  {
+    category: 'PARADE', // Changed to match enum
     patterns: [
       /parade/i,
       /marching\s*down/i,
@@ -60,7 +83,7 @@ export const CATEGORY_PATTERNS: Array<{
     weight: 6,
   },
   {
-    category: 'practice',
+    category: 'PRACTICE', // Changed to match enum
     patterns: [
       /practice/i,
       /rehearsal/i,
@@ -70,7 +93,7 @@ export const CATEGORY_PATTERNS: Array<{
     weight: 5,
   },
   {
-    category: 'concert',
+    category: 'CONCERT_BAND', // Changed to match enum
     patterns: [
       /concert/i,
       /spring\s*show/i,

@@ -68,7 +68,7 @@ class ApiClient {
   async getVideos(filters?: VideoFilters): Promise<PaginatedResponse<Video>> {
     const params = new URLSearchParams();
     if (filters?.bandId) params.append('bandId', filters.bandId);
-    if (filters?.categoryId) params.append('categoryId', filters.categoryId); // Changed from category
+    if (filters?.category) params.append('category', filters.category); // Changed from categoryId
     if (filters?.year) params.append('year', filters.year.toString());
     if (filters?.search) params.append('search', filters.search);
     if (filters?.sortBy) params.append('sortBy', filters.sortBy);

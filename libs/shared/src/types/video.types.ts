@@ -21,14 +21,19 @@ export interface Video {
   updatedAt: Date;
 }
 
-export enum VideoCategory {
-  FIFTH_QUARTER = 'FIFTH_QUARTER',
-  FIELD_SHOW = 'FIELD_SHOW',
-  STAND_BATTLE = 'STAND_BATTLE',
-  PARADE = 'PARADE',
-  PRACTICE = 'PRACTICE',
-  CONCERT_BAND = 'CONCERT_BAND',
-}
+export type VideoCategory =
+  | 'FIFTH_QUARTER'
+  | 'ZERO_QUARTER'
+  | 'FIELD_SHOW'
+  | 'STAND_BATTLE'
+  | 'PARADE'
+  | 'PRACTICE'
+  | 'CONCERT_BAND'
+  | 'HALFTIME'
+  | 'ENTRANCE'
+  | 'PREGAME'
+  | 'OTHER';
+
 
 export interface VideoWithRelations extends Omit<Video, 'bandId' | 'opponentBandId' | 'categoryId'> {
   band: {
@@ -74,4 +79,45 @@ export interface UpdateVideoInput {
   isHidden?: boolean;
   hideReason?: string | null;
   qualityScore?: number;
+}
+
+export interface CreateVideoDto {
+  youtubeId: string;
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  publishedAt: string;
+  duration?: string;
+  viewCount?: number;
+  likeCount?: number;
+  bandId?: string;
+  opponentBandId?: string;
+  category?: VideoCategory;
+  eventName?: string;
+  year?: number;
+}
+
+export interface UpdateVideoDto {
+  title?: string;
+  description?: string;
+  category?: VideoCategory;
+  eventName?: string;
+  year?: number;
+  bandId?: string;
+  opponentBandId?: string;
+  isHidden?: boolean;
+}
+
+export interface VideoQueryParams {
+  search?: string;
+  bandId?: string;
+  opponentBandId?: string;
+  category?: VideoCategory;
+  year?: number;
+  eventName?: string;
+  isHidden?: boolean;
+  sortBy?: 'publishedAt' | 'viewCount' | 'likeCount' | 'title';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
 }

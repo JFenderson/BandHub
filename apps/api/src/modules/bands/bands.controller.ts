@@ -14,6 +14,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -31,7 +32,13 @@ import {
   BandWithVideoCountDto,
 } from './dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-
+import {
+  imageFileFilter,
+  editFileName,
+  MAX_FILE_SIZE,
+} from '../../common/utils/file-upload.util';
+import { join } from 'path';
+import { diskStorage } from 'multer';
 
 @ApiTags('bands')
 @Controller('bands')
@@ -108,21 +115,43 @@ export class BandsController {
   }
 
   @Post(':id/logo')
-@UseInterceptors(FileInterceptor('logo'))
-async uploadLogo(
-  @Param('id') id: string,
-  @UploadedFile(
-    new ParseFilePipe({
-      validators: [
-        new MaxFileSizeValidator({ maxSize: 5000000 }), // 5MB
-        new FileTypeValidator({ fileType: '.(png|jpeg|jpg|gif|webp)' }),
-      ],
+  @UseInterceptors(
+    FileInterceptor('logo', {
+      storage: diskStorage({
+        destination: './uploads/bands',
+        filename: editFileName,
+      }),
+      fileFilter: imageFileFilter,
+      limits: {
+        fileSize: MAX_FILE_SIZE,
+      },
     }),
   )
-  file: Express.Multer.File,
-) {
-  const logoUrl = `/uploads/logos/${file.filename}`;
-  return this.bandsService.update(id, { logoUrl });
-}
+  async uploadLogo(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    // Update band with new logo URL
+    const logoUrl = `/uploads/bands/${file.filename}`;
+    const band = await this.bandsService.updateLogo(id, logoUrl);
+
+    return {
+      message: 'Logo uploaded successfully',
+      logoUrl: band.logoUrl,
+    };
+  }
+
+  @Delete(':id/logo')
+  async deleteLogo(@Param('id') id: string) {
+    const band = await this.bandsService.deleteLogo(id);
+    return {
+      message: 'Logo deleted successfully',
+      band,
+    };
+  }
 
 }

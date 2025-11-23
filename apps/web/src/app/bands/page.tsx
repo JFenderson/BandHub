@@ -3,6 +3,7 @@ import { apiClient } from '@/lib/api-client';
 import { BandCard } from '@/components/bands/BandCard';
 import { BandFilters } from '@/components/bands/BandFilters';
 import { Pagination } from '@/components/ui/Pagination';
+import BandLogo from '@/components/bands/BandLogo';
 
 interface BandsPageProps {
   searchParams: {

@@ -14,6 +14,7 @@ export interface Band {
   logoUrl: string | null;
   bannerUrl: string | null;
   description: string | null;
+  founded: number | null;
   foundedYear: number | null;
   youtubeChannelId: string | null;
   youtubePlaylistIds: string[];
@@ -49,6 +50,7 @@ export interface CreateBandInput {
   logoUrl?: string;
   bannerUrl?: string;
   description?: string;
+  founded?: number;
   foundedYear?: number;
   youtubeChannelId?: string;
   youtubePlaylistIds?: string[];

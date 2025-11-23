@@ -4,8 +4,6 @@ import { BandsService } from './bands.service';
 import { BandsRepository } from './bands.repository';
 import { DatabaseModule } from '../../database/database.module'; // Add this import
 import { CacheModule } from '../../cache/cache.module';
-import { PrismaModule } from '../prisma/prisma.module';
-import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [DatabaseModule, CacheModule], // Add DatabaseModule here

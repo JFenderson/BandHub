@@ -2,28 +2,45 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTransition, useEffect, useState } from 'react';
-import type { Band, VideoCategory } from '@/types/api';
+import type { Band } from '@/types/api';
+import { VideoCategory, VIDEO_CATEGORIES, VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
 
-const CATEGORIES: VideoCategory[] = [
-  'FIFTH_QUARTER',
-  'FIELD_SHOW',
-  'STAND_BATTLE',
-  'PARADE',
-  'PRACTICE',
-  'CONCERT_BAND',
-];
+// const CATEGORIES: VideoCategory[] = [
+//   'FIFTH_QUARTER',
+//   'ZERO_QUARTER',
+//   'FIELD_SHOW',
+//   'STAND_BATTLE',
+//   'PARADE',
+//   'PRACTICE',
+//   'CONCERT_BAND',
+//   'HALFTIME',
+//   'ENTRANCE',
+//   'PREGAME',
+//   'OTHER',
+// ];
 
-const CATEGORY_LABELS: Record<VideoCategory, string> = {
-  FIFTH_QUARTER: '5th Quarter',
-  FIELD_SHOW: 'Field Show',
-  STAND_BATTLE: 'Stand Battle',
-  PARADE: 'Parade',
-  PRACTICE: 'Practice',
-  CONCERT_BAND: 'Concert Band',
-};
+// const CATEGORY_LABELS: Record<VideoCategory, string> = {
+//   FIFTH_QUARTER: '5th Quarter',
+//   FIFTH_QUARTER: 'Zero Quarter',
+//   FIELD_SHOW: 'Field Show',
+//   STAND_BATTLE: 'Stand Battle',
+//   PARADE: 'Parade',
+//   PRACTICE: 'Practice',
+//   CONCERT_BAND: 'Concert Band',
+//   HALFTIME: 'Halftime Show',
+//   ENTRANCE: 'Entrance',
+//   PREGAME: 'Pregame',
+//   OTHER: 'Other',
+// };
 
 interface VideoFiltersProps {
-  bands: Band[];
+  bands?: Band[];
+  initialFilters?: {
+    bandId?: string;
+    category?: VideoCategory;
+    year?: number;
+    search?: string;
+  };
 }
 
 export function VideoFilters({ bands }: VideoFiltersProps) {
@@ -124,9 +141,9 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="">All Categories</option>
-            {CATEGORIES.map((category) => (
+            {VIDEO_CATEGORIES.map((category) => (
               <option key={category} value={category}>
-                {CATEGORY_LABELS[category]}
+                {VIDEO_CATEGORY_LABELS[category]}
               </option>
             ))}
           </select>
@@ -176,7 +193,7 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
               
               {currentCategory && (
                 <FilterChip
-                  label={`Category: ${CATEGORY_LABELS[currentCategory as VideoCategory]}`}
+                  label={`Category: ${VIDEO_CATEGORY_LABELS[currentCategory as VideoCategory]}`}
                   onRemove={() => updateFilter('category', '')}
                 />
               )}

@@ -9,7 +9,7 @@ interface VideosPageProps {
   searchParams: {
     search?: string;
     bandId?: string;
-    categoryId?: string;
+    category?: VideoCategory;
     year?: string;
     sortBy?: 'publishedAt' | 'viewCount' | 'title';
     sortOrder?: 'asc' | 'desc';
@@ -24,7 +24,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
   const { data: videos, meta } = await apiClient.getVideos({
     search: searchParams.search,
     bandId: searchParams.bandId,
-    categoryId: searchParams.categoryId,
+    category: searchParams.category,
     year: searchParams.year ? parseInt(searchParams.year) : undefined,
     sortBy: searchParams.sortBy || 'publishedAt',
     sortOrder: searchParams.sortOrder || 'desc',
