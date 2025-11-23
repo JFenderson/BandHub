@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@hbcu-band-hub/prisma';
@@ -13,6 +14,7 @@ import { LoginDto } from './dto/login.dto';
 @Injectable()
 export class AuthService {
   private readonly SALT_ROUNDS = 10;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private prisma: PrismaService,
@@ -136,6 +138,7 @@ export class AuthService {
 
       return user;
     } catch (error) {
+      this.logger.warn(`Token validation failed: ${error.message}`);
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

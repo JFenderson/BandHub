@@ -12,12 +12,18 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'default-secret-change-me',
-        signOptions: {
-          expiresIn: '7d', // 7 days expiration
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('JWT_SECRET environment variable is required');
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: '7d', // 7 days expiration
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     PrismaModule,
