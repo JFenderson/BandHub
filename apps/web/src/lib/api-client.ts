@@ -3,8 +3,10 @@ import type {
   Video, 
   PaginatedResponse, 
   VideoFilters, 
-  BandFilters 
+  BandFilters,
+  ApiResponse 
 } from '@/types/api';
+import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -62,6 +64,59 @@ class ApiClient {
 
   async getBand(slug: string): Promise<Band> {
     return this.request<Band>(`/api/bands/${slug}`);
+  }
+
+  async createBand(data: CreateBandDto): Promise<Band> {
+    return this.request<Band>(`/api/bands`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateBand(id: string, data: UpdateBandDto): Promise<Band> {
+    return this.request<Band>(`/api/bands/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteBand(id: string): Promise<void> {
+    await this.request<void>(`/api/bands/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async uploadBandLogo(id: string, file: File): Promise<ApiResponse<{ logoUrl: string }>> {
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const url = `${this.baseUrl}/api/bands/${id}/logo`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type header, let browser set it with boundary
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({
+          message: 'Failed to upload logo',
+        }));
+        throw new Error(error.message || `HTTP ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Logo upload failed:', error);
+      throw error;
+    }
+  }
+
+  async deleteBandLogo(id: string): Promise<ApiResponse<Band>> {
+    return this.request<ApiResponse<Band>>(`/api/bands/${id}/logo`, {
+      method: 'DELETE',
+    });
   }
 
   // Video methods
