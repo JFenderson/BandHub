@@ -9,6 +9,8 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { SearchModule } from './modules/search/search.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
+import { EmailModule } from './modules/email/email.module';
 import { HealthModule } from './health/health.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { BandsSeedService } from './database/seeds/bands.seed';
@@ -41,6 +43,8 @@ import { APP_GUARD } from '@nestjs/core';
     SearchModule,
     AdminModule,
     AuthModule,
+    UsersModule,
+    EmailModule,
     SyncModule,
     // Utilities
     HealthModule,
