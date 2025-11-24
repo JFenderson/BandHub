@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import clsx from 'clsx';
 import { SearchBar } from './SearchBar';
+import { useUser } from '@/contexts/UserContext';
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -16,6 +17,7 @@ const navigation = [
 export function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, isLoading, logout } = useUser();
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -58,18 +60,48 @@ export function Header() {
 
           {/* Auth Buttons - Desktop */}
           <div className="hidden md:flex md:items-center md:space-x-4">
-            <Link
-              href="/admin/login"
-              className="text-sm font-medium text-gray-700 hover:text-primary-600"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
-            >
-              Register
-            </Link>
+            {isLoading ? (
+              <div className="w-8 h-8 border-2 border-gray-200 border-t-primary-600 rounded-full animate-spin"></div>
+            ) : isAuthenticated && user ? (
+              <>
+                <Link
+                  href="/profile"
+                  className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-primary-600"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <span className="text-white text-sm font-bold">
+                        {user.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <span>{user.name.split(' ')[0]}</span>
+                </Link>
+                <button
+                  onClick={logout}
+                  className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-gray-700 hover:text-primary-600"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -116,20 +148,43 @@ export function Header() {
             </div>
             {/* Auth Buttons - Mobile */}
             <div className="px-3 py-2 space-y-2">
-              <Link
-                href="/admin/login"
-                className="block w-full px-4 py-2 text-center text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="block w-full px-4 py-2 text-center text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Register
-              </Link>
+              {isAuthenticated && user ? (
+                <>
+                  <Link
+                    href="/profile"
+                    className="block w-full px-4 py-2 text-center text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Profile ({user.name.split(' ')[0]})
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="block w-full px-4 py-2 text-center text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="block w-full px-4 py-2 text-center text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="block w-full px-4 py-2 text-center text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Register
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

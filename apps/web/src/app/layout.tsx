@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { UserProvider } from '@/contexts/UserContext';
 import { ConditionalLayout } from '@/components/layout/ConditionalLayout';
 import './globals.css';
 
@@ -18,9 +19,11 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <AuthProvider>
-          <ConditionalLayout>
-            {children}
-          </ConditionalLayout>
+          <UserProvider>
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+          </UserProvider>
         </AuthProvider>
       </body>
     </html>
