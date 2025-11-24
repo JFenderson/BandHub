@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -18,6 +19,11 @@ import { CurrentUser, CurrentUserData } from '../../common/decorators/current-us
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@hbcu-band-hub/prisma';
+import { SyncJobFilterDto } from './dto/sync-job-filter.dto';
+import { TriggerSyncDto } from './dto/trigger-sync.dto';
+import { QueueActionDto, QueueAction } from './dto/queue-action.dto';
+import { SyncJobListResponseDto, SyncJobDetailDto } from './dto/sync-job-detail.dto';
+import { QueueStatusDto, ErrorStatsResponseDto } from './dto/queue-status.dto';
 
 @ApiTags('Sync')
 @Controller('sync')
@@ -114,5 +120,135 @@ export class SyncController {
     @Body('syncType') syncType: 'channel' | 'playlist' | 'search' = 'channel',
   ) {
     return this.syncService.triggerBandSync(bandId, syncType);
+  }
+}
+
+// ========================================
+// ADMIN SYNC JOB MANAGEMENT ROUTES
+// ========================================
+@ApiTags('admin')
+@Controller('admin/sync-jobs')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth('JWT-auth')
+export class AdminSyncJobController {
+  constructor(private readonly syncService: SyncService) {}
+
+  @Get()
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all sync jobs with filtering and pagination' })
+  @ApiResponse({ status: 200, description: 'Sync jobs retrieved', type: SyncJobListResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async getSyncJobs(@Query() filterDto: SyncJobFilterDto): Promise<SyncJobListResponseDto> {
+    return this.syncService.getSyncJobs(filterDto);
+  }
+
+  @Get(':id')
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get sync job details by ID' })
+  @ApiResponse({ status: 200, description: 'Sync job details retrieved', type: SyncJobDetailDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Sync job not found' })
+  async getSyncJobById(@Param('id') id: string): Promise<SyncJobDetailDto> {
+    return this.syncService.getSyncJobById(id);
+  }
+
+  @Post(':id/retry')
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({ summary: 'Retry a failed sync job' })
+  @ApiResponse({ status: 202, description: 'Job retry queued' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Sync job not found' })
+  async retryJob(@Param('id') id: string) {
+    return this.syncService.retryJob(id);
+  }
+
+  @Post('trigger')
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({ summary: 'Manually trigger a sync job' })
+  @ApiResponse({ status: 202, description: 'Sync job queued' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async triggerManualSync(@Body() dto: TriggerSyncDto) {
+    return this.syncService.triggerManualSync(dto);
+  }
+}
+
+// ========================================
+// ADMIN QUEUE MANAGEMENT ROUTES
+// ========================================
+@ApiTags('admin')
+@Controller('admin/queue')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth('JWT-auth')
+export class AdminQueueController {
+  constructor(private readonly syncService: SyncService) {}
+
+  @Get('status')
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get queue status and metrics' })
+  @ApiResponse({ status: 200, description: 'Queue status retrieved', type: [QueueStatusDto] })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async getQueueStatus(): Promise<QueueStatusDto[]> {
+    return this.syncService.getQueueStatus();
+  }
+
+  @Post('pause')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Pause the sync queue' })
+  @ApiResponse({ status: 200, description: 'Queue paused' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async pauseQueue() {
+    return this.syncService.pauseQueue();
+  }
+
+  @Post('resume')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resume the sync queue' })
+  @ApiResponse({ status: 200, description: 'Queue resumed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async resumeQueue() {
+    return this.syncService.resumeQueue();
+  }
+
+  @Post('clear-failed')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clear all failed jobs from database' })
+  @ApiResponse({ status: 200, description: 'Failed jobs cleared' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async clearFailedJobs() {
+    return this.syncService.clearFailedJobs();
+  }
+}
+
+// ========================================
+// ADMIN ERROR TRACKING ROUTES
+// ========================================
+@ApiTags('admin')
+@Controller('admin/sync')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth('JWT-auth')
+export class AdminSyncErrorController {
+  constructor(private readonly syncService: SyncService) {}
+
+  @Get('errors')
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get error statistics from sync jobs' })
+  @ApiResponse({ status: 200, description: 'Error statistics retrieved', type: ErrorStatsResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async getErrorStats(): Promise<ErrorStatsResponseDto> {
+    return this.syncService.getErrorStats();
   }
 }
