@@ -114,7 +114,7 @@ export default function DashboardPage() {
       };
 
       // Fetch all dashboard data in parallel
-      const [statsRes, activityRes, syncRes, trendsRes, categoryRes, bandsRes] = await Promise.all([
+      const responses = await Promise.all([
         fetch(`${API_URL}/api/admin/dashboard/stats`, { headers }),
         fetch(`${API_URL}/api/admin/dashboard/recent-activity`, { headers }),
         fetch(`${API_URL}/api/admin/dashboard/sync-status`, { headers }),
@@ -123,18 +123,13 @@ export default function DashboardPage() {
         fetch(`${API_URL}/api/admin/dashboard/top-bands`, { headers }),
       ]);
 
-      if (!statsRes.ok || !activityRes.ok || !syncRes.ok || !trendsRes.ok || !categoryRes.ok || !bandsRes.ok) {
+      if (responses.some(res => !res.ok)) {
         throw new Error('Failed to fetch dashboard data');
       }
 
-      const [statsData, activityData, syncData, trendsData, categoryData, bandsData] = await Promise.all([
-        statsRes.json(),
-        activityRes.json(),
-        syncRes.json(),
-        trendsRes.json(),
-        categoryRes.json(),
-        bandsRes.json(),
-      ]);
+      const [statsData, activityData, syncData, trendsData, categoryData, bandsData] = await Promise.all(
+        responses.map(res => res.json())
+      );
 
       setStats(statsData);
       setActivity(activityData);

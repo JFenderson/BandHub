@@ -254,9 +254,10 @@ export class AdminService {
     const videosByDate = new Map<string, number>();
     
     // Initialize all dates with 0
+    const now = new Date();
     for (let i = 0; i < 30; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
+      const date = new Date(now.getTime());
+      date.setDate(now.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       videosByDate.set(dateStr, 0);
     }

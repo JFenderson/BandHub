@@ -98,22 +98,27 @@ export function ActivityFeed({ activities, isLoading }: ActivityFeedProps) {
         </div>
       ) : (
         <div className="space-y-4 max-h-96 overflow-y-auto">
-          {activities.map((activity) => (
-            <div key={activity.id} className="flex items-start space-x-3">
-              {getActivityIcon(activity.type, activity.status)}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {activity.title}
-                </p>
-                <p className="text-sm text-gray-600 truncate">
-                  {activity.description}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-                </p>
+          {activities.map((activity) => {
+            const timestamp = new Date(activity.timestamp);
+            const isValidDate = !isNaN(timestamp.getTime());
+            
+            return (
+              <div key={activity.id} className="flex items-start space-x-3">
+                {getActivityIcon(activity.type, activity.status)}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {activity.title}
+                  </p>
+                  <p className="text-sm text-gray-600 truncate">
+                    {activity.description}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {isValidDate ? formatDistanceToNow(timestamp, { addSuffix: true }) : 'Unknown time'}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

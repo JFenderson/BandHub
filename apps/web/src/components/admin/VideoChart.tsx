@@ -15,10 +15,20 @@ interface VideoChartProps {
 
 export function VideoChart({ data }: VideoChartProps) {
   // Format data for the chart
-  const chartData = data.map((item) => ({
-    ...item,
-    formattedDate: format(parseISO(item.date), 'MMM dd'),
-  }));
+  const chartData = data.map((item) => {
+    try {
+      return {
+        ...item,
+        formattedDate: format(parseISO(item.date), 'MMM dd'),
+      };
+    } catch (error) {
+      // If date parsing fails, use the original date string
+      return {
+        ...item,
+        formattedDate: item.date,
+      };
+    }
+  });
 
   return (
     <ResponsiveContainer width="100%" height={300}>
