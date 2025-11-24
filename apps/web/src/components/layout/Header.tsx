@@ -56,6 +56,22 @@ export function Header() {
             <SearchBar />
           </div>
 
+          {/* Auth Buttons - Desktop */}
+          <div className="hidden md:flex md:items-center md:space-x-4">
+            <Link
+              href="/admin/login"
+              className="text-sm font-medium text-gray-700 hover:text-primary-600"
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+            >
+              Register
+            </Link>
+          </div>
+
           {/* Mobile menu button */}
           <div className="flex md:hidden">
             <button
@@ -97,6 +113,23 @@ export function Header() {
             ))}
             <div className="px-3 py-2">
               <SearchBar />
+            </div>
+            {/* Auth Buttons - Mobile */}
+            <div className="px-3 py-2 space-y-2">
+              <Link
+                href="/admin/login"
+                className="block w-full px-4 py-2 text-center text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="block w-full px-4 py-2 text-center text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Register
+              </Link>
             </div>
           </div>
         )}
