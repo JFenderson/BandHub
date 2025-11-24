@@ -4,7 +4,11 @@ import type {
   PaginatedResponse, 
   VideoFilters, 
   BandFilters,
-  ApiResponse 
+  ApiResponse,
+  AdminVideoFilters,
+  VideoDetail,
+  BulkVideoUpdateRequest,
+  BulkVideoUpdateResponse
 } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/types/auth';
@@ -279,6 +283,67 @@ class ApiClient {
 
   async getCategories(): Promise<any[]> {
     return this.request<any[]>(`/api/categories`);
+  }
+
+  // Admin video moderation methods
+  async getAdminVideos(filters?: AdminVideoFilters): Promise<{
+    data: VideoDetail[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const params = new URLSearchParams();
+    if (filters?.bandId) params.append('bandId', filters.bandId);
+    if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+    if (filters?.opponentBandId) params.append('opponentBandId', filters.opponentBandId);
+    if (filters?.eventYear) params.append('eventYear', filters.eventYear.toString());
+    if (filters?.eventName) params.append('eventName', filters.eventName);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.hiddenStatus) params.append('hiddenStatus', filters.hiddenStatus);
+    if (filters?.categorizationStatus) params.append('categorizationStatus', filters.categorizationStatus);
+    if (filters?.tags) params.append('tags', filters.tags);
+    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const query = params.toString();
+    return this.request<{
+      data: VideoDetail[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`/api/admin/videos${query ? `?${query}` : ''}`);
+  }
+
+  async updateAdminVideo(
+    videoId: string,
+    updateData: {
+      categoryId?: string;
+      opponentBandId?: string;
+      eventName?: string;
+      eventYear?: number;
+      tags?: string[];
+      qualityScore?: number;
+      isHidden?: boolean;
+      hideReason?: string;
+    }
+  ): Promise<VideoDetail> {
+    return this.request<VideoDetail>(`/api/admin/videos/${videoId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  async bulkUpdateVideos(data: BulkVideoUpdateRequest): Promise<BulkVideoUpdateResponse> {
+    return this.request<BulkVideoUpdateResponse>(`/api/admin/videos/bulk`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 
 

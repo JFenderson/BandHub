@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { SyncJobStatus } from '@prisma/client';
+import { SyncJobStatus, Prisma } from '@prisma/client';
 import {
   DashboardStatsDto,
   RecentActivityDto,
@@ -11,6 +11,9 @@ import {
   CategoryDistributionDto,
   TopBandDto,
 } from './dto/dashboard.dto';
+import { AdminVideoQueryDto } from './dto/admin-video-query.dto';
+import { BulkVideoUpdateDto, BulkVideoUpdateResponseDto, BulkVideoAction } from './dto/bulk-video-update.dto';
+import { VideoDetailDto } from './dto/video-detail.dto';
 
 @Injectable()
 export class AdminService {
@@ -329,5 +332,488 @@ export class AdminService {
       }))
       .sort((a, b) => b.videoCount - a.videoCount)
       .slice(0, 10);
+  }
+
+  /**
+   * Get videos for admin moderation with advanced filtering
+   */
+  async getAdminVideos(query: AdminVideoQueryDto): Promise<{
+    data: VideoDetailDto[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const {
+      bandId,
+      categoryId,
+      opponentBandId,
+      eventYear,
+      eventName,
+      search,
+      hiddenStatus = 'all',
+      categorizationStatus = 'all',
+      tags,
+      dateFrom,
+      dateTo,
+      sortBy = 'publishedAt',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 20,
+    } = query;
+
+    // Build the where clause
+    const where: Prisma.VideoWhereInput = {};
+
+    // Hidden status filter
+    if (hiddenStatus === 'visible') {
+      where.isHidden = false;
+    } else if (hiddenStatus === 'hidden') {
+      where.isHidden = true;
+    }
+    // 'all' means no filter on isHidden
+
+    // Categorization status filter
+    if (categorizationStatus === 'categorized') {
+      where.categoryId = { not: null };
+    } else if (categorizationStatus === 'uncategorized') {
+      where.categoryId = null;
+    }
+
+    // Band filtering
+    if (bandId) {
+      where.bandId = bandId;
+    }
+
+    // Category filtering
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    // Opponent band filtering
+    if (opponentBandId) {
+      where.opponentBandId = opponentBandId;
+    }
+
+    // Event filtering
+    if (eventYear) {
+      where.eventYear = eventYear;
+    }
+    if (eventName) {
+      where.eventName = {
+        contains: eventName,
+        mode: 'insensitive',
+      };
+    }
+
+    // Tags filtering
+    if (tags) {
+      const tagList = tags.split(',').map((tag) => tag.trim());
+      where.tags = {
+        hasSome: tagList,
+      };
+    }
+
+    // Date range filter
+    if (dateFrom || dateTo) {
+      where.publishedAt = {};
+      if (dateFrom) {
+        where.publishedAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        where.publishedAt.lte = new Date(dateTo);
+      }
+    }
+
+    // Full-text search
+    if (search) {
+      where.OR = [
+        {
+          title: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          description: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Build order by
+    const orderBy: Prisma.VideoOrderByWithRelationInput = {
+      [sortBy]: sortOrder,
+    };
+
+    // Execute query
+    const [videos, total] = await Promise.all([
+      this.prisma.video.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        include: {
+          band: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logoUrl: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          opponentBand: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logoUrl: true,
+            },
+          },
+        },
+      }),
+      this.prisma.video.count({ where }),
+    ]);
+
+    // Map to DTO
+    const data: VideoDetailDto[] = videos.map((video) => ({
+      id: video.id,
+      youtubeId: video.youtubeId,
+      title: video.title,
+      description: video.description || undefined,
+      thumbnailUrl: video.thumbnailUrl,
+      duration: video.duration,
+      publishedAt: video.publishedAt,
+      viewCount: video.viewCount,
+      likeCount: video.likeCount,
+      eventName: video.eventName || undefined,
+      eventYear: video.eventYear || undefined,
+      tags: video.tags,
+      isHidden: video.isHidden,
+      hideReason: video.hideReason || undefined,
+      qualityScore: video.qualityScore,
+      createdAt: video.createdAt,
+      updatedAt: video.updatedAt,
+      band: video.band,
+      category: video.category || undefined,
+      opponentBand: video.opponentBand || undefined,
+    }));
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Bulk update videos
+   */
+  async bulkUpdateVideos(
+    dto: BulkVideoUpdateDto,
+    adminUserId: string,
+  ): Promise<BulkVideoUpdateResponseDto> {
+    const { videoIds, action } = dto;
+
+    if (!videoIds || videoIds.length === 0) {
+      throw new BadRequestException('No video IDs provided');
+    }
+
+    const successfulIds: string[] = [];
+    const failedIds: string[] = [];
+    const errors: { [videoId: string]: string } = {};
+
+    // Process each video
+    for (const videoId of videoIds) {
+      try {
+        // Verify video exists
+        const video = await this.prisma.video.findUnique({
+          where: { id: videoId },
+        });
+
+        if (!video) {
+          failedIds.push(videoId);
+          errors[videoId] = 'Video not found';
+          continue;
+        }
+
+        // Perform action based on type
+        switch (action) {
+          case BulkVideoAction.CATEGORIZE:
+            if (!dto.categoryId) {
+              throw new BadRequestException('Category ID required for categorize action');
+            }
+            // Verify category exists
+            const category = await this.prisma.category.findUnique({
+              where: { id: dto.categoryId },
+            });
+            if (!category) {
+              throw new BadRequestException('Category not found');
+            }
+            await this.prisma.video.update({
+              where: { id: videoId },
+              data: { categoryId: dto.categoryId },
+            });
+            break;
+
+          case BulkVideoAction.HIDE:
+            await this.prisma.video.update({
+              where: { id: videoId },
+              data: {
+                isHidden: true,
+                hideReason: dto.hideReason || 'Hidden by admin',
+              },
+            });
+            break;
+
+          case BulkVideoAction.UNHIDE:
+            await this.prisma.video.update({
+              where: { id: videoId },
+              data: {
+                isHidden: false,
+                hideReason: null,
+              },
+            });
+            break;
+
+          case BulkVideoAction.DELETE:
+            await this.prisma.video.delete({
+              where: { id: videoId },
+            });
+            break;
+
+          case BulkVideoAction.UPDATE_METADATA:
+            const updateData: Prisma.VideoUpdateInput = {};
+            if (dto.opponentBandId !== undefined) {
+              if (dto.opponentBandId) {
+                updateData.opponentBand = { connect: { id: dto.opponentBandId } };
+              } else {
+                updateData.opponentBand = { disconnect: true };
+              }
+            }
+            if (dto.eventName !== undefined) {
+              updateData.eventName = dto.eventName;
+            }
+            if (dto.eventYear !== undefined) {
+              updateData.eventYear = dto.eventYear;
+            }
+            if (dto.tags !== undefined) {
+              updateData.tags = dto.tags.split(',').map((tag) => tag.trim());
+            }
+            if (dto.qualityScore !== undefined) {
+              updateData.qualityScore = dto.qualityScore;
+            }
+            await this.prisma.video.update({
+              where: { id: videoId },
+              data: updateData,
+            });
+            break;
+
+          default:
+            throw new BadRequestException(`Unknown action: ${action}`);
+        }
+
+        successfulIds.push(videoId);
+
+        // Log audit trail
+        await this.logAuditAction(adminUserId, 'bulk_video_update', {
+          videoId,
+          action,
+          dto,
+        });
+      } catch (error) {
+        failedIds.push(videoId);
+        errors[videoId] = error instanceof Error ? error.message : 'Unknown error';
+      }
+    }
+
+    return {
+      successCount: successfulIds.length,
+      failedCount: failedIds.length,
+      successfulIds,
+      failedIds,
+      errors: failedIds.length > 0 ? errors : undefined,
+    };
+  }
+
+  /**
+   * Update a single video
+   */
+  async updateVideo(
+    videoId: string,
+    updateData: {
+      categoryId?: string;
+      opponentBandId?: string;
+      eventName?: string;
+      eventYear?: number;
+      tags?: string[];
+      qualityScore?: number;
+      isHidden?: boolean;
+      hideReason?: string;
+    },
+    adminUserId: string,
+  ): Promise<VideoDetailDto> {
+    // Verify video exists
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+    });
+
+    if (!video) {
+      throw new NotFoundException(`Video with ID ${videoId} not found`);
+    }
+
+    // Build update data
+    const prismaUpdateData: Prisma.VideoUpdateInput = {};
+
+    if (updateData.categoryId !== undefined) {
+      if (updateData.categoryId) {
+        // Verify category exists
+        const category = await this.prisma.category.findUnique({
+          where: { id: updateData.categoryId },
+        });
+        if (!category) {
+          throw new BadRequestException('Category not found');
+        }
+        prismaUpdateData.category = { connect: { id: updateData.categoryId } };
+      } else {
+        prismaUpdateData.category = { disconnect: true };
+      }
+    }
+
+    if (updateData.opponentBandId !== undefined) {
+      if (updateData.opponentBandId) {
+        // Verify band exists
+        const band = await this.prisma.band.findUnique({
+          where: { id: updateData.opponentBandId },
+        });
+        if (!band) {
+          throw new BadRequestException('Opponent band not found');
+        }
+        prismaUpdateData.opponentBand = { connect: { id: updateData.opponentBandId } };
+      } else {
+        prismaUpdateData.opponentBand = { disconnect: true };
+      }
+    }
+
+    if (updateData.eventName !== undefined) {
+      prismaUpdateData.eventName = updateData.eventName;
+    }
+
+    if (updateData.eventYear !== undefined) {
+      prismaUpdateData.eventYear = updateData.eventYear;
+    }
+
+    if (updateData.tags !== undefined) {
+      prismaUpdateData.tags = updateData.tags;
+    }
+
+    if (updateData.qualityScore !== undefined) {
+      prismaUpdateData.qualityScore = updateData.qualityScore;
+    }
+
+    if (updateData.isHidden !== undefined) {
+      prismaUpdateData.isHidden = updateData.isHidden;
+      if (!updateData.isHidden) {
+        prismaUpdateData.hideReason = null;
+      }
+    }
+
+    if (updateData.hideReason !== undefined) {
+      prismaUpdateData.hideReason = updateData.hideReason;
+    }
+
+    // Update video
+    const updatedVideo = await this.prisma.video.update({
+      where: { id: videoId },
+      data: prismaUpdateData,
+      include: {
+        band: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logoUrl: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        opponentBand: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logoUrl: true,
+          },
+        },
+      },
+    });
+
+    // Log audit trail
+    await this.logAuditAction(adminUserId, 'video_update', {
+      videoId,
+      updateData,
+    });
+
+    return {
+      id: updatedVideo.id,
+      youtubeId: updatedVideo.youtubeId,
+      title: updatedVideo.title,
+      description: updatedVideo.description || undefined,
+      thumbnailUrl: updatedVideo.thumbnailUrl,
+      duration: updatedVideo.duration,
+      publishedAt: updatedVideo.publishedAt,
+      viewCount: updatedVideo.viewCount,
+      likeCount: updatedVideo.likeCount,
+      eventName: updatedVideo.eventName || undefined,
+      eventYear: updatedVideo.eventYear || undefined,
+      tags: updatedVideo.tags,
+      isHidden: updatedVideo.isHidden,
+      hideReason: updatedVideo.hideReason || undefined,
+      qualityScore: updatedVideo.qualityScore,
+      createdAt: updatedVideo.createdAt,
+      updatedAt: updatedVideo.updatedAt,
+      band: updatedVideo.band,
+      category: updatedVideo.category || undefined,
+      opponentBand: updatedVideo.opponentBand || undefined,
+    };
+  }
+
+  /**
+   * Log audit action for moderation
+   */
+  private async logAuditAction(
+    adminUserId: string,
+    action: string,
+    metadata: any,
+  ): Promise<void> {
+    // For now, just log to console
+    // In production, you would store this in a dedicated audit log table
+    console.log('[AUDIT]', {
+      timestamp: new Date().toISOString(),
+      adminUserId,
+      action,
+      metadata,
+    });
   }
 }
