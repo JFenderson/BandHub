@@ -139,32 +139,161 @@ curl -X GET http://localhost:3001/api/auth/me \
 
 ## API Endpoints
 
-### Authentication (`/api/auth`)
-- `POST /api/auth/register` - Register new admin user
-- `POST /api/auth/login` - Login and get JWT token
-- `POST /api/auth/logout` - Logout (for future token blacklisting)
-- `GET /api/auth/me` - Get current user info (protected)
+**Base URL:** `http://localhost:3001/api`  
+**Swagger Documentation:** `http://localhost:3001/api/docs`  
+**Note:** All endpoints are prefixed with `/api` (e.g., `/api/auth/login`)
 
-### Bands (`/api/bands`)
-- `GET /api/bands` - List all bands
-- `GET /api/bands/:id` - Get band details
-- `POST /api/bands` - Create new band (protected)
-- `PUT /api/bands/:id` - Update band (protected)
-- `DELETE /api/bands/:id` - Delete band (protected)
+---
 
-### Videos (`/api/videos`)
-- `GET /api/videos` - List videos with filters
-- `GET /api/videos/:id` - Get video details
-- `POST /api/videos` - Add new video (protected)
-- `PUT /api/videos/:id` - Update video (protected)
+### 🔐 Authentication (`/api/auth`)
 
-### Categories (`/api/categories`)
-- `GET /api/categories` - List all categories
-- `GET /api/categories/:slug` - Get category details
-- `POST /api/categories` - Create category (protected)
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/auth/register` | Register a new admin user | ❌ No |
+| `POST` | `/api/auth/login` | Login and get JWT token | ❌ No |
+| `POST` | `/api/auth/logout` | Logout current session | ✅ Yes |
+| `POST` | `/api/auth/logout-all` | Logout from all devices | ✅ Yes |
+| `POST` | `/api/auth/refresh` | Refresh access token using refresh token | ❌ No |
 
-### Health Check
-- `GET /health` - API health status
+---
+
+### 🎺 Bands (`/api/bands`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/bands` | Get all bands with pagination | ❌ No |
+| `GET` | `/api/bands/:id` | Get band by ID | ❌ No |
+| `GET` | `/api/bands/slug/:slug` | Get band by slug | ❌ No |
+| `POST` | `/api/bands` | Create a new band | ✅ Yes (MODERATOR) |
+| `PUT` | `/api/bands/:id` | Update a band | ✅ Yes (MODERATOR) |
+| `DELETE` | `/api/bands/:id` | Delete a band | ✅ Yes (SUPER_ADMIN) |
+
+---
+
+### 🎥 Videos (`/api/videos`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/videos` | Get all videos with filtering and pagination | ❌ No |
+| `GET` | `/api/videos/:id` | Get video by ID | ❌ No |
+| `PUT` | `/api/videos/:id/hide` | Hide a video from public view | ✅ Yes (MODERATOR) |
+| `PUT` | `/api/videos/:id/unhide` | Unhide a video | ✅ Yes (MODERATOR) |
+| `PUT` | `/api/videos/:id/category` | Update video category | ✅ Yes (MODERATOR) |
+| `PUT` | `/api/videos/:id/quality` | Update video quality metadata | ✅ Yes (MODERATOR) |
+| `DELETE` | `/api/videos/:id` | Delete a video permanently | ✅ Yes (SUPER_ADMIN) |
+
+---
+
+### 📂 Categories (`/api/categories`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/categories` | Get all categories | ❌ No |
+| `GET` | `/api/categories/:id` | Get category by ID | ❌ No |
+| `POST` | `/api/categories` | Create a new category | ✅ Yes (SUPER_ADMIN) |
+| `PUT` | `/api/categories/:id` | Update a category | ✅ Yes (SUPER_ADMIN) |
+| `DELETE` | `/api/categories/:id` | Delete a category | ✅ Yes (SUPER_ADMIN) |
+
+---
+
+### 🔑 API Keys (`/api/api-keys`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/api-keys` | Create a new API key | ✅ Yes (SUPER_ADMIN) |
+| `GET` | `/api/api-keys` | List all API keys | ✅ Yes (MODERATOR) |
+| `DELETE` | `/api/api-keys/:id/revoke` | Revoke an API key | ✅ Yes (SUPER_ADMIN) |
+| `DELETE` | `/api/api-keys/:id` | Delete an API key permanently | ✅ Yes (SUPER_ADMIN) |
+
+---
+
+### 🏥 Health Check (`/api/health`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/health` | Check API, database, and cache health | ❌ No |
+| `GET` | `/api/health/database` | Check database connection | ❌ No |
+| `GET` | `/api/health/cache` | Check cache (Redis) connection | ❌ No |
+
+---
+
+### 👥 Admin (`/api/admin`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/admin` | Admin dashboard | 🚧 Coming Soon |
+
+---
+
+### 🔍 Search (`/api/search`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/api/search` | Search across bands and videos | 🚧 Coming Soon |
+
+---
+
+### Query Parameters
+
+#### `GET /api/bands`
+- `page` (number): Page number for pagination (default: 1)
+- `limit` (number): Results per page (default: 20)
+- `search` (string): Search bands by name
+
+**Example:**
+```bash
+GET /api/bands?page=1&limit=10&search=grambling
+```
+
+#### `GET /api/videos`
+- `bandId` (string): Filter videos by band ID
+- `categoryId` (string): Filter videos by category ID
+- `year` (number): Filter videos by event year
+- `search` (string): Search videos by title
+- `page` (number): Page number for pagination (default: 1)
+- `limit` (number): Results per page (default: 20)
+- `sortBy` (string): Sort field - `publishedAt`, `viewCount`, `title`, or `createdAt` (default: `publishedAt`)
+- `sortOrder` (string): Sort order - `asc` or `desc` (default: `desc`)
+
+**Example:**
+```bash
+GET /api/videos?bandId=clx...&categoryId=clx...&year=2024&page=1&limit=20&sortBy=viewCount&sortOrder=desc
+```
+
+---
+
+### Authentication & Authorization
+
+The API uses **JWT (JSON Web Token)** for authentication with three role levels:
+
+- **`SUPER_ADMIN`**: Full access to all endpoints, including delete operations and API key management
+- **`MODERATOR`**: Can create and update bands, videos, and manage content (hide/unhide videos)
+- **`VIEWER`**: Read-only access to public endpoints
+
+**Example: Using JWT Token**
+```bash
+# Get your JWT token from login
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@bandhub.com", "password": "SecurePass123"}'
+
+# Use the token in Authorization header
+curl -X POST http://localhost:3001/api/bands \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{"name": "Grambling State University", "slug": "grambling"}'
+```
+
+---
+
+### CORS Configuration
+
+The API is configured with CORS to allow cross-origin requests from the frontend:
+
+- **Allowed Origins:** `http://localhost:3000` (configurable via `FRONTEND_URL` environment variable)
+- **Credentials:** Enabled (`true`)
+- **Allowed Methods:** `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`
+- **Allowed Headers:** `Content-Type`, `Authorization`
 
 ## Building for Production
 
