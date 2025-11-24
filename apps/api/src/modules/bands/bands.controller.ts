@@ -22,10 +22,8 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
-import sharp from 'sharp';
+import { processUploadedImage } from '../../common/utils/image-processing.util';
 import { unlink } from 'fs/promises';
-import { join } from 'path';
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@hbcu-band-hub/prisma';
@@ -173,20 +171,12 @@ export class BandsController {
     }
 
     try {
-      // Process image with sharp - resize to 300x300px and convert to WebP
-      const processedPath = file.path;
-      await sharp(file.path)
-        .resize(300, 300, {
-          fit: 'cover',
-          position: 'center',
-        })
-        .webp({ quality: 90 })
-        .toFile(processedPath + '.tmp');
-
-      // Replace original with processed
-      await unlink(processedPath);
-      await sharp(processedPath + '.tmp').toFile(processedPath);
-      await unlink(processedPath + '.tmp');
+      // Process image - resize to 300x300px and convert to WebP
+      await processUploadedImage(file.path, {
+        width: 300,
+        height: 300,
+        quality: 90,
+      });
 
       // Update band with new logo URL
       const logoUrl = `/uploads/logos/${file.filename}`;
@@ -248,20 +238,12 @@ export class BandsController {
     }
 
     try {
-      // Process image with sharp - resize to 1600x900px and convert to WebP
-      const processedPath = file.path;
-      await sharp(file.path)
-        .resize(1600, 900, {
-          fit: 'cover',
-          position: 'center',
-        })
-        .webp({ quality: 90 })
-        .toFile(processedPath + '.tmp');
-
-      // Replace original with processed
-      await unlink(processedPath);
-      await sharp(processedPath + '.tmp').toFile(processedPath);
-      await unlink(processedPath + '.tmp');
+      // Process image - resize to 1600x900px and convert to WebP
+      await processUploadedImage(file.path, {
+        width: 1600,
+        height: 900,
+        quality: 90,
+      });
 
       // Update band with new banner URL
       const bannerUrl = `/uploads/banners/${file.filename}`;
