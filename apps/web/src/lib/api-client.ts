@@ -7,32 +7,89 @@ import type {
   ApiResponse 
 } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
+import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/types/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 class ApiClient {
   private baseUrl: string;
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
+  private onUnauthorized?: () => void;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
+  /**
+   * Set the access token for authenticated requests
+   */
+  setAccessToken(token: string | null) {
+    this.accessToken = token;
+  }
+
+  /**
+   * Set the refresh token for token refresh
+   */
+  setRefreshToken(token: string | null) {
+    this.refreshToken = token;
+  }
+
+  /**
+   * Set callback for unauthorized errors (401)
+   */
+  setOnUnauthorized(callback: () => void) {
+    this.onUnauthorized = callback;
+  }
+
   private async request<T>(
     endpoint: string,
-    options?: RequestInit
+    options?: RequestInit,
+    skipAuth: boolean = false
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    };
+
+    // Add authorization header if we have an access token
+    if (this.accessToken && !skipAuth) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
+    
     const config: RequestInit = {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
     };
 
     try {
       const response = await fetch(url, config);
+
+      // Handle 401 Unauthorized
+      if (response.status === 401 && !skipAuth) {
+        // Try to refresh token
+        if (this.refreshToken && endpoint !== '/api/auth/refresh') {
+          try {
+            await this.refreshAccessToken();
+            // Retry the original request with new token
+            return this.request<T>(endpoint, options, skipAuth);
+          } catch (refreshError) {
+            // Refresh failed, trigger unauthorized callback
+            if (this.onUnauthorized) {
+              this.onUnauthorized();
+            }
+            throw new Error('Session expired. Please login again.');
+          }
+        } else {
+          // No refresh token available or refresh endpoint failed
+          if (this.onUnauthorized) {
+            this.onUnauthorized();
+          }
+          throw new Error('Unauthorized. Please login.');
+        }
+      }
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({
@@ -45,6 +102,78 @@ class ApiClient {
     } catch (error) {
       console.error('API request failed:', error);
       throw error;
+    }
+  }
+
+  // ============ AUTH METHODS ============
+
+  /**
+   * Login with email and password
+   */
+  async login(credentials: LoginCredentials): Promise<LoginResponse> {
+    const response = await this.request<LoginResponse>(
+      '/api/auth/login',
+      {
+        method: 'POST',
+        body: JSON.stringify({ 
+          email: credentials.email, 
+          password: credentials.password 
+        }),
+      },
+      true // Skip auth for login
+    );
+
+    // Store tokens
+    this.setAccessToken(response.accessToken);
+    this.setRefreshToken(response.refreshToken);
+
+    return response;
+  }
+
+  /**
+   * Refresh access token using refresh token
+   */
+  async refreshAccessToken(): Promise<RefreshTokenResponse> {
+    if (!this.refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    const response = await this.request<RefreshTokenResponse>(
+      '/api/auth/refresh',
+      {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken: this.refreshToken }),
+      },
+      true // Skip auth for refresh
+    );
+
+    // Update tokens
+    this.setAccessToken(response.accessToken);
+    this.setRefreshToken(response.refreshToken);
+
+    return response;
+  }
+
+  /**
+   * Logout current session
+   */
+  async logout(): Promise<void> {
+    if (!this.refreshToken) {
+      return;
+    }
+
+    try {
+      await this.request<{ message: string }>(
+        '/api/auth/logout',
+        {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken: this.refreshToken }),
+        }
+      );
+    } finally {
+      // Clear tokens even if logout request fails
+      this.setAccessToken(null);
+      this.setRefreshToken(null);
     }
   }
 
