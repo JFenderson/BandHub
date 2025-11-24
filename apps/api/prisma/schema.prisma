@@ -32,6 +32,7 @@ model Band {
   searchKeywords     String[]   @default([]) @map("search_keywords")
   videos             Video[]    @relation("BandVideos")
   opponentVideos     Video[]    @relation("OpponentBandVideos")
+  syncJobs           SyncJob[]
 
   @@index([slug])
   @@index([schoolName])
@@ -172,6 +173,7 @@ model SyncJob {
   startedAt     DateTime?     @map("started_at")
   completedAt   DateTime?     @map("completed_at")
   createdAt     DateTime      @default(now()) @map("created_at")
+  band          Band?         @relation(fields: [bandId], references: [id], onDelete: SetNull)
 
   @@index([bandId])
   @@index([status])

@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { SyncController } from './sync.controller';
+import { SyncController, AdminSyncJobController, AdminQueueController, AdminSyncErrorController } from './sync.controller';
 import { SyncService } from './sync.service';
 import { QueueModule } from '../../queue/queue.module';
 import { DatabaseModule } from '../../database/database.module';
 
 @Module({
   imports: [QueueModule, DatabaseModule],
-  controllers: [SyncController],
+  controllers: [SyncController, AdminSyncJobController, AdminQueueController, AdminSyncErrorController],
   providers: [SyncService],
   exports: [SyncService],
 })
