@@ -7,151 +7,116 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
   HttpCode,
   HttpStatus,
-    UseInterceptors,
-  UploadedFile,
-  ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
-  BadRequestException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { BandsService } from './bands.service';
-import {
-  CreateBandDto,
-  UpdateBandDto,
-  BandQueryDto,
-  BandResponseDto,
-  BandWithVideoCountDto,
-} from './dto';
-import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  imageFileFilter,
-  editFileName,
-  MAX_FILE_SIZE,
-} from '../../common/utils/file-upload.util';
-import { join } from 'path';
-import { diskStorage } from 'multer';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 
-@ApiTags('bands')
+// Import AdminRole from generated Prisma client
+import { AdminRole } from '@hbcu-band-hub/prisma';
+
+@ApiTags('Bands')
 @Controller('bands')
 export class BandsController {
-  constructor(private bandsService: BandsService) {}
+  constructor(private readonly bandsService: BandsService) {}
+
+  // ========================================
+  // PUBLIC ROUTES
+  // ========================================
 
   @Get()
-  @ApiOperation({ summary: 'Get all bands with optional filtering' })
-  @ApiResponse({
-    status: 200,
-    description: 'Paginated list of bands',
-  })
-  async findAll(@Query() query: BandQueryDto) {
-    return this.bandsService.findAll(query);
+  @ApiOperation({ summary: 'Get all bands with pagination' })
+  @ApiResponse({ status: 200, description: 'Bands retrieved successfully' })
+  async findAll(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+    @Query('search') search?: string,
+  ) {
+    return this.bandsService.findAll({
+      page: Number(page),
+      limit: Number(limit),
+      search,
+    });
   }
 
-  @Get(':identifier')
-  @ApiOperation({ summary: 'Get a band by ID or slug' })
-  @ApiParam({
-    name: 'identifier',
-    description: 'Band ID (cuid) or slug',
-    example: 'sonic-boom-of-the-south',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Band details',
-    type: BandWithVideoCountDto,
-  })
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a band by ID' })
+  @ApiResponse({ status: 200, description: 'Band retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Band not found' })
-  async findOne(@Param('identifier') identifier: string) {
-    // Check if identifier is a slug (contains hyphens or lowercase letters only)
-    const isSlug = /^[a-z0-9-]+$/.test(identifier) && identifier.includes('-');
-    
-    if (isSlug) {
-      return this.bandsService.findBySlug(identifier);
-    }
-    
-    return this.bandsService.findById(identifier);
+  async findOne(@Param('id') id: string) {
+    return this.bandsService.findById(id);
   }
+
+  @Get('slug/:slug')
+  @ApiOperation({ summary: 'Get a band by slug' })
+  @ApiResponse({ status: 200, description: 'Band retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Band not found' })
+  async findBySlug(@Param('slug') slug: string) {
+    return this.bandsService.findBySlug(slug);
+  }
+
+  // ========================================
+  // MODERATOR ROUTES
+  // ========================================
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create a new band' })
-  @ApiResponse({
-    status: 201,
-    description: 'Band created successfully',
-    type: BandResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Invalid input' })
-  async create(@Body() dto: CreateBandDto) {
-    return this.bandsService.create(dto);
+  @ApiResponse({ status: 201, description: 'Band created successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async create(
+    @Body() createBandDto: any,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.bandsService.create(createBandDto);
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a band' })
-  @ApiParam({ name: 'id', description: 'Band ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Band updated successfully',
-    type: BandResponseDto,
-  })
+  @ApiResponse({ status: 200, description: 'Band updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Band not found' })
-  async update(@Param('id') id: string, @Body() dto: UpdateBandDto) {
-    return this.bandsService.update(id, dto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateBandDto: any,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.bandsService.update(id, updateBandDto);
   }
+
+  // ========================================
+  // SUPER_ADMIN ONLY ROUTES
+  // ========================================
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a band' })
-  @ApiParam({ name: 'id', description: 'Band ID' })
+  @ApiOperation({ summary: 'Delete a band (SUPER_ADMIN only)' })
   @ApiResponse({ status: 204, description: 'Band deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Band not found' })
-  async delete(@Param('id') id: string) {
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
     await this.bandsService.delete(id);
   }
-
-  @Post(':id/logo')
-  @UseInterceptors(
-    FileInterceptor('logo', {
-      storage: diskStorage({
-        destination: './uploads/bands',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-      limits: {
-        fileSize: MAX_FILE_SIZE,
-      },
-    }),
-  )
-  async uploadLogo(
-    @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    // Update band with new logo URL
-    const logoUrl = `/uploads/bands/${file.filename}`;
-    const band = await this.bandsService.updateLogo(id, logoUrl);
-
-    return {
-      message: 'Logo uploaded successfully',
-      logoUrl: band.logoUrl,
-    };
-  }
-
-  @Delete(':id/logo')
-  async deleteLogo(@Param('id') id: string) {
-    const band = await this.bandsService.deleteLogo(id);
-    return {
-      message: 'Logo deleted successfully',
-      band,
-    };
-  }
-
 }

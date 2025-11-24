@@ -15,7 +15,7 @@
     "esModuleInterop": true,
     "paths": {
       "@hbcu-band-hub/shared-types": ["../../libs/shared/types"],
-      "@hbcu-band-hub/prisma": ["../../libs/prisma/dist"]
+      "@hbcu-band-hub/prisma": ["../../libs/prisma/src"]
     }
   },
   "include": ["src/**/*"],

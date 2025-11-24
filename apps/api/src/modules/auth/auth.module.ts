@@ -8,6 +8,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { DatabaseModule } from '../../database/database.module';
+import { ApiKeyService } from './services/api-key.service';
+import { ApiKeysController } from './controllers/api-keys.controller';
 
 @Module({
   imports: [
@@ -17,13 +19,19 @@ import { DatabaseModule } from '../../database/database.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('JWT_SECRET environment variable is required');
+        }
+        return{
+        secret,
         signOptions: {
           expiresIn: '7d',
         },
-      }),
-    }),
+      };
+    },
+  }),
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -32,8 +40,8 @@ import { DatabaseModule } from '../../database/database.module';
       },
     ]),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  controllers: [AuthController, ApiKeysController],
+  providers: [AuthService, JwtStrategy, ApiKeyService],
+  exports: [AuthService, JwtStrategy, PassportModule, JwtModule, ApiKeyService],
 })
 export class AuthModule {}
