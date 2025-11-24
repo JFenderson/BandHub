@@ -149,6 +149,25 @@ class ApiClient {
   async getCategories(): Promise<any[]> {
     return this.request<any[]>(`/api/categories`);
   }
+
+
+// Sync methods
+async triggerFullSync(): Promise<any> {
+  return this.request<any>(`/api/sync/trigger`, {
+    method: 'POST',
+  });
+}
+
+async triggerBandSync(bandId: string, syncType: 'channel' | 'playlist' | 'search' = 'channel'): Promise<any> {
+  return this.request<any>(`/api/sync/band/${bandId}`, {
+    method: 'POST',
+    body: JSON.stringify({ syncType }),
+  });
+}
+
+async getSyncStatus(): Promise<any> {
+  return this.request<any>(`/api/sync/status`);
+}
 }
 
 export const apiClient = new ApiClient(API_URL);
