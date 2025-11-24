@@ -6,8 +6,15 @@ import type { VideoDetail, AdminVideoFilters } from '@/types/api';
 import { VideoModerationTable } from '@/components/admin/VideoModerationTable';
 import { VideoDetailModal } from '@/components/admin/VideoDetailModal';
 import { BulkActionsBar } from '@/components/admin/BulkActionsBar';
+import { ConfirmModal, InputModal, Toast } from '@/components/admin/Modals';
 
 type TabType = 'all' | 'pending' | 'hidden';
+
+interface ToastState {
+  message: string;
+  type: 'success' | 'error' | 'info';
+  show: boolean;
+}
 
 export default function AdminVideosPage() {
   const [activeTab, setActiveTab] = useState<TabType>('all');
@@ -18,6 +25,15 @@ export default function AdminVideosPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Toast notification
+  const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', show: false });
+
+  // Bulk action modals
+  const [showCategorizeModal, setShowCategorizeModal] = useState(false);
+  const [showHideModal, setShowHideModal] = useState(false);
+  const [showUnhideConfirm, setShowUnhideConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Filters
   const [filters, setFilters] = useState<AdminVideoFilters>({
@@ -195,17 +211,19 @@ export default function AdminVideosPage() {
       await fetchVideos();
       setIsModalOpen(false);
       setSelectedVideo(null);
+      setToast({ message: 'Video updated successfully', type: 'success', show: true });
     } catch (err) {
       console.error('Failed to update video:', err);
-      alert(err instanceof Error ? err.message : 'Failed to update video');
+      setToast({ 
+        message: err instanceof Error ? err.message : 'Failed to update video', 
+        type: 'error', 
+        show: true 
+      });
     }
   };
 
   // Bulk action handlers
-  const handleBulkCategorize = async () => {
-    const categoryId = prompt('Enter category ID to assign:');
-    if (!categoryId) return;
-
+  const handleBulkCategorize = async (categoryId: string) => {
     try {
       await apiClient.bulkUpdateVideos({
         videoIds: Array.from(selectedVideoIds),
@@ -214,17 +232,19 @@ export default function AdminVideosPage() {
       });
       await fetchVideos();
       setSelectedVideoIds(new Set());
-      alert('Videos categorized successfully');
+      setShowCategorizeModal(false);
+      setToast({ message: 'Videos categorized successfully', type: 'success', show: true });
     } catch (err) {
       console.error('Failed to categorize videos:', err);
-      alert(err instanceof Error ? err.message : 'Failed to categorize videos');
+      setToast({ 
+        message: err instanceof Error ? err.message : 'Failed to categorize videos', 
+        type: 'error', 
+        show: true 
+      });
     }
   };
 
-  const handleBulkHide = async () => {
-    const reason = prompt('Enter reason for hiding videos:');
-    if (!reason) return;
-
+  const handleBulkHide = async (reason: string) => {
     try {
       await apiClient.bulkUpdateVideos({
         videoIds: Array.from(selectedVideoIds),
@@ -233,16 +253,19 @@ export default function AdminVideosPage() {
       });
       await fetchVideos();
       setSelectedVideoIds(new Set());
-      alert('Videos hidden successfully');
+      setShowHideModal(false);
+      setToast({ message: 'Videos hidden successfully', type: 'success', show: true });
     } catch (err) {
       console.error('Failed to hide videos:', err);
-      alert(err instanceof Error ? err.message : 'Failed to hide videos');
+      setToast({ 
+        message: err instanceof Error ? err.message : 'Failed to hide videos', 
+        type: 'error', 
+        show: true 
+      });
     }
   };
 
   const handleBulkUnhide = async () => {
-    if (!confirm(`Unhide ${selectedVideoIds.size} videos?`)) return;
-
     try {
       await apiClient.bulkUpdateVideos({
         videoIds: Array.from(selectedVideoIds),
@@ -250,21 +273,19 @@ export default function AdminVideosPage() {
       });
       await fetchVideos();
       setSelectedVideoIds(new Set());
-      alert('Videos unhidden successfully');
+      setShowUnhideConfirm(false);
+      setToast({ message: 'Videos unhidden successfully', type: 'success', show: true });
     } catch (err) {
       console.error('Failed to unhide videos:', err);
-      alert(err instanceof Error ? err.message : 'Failed to unhide videos');
+      setToast({ 
+        message: err instanceof Error ? err.message : 'Failed to unhide videos', 
+        type: 'error', 
+        show: true 
+      });
     }
   };
 
   const handleBulkDelete = async () => {
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedVideoIds.size} videos? This cannot be undone.`
-      )
-    )
-      return;
-
     try {
       await apiClient.bulkUpdateVideos({
         videoIds: Array.from(selectedVideoIds),
@@ -272,10 +293,15 @@ export default function AdminVideosPage() {
       });
       await fetchVideos();
       setSelectedVideoIds(new Set());
-      alert('Videos deleted successfully');
+      setShowDeleteConfirm(false);
+      setToast({ message: 'Videos deleted successfully', type: 'success', show: true });
     } catch (err) {
       console.error('Failed to delete videos:', err);
-      alert(err instanceof Error ? err.message : 'Failed to delete videos');
+      setToast({ 
+        message: err instanceof Error ? err.message : 'Failed to delete videos', 
+        type: 'error', 
+        show: true 
+      });
     }
   };
 
@@ -536,10 +562,10 @@ export default function AdminVideosPage() {
       <BulkActionsBar
         selectedCount={selectedVideoIds.size}
         onClearSelection={handleDeselectAll}
-        onCategorize={handleBulkCategorize}
-        onHide={handleBulkHide}
-        onUnhide={handleBulkUnhide}
-        onDelete={handleBulkDelete}
+        onCategorize={() => setShowCategorizeModal(true)}
+        onHide={() => setShowHideModal(true)}
+        onUnhide={() => setShowUnhideConfirm(true)}
+        onDelete={() => setShowDeleteConfirm(true)}
       />
 
       {/* Video Detail Modal */}
@@ -554,6 +580,60 @@ export default function AdminVideosPage() {
         }}
         onSave={handleSaveVideo}
       />
+
+      {/* Bulk Categorize Modal */}
+      <InputModal
+        isOpen={showCategorizeModal}
+        title="Categorize Videos"
+        message={`Select a category for ${selectedVideoIds.size} video(s)`}
+        inputType="select"
+        options={categories.map((cat) => ({ value: cat.id, label: cat.name }))}
+        confirmText="Categorize"
+        onConfirm={handleBulkCategorize}
+        onCancel={() => setShowCategorizeModal(false)}
+      />
+
+      {/* Bulk Hide Modal */}
+      <InputModal
+        isOpen={showHideModal}
+        title="Hide Videos"
+        message={`Enter a reason for hiding ${selectedVideoIds.size} video(s)`}
+        inputType="textarea"
+        placeholder="Reason for hiding..."
+        confirmText="Hide Videos"
+        onConfirm={handleBulkHide}
+        onCancel={() => setShowHideModal(false)}
+      />
+
+      {/* Bulk Unhide Confirmation */}
+      <ConfirmModal
+        isOpen={showUnhideConfirm}
+        title="Unhide Videos"
+        message={`Are you sure you want to unhide ${selectedVideoIds.size} video(s)?`}
+        confirmText="Unhide"
+        onConfirm={handleBulkUnhide}
+        onCancel={() => setShowUnhideConfirm(false)}
+      />
+
+      {/* Bulk Delete Confirmation */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Videos"
+        message={`Are you sure you want to delete ${selectedVideoIds.size} video(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        onConfirm={handleBulkDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
     </div>
   );
 }

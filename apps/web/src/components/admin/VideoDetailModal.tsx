@@ -61,7 +61,7 @@ export function VideoDetailModal({
   // Keyboard shortcuts
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (!isOpen) return;
+      if (!isOpen || !video) return;
 
       // Esc to close
       if (e.key === 'Escape') {
@@ -71,7 +71,50 @@ export function VideoDetailModal({
       // Cmd/Ctrl + S to save
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
-        handleSave();
+        // Call save logic directly
+        if (isSaving) return;
+        
+        setIsSaving(true);
+        const updates: any = {};
+
+        if (categoryId !== (video.category?.id || '')) {
+          updates.categoryId = categoryId || null;
+        }
+
+        if (opponentBandId !== (video.opponentBand?.id || '')) {
+          updates.opponentBandId = opponentBandId || null;
+        }
+
+        if (eventName !== (video.eventName || '')) {
+          updates.eventName = eventName;
+        }
+
+        const yearNum = eventYear ? parseInt(eventYear, 10) : undefined;
+        if (yearNum !== video.eventYear) {
+          updates.eventYear = yearNum;
+        }
+
+        const tagArray = tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
+        if (JSON.stringify(tagArray) !== JSON.stringify(video.tags)) {
+          updates.tags = tagArray;
+        }
+
+        if (qualityScore !== video.qualityScore) {
+          updates.qualityScore = qualityScore;
+        }
+
+        if (isHidden !== video.isHidden) {
+          updates.isHidden = isHidden;
+        }
+
+        if (hideReason !== (video.hideReason || '')) {
+          updates.hideReason = hideReason;
+        }
+
+        onSave(video.id, updates).finally(() => setIsSaving(false));
       }
 
       // Arrow keys for navigation
@@ -83,7 +126,7 @@ export function VideoDetailModal({
         }
       }
     },
-    [isOpen, onClose, onNavigate]
+    [isOpen, video, onClose, onNavigate, isSaving, categoryId, opponentBandId, eventName, eventYear, tags, qualityScore, isHidden, hideReason, onSave]
   );
 
   useEffect(() => {
