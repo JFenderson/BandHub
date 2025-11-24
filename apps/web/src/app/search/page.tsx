@@ -20,12 +20,44 @@ interface PopularSearch {
   count: number;
 }
 
+interface SearchResultItem {
+  id: string;
+  title: string;
+  description?: string;
+  thumbnailUrl: string;
+  duration: number;
+  publishedAt: string | Date;
+  viewCount: number;
+  youtubeId: string;
+  highlights?: {
+    title?: string;
+    description?: string;
+    bandName?: string;
+  };
+  band: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl?: string;
+  };
+  category?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  opponentBand?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+}
+
 function SearchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // State
-  const [results, setResults] = useState<unknown[]>([]);
+  const [results, setResults] = useState<SearchResultItem[]>([]);
   const [meta, setMeta] = useState<SearchMeta | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [view, setView] = useState<ViewMode>('grid');
@@ -296,7 +328,7 @@ function SearchPageContent() {
             ) : (
               <>
                 <SearchResults
-                  results={results as Parameters<typeof SearchResults>[0]['results']}
+                  results={results}
                   view={view}
                   query={query}
                   isLoading={isLoading}
