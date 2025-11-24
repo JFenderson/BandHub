@@ -5,9 +5,10 @@
   "scripts": {
     "build": "nest build",
     "start": "node dist/main.js",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main.js"
+    "start:dev": "nest start --watch --entryFile apps/worker/src/main",
+    "start:debug": "nest start --debug --watch --entryFile apps/worker/src/main",
+    "start:prod": "node dist/apps/worker/src/main.js",
+    "dev": "nest start --watch --entryFile apps/worker/src/main"
   },
   "dependencies": {
     "@hbcu-band-hub/shared-types": "*",
@@ -24,6 +25,7 @@
     "node-cron": "^3.0.3"
   },
   "devDependencies": {
+    "@nestjs/cli": "^10.3.0",
     "@types/node": "^20.14.0",
     "@types/node-cron": "^3.0.11",
     "tsx": "^4.7.0",
