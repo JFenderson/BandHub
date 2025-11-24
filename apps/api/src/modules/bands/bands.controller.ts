@@ -23,7 +23,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
 

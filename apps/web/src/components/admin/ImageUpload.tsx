@@ -51,7 +51,7 @@ export default function ImageUpload({
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024, // 5MB
     disabled,
-  });
+  } as any);
 
   const displayImage = preview || currentImageUrl;
 
@@ -62,14 +62,14 @@ export default function ImageUpload({
       </label>
       
       <div
-        {...getRootProps()}
+        {...(getRootProps() as any)}
         className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
           isDragActive
             ? 'border-primary-500 bg-primary-50'
             : 'border-gray-300 hover:border-primary-400'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        <input {...getInputProps()} />
+        <input {...(getInputProps() as any)} />
         
         {displayImage ? (
           <div className="space-y-2">
