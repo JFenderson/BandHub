@@ -18,6 +18,7 @@ export default async function BandPage({ params }: BandPageProps) {
     band = await apiClient.getBand(params.slug);
     const videosResult = await apiClient.getVideos({ 
       bandId: band.id, 
+       page: 1,
       limit: 12,
       sortBy: 'publishedAt',
       sortOrder: 'desc'
