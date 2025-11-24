@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@hbcu-band-hub/prisma';
 import { Band, Video, Category, Prisma, SyncStatus, SyncJobType, SyncJobStatus } from '@prisma/client';
-import { YouTubeVideoMetadata } from '@hbcu-band-hub/shared/types';
+import { YouTubeVideoMetadata } from '@hbcu-band-hub/shared-types';
 import { 
   CATEGORY_PATTERNS, 
   IRRELEVANT_PATTERNS,
   EVENT_PATTERNS,
-} from '@hbcu-band-hub/shared/types';
+} from '@hbcu-band-hub/shared-types';
 
 export interface VideoUpsertResult {
   video: Video;

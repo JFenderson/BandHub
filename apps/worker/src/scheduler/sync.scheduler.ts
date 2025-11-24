@@ -9,7 +9,7 @@ import {
   CleanupVideosJobData,
   SyncMode,
   JobPriority,
-} from '@hbcu-band-hub/shared/types';
+} from '@hbcu-band-hub/shared-types';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()

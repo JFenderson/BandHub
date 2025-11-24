@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QueueName, CleanupVideosJobData } from '@hbcu-band-hub/shared/types';
+import { QueueName, CleanupVideosJobData } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 import { PrismaService } from '@hbcu-band-hub/prisma';
 

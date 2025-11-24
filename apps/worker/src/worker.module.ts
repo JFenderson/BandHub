@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { QueueName } from '@hbcu-band-hub/shared/types';
+import { QueueName } from '@hbcu-band-hub/shared-types';
 import { PrismaModule } from '@hbcu-band-hub/prisma';
 
 // Services

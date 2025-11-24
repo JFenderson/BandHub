@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QueueName, ProcessVideoJobData } from '@hbcu-band-hub/shared/types';
+import { QueueName, ProcessVideoJobData } from '@hbcu-band-hub/shared-types';
 import { DatabaseService, VideoUpsertResult } from '../services/database.service';
 
 @Processor(QueueName.VIDEO_PROCESSING, {

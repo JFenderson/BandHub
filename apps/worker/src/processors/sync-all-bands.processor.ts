@@ -8,7 +8,7 @@ import {
   SyncAllBandsJobData, 
   SyncBandJobData,
   JobPriority,
-} from '@hbcu-band-hub/shared/types';
+} from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 
 @Processor(QueueName.VIDEO_SYNC, {

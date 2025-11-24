@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { google, youtube_v3 } from 'googleapis';
 import { ConfigService } from '@nestjs/config';
-import { YouTubeVideoMetadata } from '@hbcu-band-hub/shared/types';
+import { YouTubeVideoMetadata } from '@hbcu-band-hub/shared-types';
 
 // Custom error types for better error handling upstream
 export class YouTubeQuotaExceededError extends Error {

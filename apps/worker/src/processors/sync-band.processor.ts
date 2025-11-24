@@ -8,7 +8,7 @@ import {
   SyncJobResult,
   ProcessVideoJobData,
   SyncMode,
-} from '@hbcu-band-hub/shared/types';
+} from '@hbcu-band-hub/shared-types';
 import { SyncJobType, SyncJobStatus } from '@prisma/client';
 import { YouTubeService, YouTubeQuotaExceededError, YouTubeRateLimitError } from '../services/youtube.service';
 import { DatabaseService } from '../services/database.service';
