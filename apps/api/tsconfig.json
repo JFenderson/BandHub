@@ -13,6 +13,8 @@
     "incremental": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
     "paths": {
       "@hbcu-band-hub/shared-types": ["../../libs/shared/types"],
       "@hbcu-band-hub/prisma": ["../../libs/prisma/src"]

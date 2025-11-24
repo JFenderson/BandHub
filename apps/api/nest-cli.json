@@ -3,11 +3,10 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": false,
-    "tsConfigPath": "tsconfig.json",
+    "deleteOutDir": true,
+    "builder": "tsc",
+    "tsConfigPath": "tsconfig.build.json",
     "assets": [],
     "watchAssets": false
-  },
-  "monorepo": true,
-  "root": "apps/api"
+  }
 }

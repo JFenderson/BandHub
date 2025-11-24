@@ -4,4 +4,5 @@ export { ApiKeyGuard } from './guards/api-key.guard';
 
 // Decorators
 export { Roles } from './decorators/roles.decorator';
-export { CurrentUser, CurrentUserData } from './decorators/current-user.decorator';
+export { CurrentUser } from './decorators/current-user.decorator';
+export type { CurrentUserData } from './decorators/current-user.decorator';
