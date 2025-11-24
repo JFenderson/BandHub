@@ -99,13 +99,16 @@ export function UserProvider({ children }: UserProviderProps) {
 
   /**
    * Login user
+   * Note: Access tokens expire after 15 minutes on the backend, but we store them with
+   * session expiry for convenience. When an access token expires, a new one should be
+   * requested using the session token. The cookie expiry matches the session token validity.
    */
   const login = useCallback(async (credentials: UserLoginCredentials) => {
     try {
       setIsLoading(true);
       const response = await userApiClient.login(credentials);
 
-      // Store tokens in cookies
+      // Store tokens in cookies - expiry matches session token validity
       const days = credentials.rememberMe ? 30 : 7;
       setCookie('user_access_token', response.accessToken, days);
       setCookie('user_session_token', response.sessionToken, days);

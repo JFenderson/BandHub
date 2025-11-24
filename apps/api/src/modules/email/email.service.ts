@@ -21,6 +21,8 @@ export class EmailService {
 
   /**
    * Send an email (using console logging in development, or email service in production)
+   * NOTE: In development mode (without RESEND_API_KEY), emails are logged to console
+   * and a warning is shown. Set RESEND_API_KEY in environment for actual email delivery.
    */
   async sendEmail(options: EmailOptions): Promise<void> {
     const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
@@ -54,10 +56,11 @@ export class EmailService {
         throw error;
       }
     } else {
-      // Log email in development
-      this.logger.log(`[DEV] Email to ${options.to}:`);
+      // Log email in development - clearly indicate this is dev mode
+      this.logger.warn(`[DEV MODE] RESEND_API_KEY not configured - email NOT actually sent`);
+      this.logger.log(`[DEV MODE] Would send email to ${options.to}:`);
       this.logger.log(`Subject: ${options.subject}`);
-      this.logger.log(`Body: ${options.text || options.html}`);
+      this.logger.debug(`Body: ${options.text || options.html}`);
     }
   }
 

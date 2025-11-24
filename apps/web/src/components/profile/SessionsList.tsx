@@ -61,7 +61,6 @@ interface SessionItemProps {
 }
 
 function SessionItem({ session, onDelete }: SessionItemProps) {
-  const isCurrentSession = session.lastActiveAt === session.createdAt; // Rough approximation
   const lastActive = new Date(session.lastActiveAt);
   const isRecent = (Date.now() - lastActive.getTime()) < 5 * 60 * 1000; // Within 5 minutes
 

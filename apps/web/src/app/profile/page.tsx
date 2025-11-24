@@ -27,6 +27,7 @@ function ProfileContent() {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Password change state
   const [passwordForm, setPasswordForm] = useState({
@@ -169,9 +170,9 @@ function ProfileContent() {
                     onClick={async () => {
                       try {
                         await userApiClient.resendVerification();
-                        alert('Verification email sent!');
+                        setVerificationMessage({ type: 'success', text: 'Verification email sent!' });
                       } catch (error) {
-                        alert('Failed to send verification email');
+                        setVerificationMessage({ type: 'error', text: 'Failed to send verification email' });
                       }
                     }}
                     className="font-medium underline hover:text-yellow-800"
@@ -179,6 +180,11 @@ function ProfileContent() {
                     Resend verification email
                   </button>
                 </p>
+                {verificationMessage && (
+                  <p className={`mt-1 text-sm ${verificationMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                    {verificationMessage.text}
+                  </p>
+                )}
               </div>
             </div>
           </div>
