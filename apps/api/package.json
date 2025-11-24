@@ -88,7 +88,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@hbcu-band-hub/shared(.*)$": "<rootDir>/../../../libs/shared/src$1"
+      "^@hbcu-band-hub/shared(.*)$": "<rootDir>/../../../libs/shared/src$1",
+      "^@hbcu-band-hub/prisma$": "<rootDir>/../../../libs/prisma/src"
     }
   }
 }
