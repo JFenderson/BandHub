@@ -1,6 +1,6 @@
 export interface Band {
   id: string;
-   slug: string;
+  slug: string;
   name: string;
   school: string;
   nickname?: string | null;
@@ -12,9 +12,20 @@ export interface Band {
   colors?: string | null;
   website?: string | null;
   logoUrl?: string | null;
+  bannerUrl?: string | null;
+  description?: string | null;
+  foundedYear?: number | null;
+  youtubeChannelId?: string | null;
+  youtubePlaylistIds?: string[];
+  lastSyncAt?: string | null;
+  syncStatus?: string;
   isActive: boolean;
+  isFeatured?: boolean;
   createdAt: string;
   updatedAt: string;
+  _count?: {
+    videos?: number;
+  };
 }
 
 export interface CreateBandDto {
@@ -28,7 +39,12 @@ export interface CreateBandDto {
   founded?: number;
   colors?: string;
   website?: string;
+  description?: string;
+  foundedYear?: number;
+  youtubeChannelId?: string;
+  youtubePlaylistIds?: string[];
   isActive?: boolean;
+  isFeatured?: boolean;
 }
 
 export interface UpdateBandDto {
@@ -43,7 +59,13 @@ export interface UpdateBandDto {
   colors?: string;
   website?: string;
   logoUrl?: string;
+  bannerUrl?: string;
+  description?: string;
+  foundedYear?: number;
+  youtubeChannelId?: string;
+  youtubePlaylistIds?: string[];
   isActive?: boolean;
+  isFeatured?: boolean;
 }
 
 export interface BandQueryParams {

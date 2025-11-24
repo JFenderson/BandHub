@@ -73,6 +73,18 @@ export class SyncController {
     return this.syncService.getSyncStatus();
   }
 
+  @Get('job/:jobId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get status of a specific sync job' })
+  @ApiResponse({ status: 200, description: 'Job status retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async getJobStatus(@Param('jobId') jobId: string) {
+    return this.syncService.getJobStatus(jobId);
+  }
+
   // ========================================
   // WORKER/API KEY ROUTES (For scheduled background jobs)
   // ========================================

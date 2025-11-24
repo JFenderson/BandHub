@@ -225,13 +225,18 @@ class ApiClient {
     const formData = new FormData();
     formData.append('logo', file);
 
-    const url = `${this.baseUrl}/api/bands/${id}/logo`;
+    const url = `${this.baseUrl}/api/bands/${id}/upload-logo`;
+    const headers: HeadersInit = {};
+    
+    if (this.accessToken) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
     
     try {
       const response = await fetch(url, {
         method: 'POST',
         body: formData,
-        // Don't set Content-Type header, let browser set it with boundary
+        headers,
       });
 
       if (!response.ok) {
@@ -244,6 +249,38 @@ class ApiClient {
       return response.json();
     } catch (error) {
       console.error('Logo upload failed:', error);
+      throw error;
+    }
+  }
+
+  async uploadBandBanner(id: string, file: File): Promise<ApiResponse<{ bannerUrl: string }>> {
+    const formData = new FormData();
+    formData.append('banner', file);
+
+    const url = `${this.baseUrl}/api/bands/${id}/upload-banner`;
+    const headers: HeadersInit = {};
+    
+    if (this.accessToken) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers,
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({
+          message: 'Failed to upload banner',
+        }));
+        throw new Error(error.message || `HTTP ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Banner upload failed:', error);
       throw error;
     }
   }
@@ -363,6 +400,10 @@ async triggerBandSync(bandId: string, syncType: 'channel' | 'playlist' | 'search
 
 async getSyncStatus(): Promise<any> {
   return this.request<any>(`/api/sync/status`);
+}
+
+async getSyncJobStatus(jobId: string): Promise<any> {
+  return this.request<any>(`/api/sync/job/${jobId}`);
 }
 }
 

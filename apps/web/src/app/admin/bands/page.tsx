@@ -5,7 +5,8 @@ import { apiClient } from '@/lib/api-client';
 import type { Band } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 import BandFormModal from '@/components/admin/BandFormModal';
-import BandLogo from '@/components/bands/BandLogo';
+import BandTable from '@/components/admin/BandTable';
+import SyncProgressModal from '@/components/admin/SyncProgressModal';
 
 export default function AdminBandsPage() {
   const [bands, setBands] = useState<Band[]>([]);
@@ -15,15 +16,16 @@ export default function AdminBandsPage() {
   const [editingBand, setEditingBand] = useState<Band | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [stateFilter, setStateFilter] = useState('');
+  const [conferenceFilter, setConferenceFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
-  const formatLocation = (city?: string | null, state?: string | null): string => {
-    if (city && state) return `${city}, ${state}`;
-    if (city) return city;
-    if (state) return state;
-    return '-';
-  };
+  const [totalBands, setTotalBands] = useState(0);
+  
+  // Sync modal state
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncJobId, setSyncJobId] = useState<string | null>(null);
+  const [syncBandName, setSyncBandName] = useState<string>('');
 
   const fetchBands = useCallback(async () => {
     try {
@@ -31,17 +33,19 @@ export default function AdminBandsPage() {
       setError('');
       const response = await apiClient.getBands({
         search: searchQuery || undefined,
+        state: stateFilter || undefined,
         page: currentPage,
         limit: 20,
       });
       setBands(response.data);
       setTotalPages(response.meta.totalPages);
+      setTotalBands(response.meta.total);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load bands');
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery]);
+  }, [currentPage, searchQuery, stateFilter]);
 
   useEffect(() => {
     fetchBands();
@@ -57,7 +61,11 @@ export default function AdminBandsPage() {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (data: CreateBandDto | UpdateBandDto, logoFile?: File | null) => {
+  const handleSubmit = async (
+    data: CreateBandDto | UpdateBandDto,
+    logoFile?: File | null,
+    bannerFile?: File | null
+  ) => {
     try {
       setIsSubmitting(true);
       let savedBand: Band;
@@ -73,6 +81,11 @@ export default function AdminBandsPage() {
       // Upload logo if provided
       if (logoFile) {
         await apiClient.uploadBandLogo(savedBand.id, logoFile);
+      }
+
+      // Upload banner if provided
+      if (bannerFile) {
+        await apiClient.uploadBandBanner(savedBand.id, bannerFile);
       }
 
       // Refresh the list
@@ -99,6 +112,53 @@ export default function AdminBandsPage() {
     }
   };
 
+  const handleSyncBand = async (band: Band) => {
+    try {
+      const response = await apiClient.triggerBandSync(band.id);
+      setSyncJobId(response.jobId);
+      setSyncBandName(band.name);
+      setIsSyncModalOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start sync');
+    }
+  };
+
+  const handleCloseSyncModal = () => {
+    setIsSyncModalOpen(false);
+    setSyncJobId(null);
+    setSyncBandName('');
+    // Refresh bands to get updated video counts
+    fetchBands();
+  };
+
+  const handleExportCSV = () => {
+    const csv = [
+      ['Name', 'School', 'City', 'State', 'Conference', 'Founded', 'YouTube Channel', 'Videos', 'Active', 'Featured'].join(','),
+      ...bands.map(band =>
+        [
+          `"${band.name}"`,
+          `"${band.school}"`,
+          `"${band.city || ''}"`,
+          `"${band.state || ''}"`,
+          `"${band.conference || ''}"`,
+          band.foundedYear || band.founded || '',
+          `"${band.youtubeChannelId || ''}"`,
+          band._count?.videos || 0,
+          band.isActive ? 'Yes' : 'No',
+          band.isFeatured ? 'Yes' : 'No',
+        ].join(',')
+      ),
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bands-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -106,33 +166,103 @@ export default function AdminBandsPage() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Manage Bands</h2>
           <p className="text-gray-600 mt-1">
-            Create, edit, and manage HBCU marching band profiles
+            {totalBands} {totalBands === 1 ? 'band' : 'bands'} total
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleAddBand}
-          className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Add New Band</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="bg-white text-gray-700 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span>Export CSV</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleAddBand}
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Add New Band</span>
+          </button>
+        </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow p-4">
-        <input
-          type="text"
-          placeholder="Search bands by name or school..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+              Search
+            </label>
+            <input
+              id="search"
+              type="text"
+              placeholder="Search by name or school..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+              State
+            </label>
+            <select
+              id="state"
+              value={stateFilter}
+              onChange={(e) => {
+                setStateFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="">All States</option>
+              <option value="AL">Alabama</option>
+              <option value="FL">Florida</option>
+              <option value="GA">Georgia</option>
+              <option value="MS">Mississippi</option>
+              <option value="NC">North Carolina</option>
+              <option value="SC">South Carolina</option>
+              <option value="TN">Tennessee</option>
+              <option value="TX">Texas</option>
+              <option value="VA">Virginia</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="conference" className="block text-sm font-medium text-gray-700 mb-1">
+              Conference
+            </label>
+            <select
+              id="conference"
+              value={conferenceFilter}
+              onChange={(e) => {
+                setConferenceFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="">All Conferences</option>
+              <option value="SWAC">SWAC</option>
+              <option value="MEAC">MEAC</option>
+              <option value="SIAC">SIAC</option>
+              <option value="CIAA">CIAA</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -142,122 +272,15 @@ export default function AdminBandsPage() {
         </div>
       )}
 
-      {/* Bands List */}
+      {/* Bands Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          </div>
-        ) : bands.length === 0 ? (
-          <div className="text-center py-12">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No bands found
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {searchQuery ? 'Try adjusting your search query' : 'Get started by adding your first band'}
-            </p>
-            {!searchQuery && (
-              <button
-                onClick={handleAddBand}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
-              >
-                Add First Band
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Band
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    School
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Conference
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {bands.map((band) => (
-                  <tr key={band.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <BandLogo
-                          logoUrl={band.logoUrl}
-                          bandName={band.name}
-                          size="sm"
-                          className="mr-3"
-                        />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {band.name}
-                          </div>
-                          {band.nickname && (
-                            <div className="text-sm text-gray-500">
-                              {band.nickname}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{band.school}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatLocation(band.city, band.state)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{band.conference || '-'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          band.isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {band.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleEditBand(band)}
-                        className="text-primary-600 hover:text-primary-900 mr-4"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBand(band)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <BandTable
+          bands={bands}
+          onEdit={handleEditBand}
+          onDelete={handleDeleteBand}
+          onSync={handleSyncBand}
+          loading={loading}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (
@@ -308,7 +331,7 @@ export default function AdminBandsPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modals */}
       <BandFormModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -318,6 +341,13 @@ export default function AdminBandsPage() {
         onSubmit={handleSubmit}
         band={editingBand}
         isLoading={isSubmitting}
+      />
+
+      <SyncProgressModal
+        isOpen={isSyncModalOpen}
+        onClose={handleCloseSyncModal}
+        jobId={syncJobId}
+        bandName={syncBandName}
       />
     </div>
   );

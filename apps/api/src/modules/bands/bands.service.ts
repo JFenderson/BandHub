@@ -192,7 +192,7 @@ export class BandsService {
     }
   }
 
-    async updateLogo(id: string, logoUrl: string) {
+  async updateLogo(id: string, logoUrl: string) {
     const band = await this.prismaService.band.findUnique({
       where: { id },
     });
@@ -204,7 +204,7 @@ export class BandsService {
     // Delete old logo file if it exists
     if (band.logoUrl) {
       try {
-        const oldFilePath = join(process.cwd(), 'uploads', 'bands', band.logoUrl.split('/').pop()!);
+        const oldFilePath = join(process.cwd(), 'uploads', 'logos', band.logoUrl.split('/').pop()!);
         await unlink(oldFilePath);
       } catch (error) {
         // File might not exist, that's okay
@@ -215,6 +215,32 @@ export class BandsService {
     return this.prismaService.band.update({
       where: { id },
       data: { logoUrl },
+    });
+  }
+
+  async updateBanner(id: string, bannerUrl: string) {
+    const band = await this.prismaService.band.findUnique({
+      where: { id },
+    });
+
+    if (!band) {
+      throw new NotFoundException(`Band with ID ${id} not found`);
+    }
+
+    // Delete old banner file if it exists
+    if (band.bannerUrl) {
+      try {
+        const oldFilePath = join(process.cwd(), 'uploads', 'banners', band.bannerUrl.split('/').pop()!);
+        await unlink(oldFilePath);
+      } catch (error) {
+        // File might not exist, that's okay
+        console.warn('Could not delete old banner:', error);
+      }
+    }
+
+    return this.prismaService.band.update({
+      where: { id },
+      data: { bannerUrl },
     });
   }
 
@@ -233,7 +259,7 @@ export class BandsService {
 
     // Delete file from disk
     try {
-      const filePath = join(process.cwd(), 'uploads', 'bands', band.logoUrl.split('/').pop()!);
+      const filePath = join(process.cwd(), 'uploads', 'logos', band.logoUrl.split('/').pop()!);
       await unlink(filePath);
     } catch (error) {
       console.warn('Could not delete logo file:', error);
