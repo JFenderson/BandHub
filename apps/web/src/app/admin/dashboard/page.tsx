@@ -266,7 +266,7 @@ export default function DashboardPage() {
         </svg>
       ),
       label: 'View Sync Jobs',
-      href: '/admin/sync',
+      href: '/admin/sync-jobs',
     },
   ];
 
