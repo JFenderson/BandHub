@@ -1,9 +1,10 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 import { AdminRole } from '@prisma/client';
 import {
   DashboardStatsDto,
@@ -13,6 +14,9 @@ import {
   CategoryDistributionDto,
   TopBandDto,
 } from './dto/dashboard.dto';
+import { AdminVideoQueryDto } from './dto/admin-video-query.dto';
+import { BulkVideoUpdateDto, BulkVideoUpdateResponseDto } from './dto/bulk-video-update.dto';
+import { VideoDetailDto } from './dto/video-detail.dto';
 
 @ApiTags('admin')
 @Controller('admin')
@@ -79,5 +83,62 @@ export class AdminController {
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   async getTopBands(): Promise<TopBandDto[]> {
     return this.adminService.getTopBands();
+  }
+
+  // ============ VIDEO MODERATION ENDPOINTS ============
+
+  @Get('videos')
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get videos for admin moderation with advanced filtering' })
+  @ApiResponse({ status: 200, description: 'Videos retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async getAdminVideos(@Query() query: AdminVideoQueryDto): Promise<{
+    data: VideoDetailDto[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    return this.adminService.getAdminVideos(query);
+  }
+
+  @Patch('videos/bulk')
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Bulk update videos' })
+  @ApiResponse({ status: 200, description: 'Bulk update completed', type: BulkVideoUpdateResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async bulkUpdateVideos(
+    @Body() dto: BulkVideoUpdateDto,
+    @CurrentUser() user: CurrentUserData,
+  ): Promise<BulkVideoUpdateResponseDto> {
+    return this.adminService.bulkUpdateVideos(dto, user.userId);
+  }
+
+  @Put('videos/:id')
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Update a single video' })
+  @ApiResponse({ status: 200, description: 'Video updated successfully', type: VideoDetailDto })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Video not found' })
+  async updateVideo(
+    @Param('id') id: string,
+    @Body() updateData: {
+      categoryId?: string;
+      opponentBandId?: string;
+      eventName?: string;
+      eventYear?: number;
+      tags?: string[];
+      qualityScore?: number;
+      isHidden?: boolean;
+      hideReason?: string;
+    },
+    @CurrentUser() user: CurrentUserData,
+  ): Promise<VideoDetailDto> {
+    return this.adminService.updateVideo(id, updateData, user.userId);
   }
 }
