@@ -18,6 +18,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
 
   /**
+   * Handle logout cleanup
+   */
+  const handleLogout = useCallback(async () => {
+    // Clear tokens from cookies
+    await clearAuthTokens();
+
+    // Clear API client tokens
+    apiClient.setAccessToken(null);
+    apiClient.setRefreshToken(null);
+
+    // Clear user state
+    setUser(null);
+    setIsLoading(false);
+
+    // Redirect to login
+    router.push('/admin/login');
+  }, [router]);
+
+  /**
    * Initialize auth state on mount
    */
   useEffect(() => {
@@ -58,10 +77,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Set up unauthorized callback for API client
    */
   useEffect(() => {
-    apiClient.setOnUnauthorized(() => {
-      handleLogout();
-    });
-  }, []);
+    apiClient.setOnUnauthorized(handleLogout);
+  }, [handleLogout]);
 
   /**
    * Login with credentials
@@ -106,26 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       await handleLogout();
     }
-  }, []);
-
-  /**
-   * Handle logout cleanup
-   */
-  const handleLogout = async () => {
-    // Clear tokens from cookies
-    await clearAuthTokens();
-
-    // Clear API client tokens
-    apiClient.setAccessToken(null);
-    apiClient.setRefreshToken(null);
-
-    // Clear user state
-    setUser(null);
-    setIsLoading(false);
-
-    // Redirect to login
-    router.push('/admin/login');
-  };
+  }, [handleLogout]);
 
   /**
    * Refresh access token
@@ -149,7 +147,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await handleLogout();
       throw error;
     }
-  }, []);
+  }, [handleLogout]);
 
   const value: AuthContextType = {
     user,
