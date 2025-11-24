@@ -24,6 +24,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
+    "@hbcu-band-hub/shared-types": "*",
     "@nestjs/bullmq": "^10.1.0",
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.3.0",

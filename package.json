@@ -2,6 +2,7 @@
   "name": "hbcu-band-hub",
   "version": "0.0.1",
   "private": true,
+  "packageManager": "npm@10.0.0",
   "workspaces": [
     "apps/*",
     "libs/*",
@@ -53,9 +54,10 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
-  },
+"prisma": {
+  "seed": "ts-node apps/api/prisma/seed.ts",
+  "schema": "apps/api/prisma/schema.prisma"
+},
   "description": "",
   "main": "index.js",
   "keywords": [],

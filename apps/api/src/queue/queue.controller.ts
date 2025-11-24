@@ -10,7 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { QueueService } from './queue.service';
-import { SyncMode, JobPriority } from '@hbcu-band-hub/shared';
+import { SyncMode, JobPriority } from '@hbcu-band-hub/shared-types';
 
 // DTOs with proper initialization
 class SyncBandDto {

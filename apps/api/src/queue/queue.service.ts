@@ -3,14 +3,13 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, Job, JobState } from 'bullmq';
 import {
   QUEUE_NAMES,
-  JOB_NAMES,
   JobType,
   SyncBandJobData,
   SyncAllBandsJobData,
   CleanupVideosJobData,
   SyncMode,
   JobPriority,
-} from '@hbcu-band-hub/shared';
+} from '@hbcu-band-hub/shared-types';
 
 export interface QueueStats {
   name: string;
@@ -43,7 +42,7 @@ export class QueueService {
     @InjectQueue(QUEUE_NAMES.YOUTUBE_SYNC)
     private youtubeSyncQueue: Queue,
     
-    @InjectQueue(QUEUE_NAMES.VIDEO_SYNC)
+    @InjectQueue(QUEUE_NAMES.YOUTUBE_SYNC)
     private videoSyncQueue: Queue,
     
     @InjectQueue(QUEUE_NAMES.VIDEO_PROCESSING)
@@ -131,7 +130,6 @@ export class QueueService {
   async getAllQueues() {
   const queues = [
     { queue: this.youtubeSyncQueue, name: QUEUE_NAMES.YOUTUBE_SYNC },
-    { queue: this.videoSyncQueue, name: QUEUE_NAMES.VIDEO_SYNC },
     { queue: this.videoProcessingQueue, name: QUEUE_NAMES.VIDEO_PROCESSING },
     { queue: this.maintenanceQueue, name: QUEUE_NAMES.MAINTENANCE },
   ];
@@ -315,7 +313,7 @@ export class QueueService {
   
   private getQueue(name: string): Queue | null {
     switch (name) {
-      case QUEUE_NAMES.VIDEO_SYNC:
+      case QUEUE_NAMES.YOUTUBE_SYNC:
         return this.videoSyncQueue;
       case QUEUE_NAMES.VIDEO_PROCESSING:
         return this.videoProcessingQueue;

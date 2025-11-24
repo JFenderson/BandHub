@@ -10,6 +10,7 @@
     "start:prod": "node dist/main.js"
   },
   "dependencies": {
+    "@hbcu-band-hub/shared-types": "*",
     "@nestjs/bullmq": "^10.0.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.3.0",

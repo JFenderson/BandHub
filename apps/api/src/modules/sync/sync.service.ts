@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { QueueService } from '../../queue/queue.service';
 import { DatabaseService } from '../../database/database.service';
-import { QUEUE_NAMES } from '@hbcu-band-hub/shared';
+import { QUEUE_NAMES } from '@hbcu-band-hub/shared-types';
 
 @Injectable()
 export class SyncService {
