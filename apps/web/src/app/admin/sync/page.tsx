@@ -17,7 +17,7 @@ const SyncManagement = () => {
     fetchBands();
   }, []);
 
-  const triggerSync = async (bandId) => {
+  const triggerSync = async (bandId?: string) => {
     // Placeholder for actual sync logic
     if (bandId) {
       setSyncStatus((prev) => ({ ...prev, [bandId]: 'Syncing...' }));
