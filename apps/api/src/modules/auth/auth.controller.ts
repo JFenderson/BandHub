@@ -1,44 +1,37 @@
-import { Controller, Post, Get, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Request,
+  Ip,
+  Headers,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
+import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto, RefreshTokenResponseDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { CurrentUser, CurrentUserData } from './decorators/current-user.decorator';
 
-@ApiTags('auth')
-@Controller('api/auth')
+@ApiTags('Authentication')
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new admin user' })
   @ApiResponse({
     status: 201,
-    description: 'User registered successfully',
-    schema: {
-      properties: {
-        message: { type: 'string', example: 'User registered successfully' },
-        user: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-            email: { type: 'string' },
-            name: { type: 'string' },
-            role: { type: 'string' },
-            createdAt: { type: 'string' },
-          },
-        },
-      },
-    },
+    description: 'User successfully registered',
   })
   @ApiResponse({
     status: 409,
-    description: 'User with this email already exists',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Validation error',
+    description: 'User already exists',
   })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
@@ -46,71 +39,82 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({
     status: 200,
-    description: 'Login successful',
-    schema: {
-      properties: {
-        access_token: { type: 'string' },
-        user: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-            email: { type: 'string' },
-            name: { type: 'string' },
-            role: { type: 'string' },
-          },
-        },
-      },
-    },
+    description: 'Successfully authenticated',
+    type: LoginResponseDto,
   })
   @ApiResponse({
     status: 401,
-    description: 'Invalid credentials',
+    description: 'Invalid credentials or account locked',
   })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests',
+  })
+  async login(
+    @Body() loginDto: LoginDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ): Promise<LoginResponseDto> {
+    return this.authService.login(loginDto, ipAddress, userAgent);
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 attempts per minute
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tokens successfully refreshed',
+    type: RefreshTokenResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired refresh token',
+  })
+  async refresh(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ): Promise<RefreshTokenResponseDto> {
+    return this.authService.refreshTokens(
+      refreshTokenDto.refreshToken,
+      ipAddress,
+      userAgent,
+    );
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Logout current user' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout current session' })
   @ApiResponse({
     status: 200,
-    description: 'Logged out successfully',
+    description: 'Successfully logged out',
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-  })
-  async logout() {
-    return this.authService.logout();
+  async logout(
+    @Request() req,
+    @Body() refreshTokenDto: RefreshTokenDto,
+  ): Promise<{ message: string }> {
+    await this.authService.logout(refreshTokenDto.refreshToken, req.user.id);
+    return { message: 'Successfully logged out' };
   }
 
-  @Get('me')
+  @Post('logout-all')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get current user information' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout from all devices' })
   @ApiResponse({
     status: 200,
-    description: 'Current user information',
-    schema: {
-      properties: {
-        userId: { type: 'string' },
-        email: { type: 'string' },
-        name: { type: 'string' },
-        role: { type: 'string' },
-      },
-    },
+    description: 'Successfully logged out from all devices',
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-  })
-  async getCurrentUser(@CurrentUser() user: CurrentUserData) {
-    return user;
+  async logoutAll(@Request() req): Promise<{ message: string }> {
+    await this.authService.logoutAll(req.user.id);
+    return { message: 'Successfully logged out from all devices' };
   }
 }

@@ -96,32 +96,66 @@ model Category {
 }
 
 model AdminUser {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  passwordHash String     @map("password_hash")
-  name         String
-  role         AdminRole  @default(MODERATOR)
-  isActive     Boolean    @default(true) @map("is_active")
-  lastLoginAt  DateTime?  @map("last_login_at")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  auditLogs    AuditLog[]
+  id        String   @id @default(uuid())
+  email     String   @unique
+  passwordHash        String    @map("password_hash")
+  name      String
+  role      String   @default("admin")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Session tracking fields
+  lastLoginAt     DateTime?
+  lastLoginIp     String?
+  failedLoginAttempts Int @default(0)
+  lockedUntil     DateTime?
+
+  // Relations
+  auditLogs     AuditLog[]
+  refreshTokens RefreshToken[]
 
   @@map("admin_users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique // This will be hashed
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  // Track which device/session this token belongs to
+  userAgent String?
+  ipAddress String?
+  
+  // For token family tracking (detect token reuse)
+  isRevoked Boolean  @default(false)
+  revokedAt DateTime?
+  replacedBy String? // ID of the token that replaced this one
+
+  // Relations
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes for performance
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 model AuditLog {
   id          String    @id @default(cuid())
   action      String
+  userId    String?  @map("user_id") // Make nullable for system actions
   entityType  String    @map("entity_type")
   entityId    String    @map("entity_id")
   changes     Json?
-  adminUserId String    @map("admin_user_id")
   createdAt   DateTime  @default(now()) @map("created_at")
-  adminUser   AdminUser @relation(fields: [adminUserId], references: [id])
+  user AdminUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([entityType, entityId])
-  @@index([adminUserId])
+  @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@map("audit_logs")
 }

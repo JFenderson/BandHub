@@ -14,13 +14,21 @@ import { SyncModule } from './modules/sync/sync.module';
 import { BandsSeedService } from './database/seeds/bands.seed';
 import { CategoriesSeedService } from './database/seeds/categories.seed';
 import { PrismaModule } from '@hbcu-band-hub/prisma';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000,
+        limit: 100, // Global limit: 100 requests per minute
+      },
+    ]),
     // Core infrastructure
     DatabaseModule,
     CacheModule,
@@ -38,6 +46,10 @@ import { PrismaModule } from '@hbcu-band-hub/prisma';
     HealthModule,
   ],
   providers: [
+        {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard, // Apply rate limiting globally
+    },
     CategoriesSeedService, // ← It should be here, not in imports
     // ... other providers
   ],
