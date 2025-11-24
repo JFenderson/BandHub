@@ -63,7 +63,7 @@ class ApiClient {
   }
 
   async getBand(slug: string): Promise<Band> {
-    return this.request<Band>(`/api/bands/${slug}`);
+    return this.request<Band>(`/api/bands/slug/${slug}`);
   }
 
   async createBand(data: CreateBandDto): Promise<Band> {
