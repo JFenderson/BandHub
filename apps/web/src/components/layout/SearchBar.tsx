@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export function SearchBar() {
@@ -8,18 +8,44 @@ export function SearchBar() {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // "/" key to focus search (when not in an input)
+      if (
+        event.key === '/' &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        event.preventDefault();
+        const searchInput = document.getElementById('header-search-input');
+        searchInput?.focus();
+      }
+      // Cmd/Ctrl + K to focus search
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        const searchInput = document.getElementById('header-search-input');
+        searchInput?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
 
     startTransition(() => {
-      router.push(`/videos?search=${encodeURIComponent(query)}`);
+      router.push(`/search?q=${encodeURIComponent(query)}`);
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="relative">
       <input
+        id="header-search-input"
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -35,6 +61,10 @@ export function SearchBar() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </button>
+      {/* Keyboard shortcut hint */}
+      <span className="absolute right-10 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-1 text-xs text-gray-400">
+        <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-gray-500">/</kbd>
+      </span>
     </form>
   );
 }

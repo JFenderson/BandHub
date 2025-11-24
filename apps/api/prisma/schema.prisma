@@ -289,3 +289,18 @@ enum SyncJobStatus {
   COMPLETED
   FAILED
 }
+
+model SearchLog {
+  id            String   @id @default(cuid())
+  query         String
+  resultsCount  Int      @map("results_count")
+  filters       Json?
+  userId        String?  @map("user_id")
+  sessionId     String?  @map("session_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([query])
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("search_logs")
+}
