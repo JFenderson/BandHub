@@ -211,16 +211,17 @@ export default function LoginPage() {
               </div>
 
               <div className="text-sm">
-                <button
-                  type="button"
+                <a
+                  href="#"
                   className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
                     // Placeholder for forgot password functionality
-                    alert('Forgot password functionality will be implemented soon.');
+                    // TODO: Implement forgot password flow
                   }}
                 >
                   Forgot password?
-                </button>
+                </a>
               </div>
             </div>
 

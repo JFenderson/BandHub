@@ -175,6 +175,11 @@ export function useAuth(): AuthContextType {
 /**
  * Parse JWT token (simple base64 decode)
  * Note: This is not a security validation, just for reading the payload
+ * The actual token validation happens on the backend
+ * We don't check expiration here because:
+ * 1. The backend validates on each request
+ * 2. We have automatic token refresh on 401
+ * 3. Checking expiration client-side could cause timing issues
  */
 function parseJwt(token: string): any {
   try {

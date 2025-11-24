@@ -109,6 +109,7 @@ class ApiClient {
 
   /**
    * Login with email and password
+   * Note: rememberMe is handled by cookie maxAge in setAuthTokens
    */
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     const response = await this.request<LoginResponse>(
@@ -118,6 +119,7 @@ class ApiClient {
         body: JSON.stringify({ 
           email: credentials.email, 
           password: credentials.password 
+          // rememberMe is not sent to backend, it's handled client-side via cookie duration
         }),
       },
       true // Skip auth for login
