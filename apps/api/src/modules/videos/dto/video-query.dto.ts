@@ -23,6 +23,11 @@ export class VideoQueryDto {
   @IsString()
   categorySlug?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by content creator ID' })
+  @IsOptional()
+  @IsString()
+  creatorId?: string;
+
   @ApiPropertyOptional({ description: 'Filter by opponent band ID' })
   @IsOptional()
   @IsString()

@@ -13,6 +13,7 @@ export class VideosRepository {
       bandSlug,
       categoryId,
       categorySlug,
+      creatorId,
       opponentBandId,
       eventYear,
       eventName,
@@ -49,6 +50,11 @@ export class VideosRepository {
       where.category = {
         slug: categorySlug,
       };
+    }
+
+    // Creator filtering
+    if (creatorId) {
+      where.creatorId = creatorId;
     }
 
     // Opponent band filtering
@@ -97,6 +103,14 @@ export class VideosRepository {
         },
         {
           band: {
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          creator: {
             name: {
               contains: search,
               mode: 'insensitive',

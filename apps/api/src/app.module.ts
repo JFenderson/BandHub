@@ -21,6 +21,7 @@ import { CategoriesSeedService } from './database/seeds/categories.seed';
 import { PrismaModule } from '@hbcu-band-hub/prisma';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { CreatorsModule } from './modules/creators/creators.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { APP_GUARD } from '@nestjs/core';
     NotificationsModule,
     SyncModule,
     YoutubeModule,
+    CreatorsModule,
     // Utilities
     HealthModule,
   ],
