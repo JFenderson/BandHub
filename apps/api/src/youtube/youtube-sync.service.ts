@@ -195,11 +195,13 @@ export class YoutubeSyncService {
         options.maxVideos || SYNC_CONFIG.MAX_RESULTS_PER_SEARCH,
       );
 
-      // Estimate quota usage
-      result.quotaUsed += QUOTA.CHANNEL_LIST;
-      result.quotaUsed += QUOTA.PLAYLIST_ITEMS * Math.ceil(videos.length / 50);
-      result.quotaUsed += QUOTA.VIDEO_LIST * Math.ceil(videos.length / SYNC_CONFIG.BATCH_SIZE_FOR_VIDEO_DETAILS);
-      this.dailyQuotaUsed += result.quotaUsed;
+      // Estimate quota usage for this operation
+      const operationQuota = 
+        QUOTA.CHANNEL_LIST + 
+        QUOTA.PLAYLIST_ITEMS * Math.ceil(videos.length / 50) +
+        QUOTA.VIDEO_LIST * Math.ceil(videos.length / SYNC_CONFIG.BATCH_SIZE_FOR_VIDEO_DETAILS);
+      result.quotaUsed += operationQuota;
+      this.dailyQuotaUsed += operationQuota;
 
       for (const video of videos) {
         // Filter by date if specified
@@ -255,9 +257,10 @@ export class YoutubeSyncService {
           options.maxVideos || SYNC_CONFIG.MAX_RESULTS_PER_SEARCH,
         );
 
-        result.quotaUsed += QUOTA.SEARCH;
-        result.quotaUsed += QUOTA.VIDEO_LIST * Math.ceil(videos.length / SYNC_CONFIG.BATCH_SIZE_FOR_VIDEO_DETAILS);
-        this.dailyQuotaUsed += QUOTA.SEARCH + QUOTA.VIDEO_LIST * Math.ceil(videos.length / SYNC_CONFIG.BATCH_SIZE_FOR_VIDEO_DETAILS);
+        // Calculate quota usage for this search operation
+        const searchQuota = QUOTA.SEARCH + QUOTA.VIDEO_LIST * Math.ceil(videos.length / SYNC_CONFIG.BATCH_SIZE_FOR_VIDEO_DETAILS);
+        result.quotaUsed += searchQuota;
+        this.dailyQuotaUsed += searchQuota;
 
         for (const video of videos) {
           // Filter by date if specified
@@ -541,16 +544,42 @@ export class YoutubeSyncService {
 
   private resetDailyQuotaIfNeeded(): void {
     const now = new Date();
+    
     // YouTube API quota resets at midnight Pacific Time
-    const pacificMidnight = new Date(now);
-    pacificMidnight.setHours(0, 0, 0, 0);
+    // Calculate current Pacific time by using UTC offset
+    // Pacific is UTC-8 (PST) or UTC-7 (PDT)
+    const pacificOffset = this.getPacificOffset(now);
+    const pacificNow = new Date(now.getTime() + pacificOffset);
+    
+    // Calculate midnight Pacific time in UTC
+    const pacificMidnightToday = new Date(pacificNow);
+    pacificMidnightToday.setHours(0, 0, 0, 0);
+    const utcMidnightPacific = new Date(pacificMidnightToday.getTime() - pacificOffset);
 
     if (now >= this.quotaResetTime) {
       this.dailyQuotaUsed = 0;
-      // Set next reset time to next day
-      this.quotaResetTime = new Date(pacificMidnight);
-      this.quotaResetTime.setDate(this.quotaResetTime.getDate() + 1);
+      // Set next reset time to next Pacific midnight
+      this.quotaResetTime = new Date(utcMidnightPacific.getTime() + 24 * 60 * 60 * 1000);
     }
+  }
+
+  private getPacificOffset(date: Date): number {
+    // Check if date is in DST (PDT: UTC-7) or PST (UTC-8)
+    // DST in US: Second Sunday in March to First Sunday in November
+    const year = date.getUTCFullYear();
+    const marchSecondSunday = this.getNthSundayOfMonth(year, 2, 2); // March, 2nd Sunday
+    const novFirstSunday = this.getNthSundayOfMonth(year, 10, 1); // November, 1st Sunday
+    
+    const isDST = date >= marchSecondSunday && date < novFirstSunday;
+    return isDST ? -7 * 60 * 60 * 1000 : -8 * 60 * 60 * 1000;
+  }
+
+  private getNthSundayOfMonth(year: number, month: number, n: number): Date {
+    const date = new Date(Date.UTC(year, month, 1, 10, 0, 0)); // 10 AM UTC (2 AM Pacific)
+    const dayOfWeek = date.getUTCDay();
+    const firstSunday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+    date.setUTCDate(firstSunday + (n - 1) * 7);
+    return date;
   }
 
   private delay(ms: number): Promise<void> {

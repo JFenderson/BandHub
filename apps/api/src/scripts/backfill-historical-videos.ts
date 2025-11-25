@@ -332,7 +332,7 @@ async function upsertVideo(
   bandId: string,
   searchResult: { id: string; title: string },
   details: NonNullable<Awaited<ReturnType<typeof getVideoDetails>>>,
-): Promise<'added' | 'updated' | 'skipped'> {
+): Promise<'added' | 'updated'> {
   const existing = await prisma.video.findUnique({
     where: { youtubeId: searchResult.id },
   });
