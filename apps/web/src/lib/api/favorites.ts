@@ -154,20 +154,20 @@ class FavoritesApiClient {
   // ============ FAVORITE VIDEOS ============
 
   async addFavoriteVideo(videoId: string, notes?: string): Promise<FavoriteVideo> {
-    return this.request('/api/favorites/videos/' + videoId, {
+    return this.request(`/api/favorites/videos/${videoId}`, {
       method: 'POST',
       body: JSON.stringify({ notes }),
     });
   }
 
   async removeFavoriteVideo(videoId: string): Promise<{ message: string }> {
-    return this.request('/api/favorites/videos/' + videoId, {
+    return this.request(`/api/favorites/videos/${videoId}`, {
       method: 'DELETE',
     });
   }
 
   async updateFavoriteVideo(videoId: string, notes: string): Promise<FavoriteVideo> {
-    return this.request('/api/favorites/videos/' + videoId, {
+    return this.request(`/api/favorites/videos/${videoId}`, {
       method: 'PATCH',
       body: JSON.stringify({ notes }),
     });
@@ -192,25 +192,25 @@ class FavoritesApiClient {
   }
 
   async isVideoFavorited(videoId: string): Promise<{ isFavorited: boolean }> {
-    return this.request('/api/favorites/videos/' + videoId + '/status');
+    return this.request(`/api/favorites/videos/${videoId}/status`);
   }
 
   // ============ FAVORITE BANDS ============
 
   async followBand(bandId: string): Promise<FavoriteBand> {
-    return this.request('/api/favorites/bands/' + bandId, {
+    return this.request(`/api/favorites/bands/${bandId}`, {
       method: 'POST',
     });
   }
 
   async unfollowBand(bandId: string): Promise<{ message: string }> {
-    return this.request('/api/favorites/bands/' + bandId, {
+    return this.request(`/api/favorites/bands/${bandId}`, {
       method: 'DELETE',
     });
   }
 
   async updateBandNotifications(bandId: string, notificationsEnabled: boolean): Promise<FavoriteBand> {
-    return this.request('/api/favorites/bands/' + bandId, {
+    return this.request(`/api/favorites/bands/${bandId}`, {
       method: 'PATCH',
       body: JSON.stringify({ notificationsEnabled }),
     });
@@ -233,25 +233,25 @@ class FavoritesApiClient {
   }
 
   async getBandStatus(bandId: string): Promise<BandStatus> {
-    return this.request('/api/favorites/bands/' + bandId + '/status');
+    return this.request(`/api/favorites/bands/${bandId}/status`);
   }
 
   // ============ WATCH LATER ============
 
   async addToWatchLater(videoId: string): Promise<WatchLaterItem> {
-    return this.request('/api/favorites/watch-later/' + videoId, {
+    return this.request(`/api/favorites/watch-later/${videoId}`, {
       method: 'POST',
     });
   }
 
   async removeFromWatchLater(videoId: string): Promise<{ message: string }> {
-    return this.request('/api/favorites/watch-later/' + videoId, {
+    return this.request(`/api/favorites/watch-later/${videoId}`, {
       method: 'DELETE',
     });
   }
 
   async markAsWatched(videoId: string, watched: boolean): Promise<WatchLaterItem> {
-    return this.request('/api/favorites/watch-later/' + videoId, {
+    return this.request(`/api/favorites/watch-later/${videoId}`, {
       method: 'PATCH',
       body: JSON.stringify({ watched }),
     });
@@ -274,13 +274,13 @@ class FavoritesApiClient {
   }
 
   async isInWatchLater(videoId: string): Promise<{ isInWatchLater: boolean }> {
-    return this.request('/api/favorites/watch-later/' + videoId + '/status');
+    return this.request(`/api/favorites/watch-later/${videoId}/status`);
   }
 
   // ============ COMBINED STATUS ============
 
   async getVideoStatus(videoId: string): Promise<VideoStatus> {
-    return this.request('/api/favorites/status/' + videoId);
+    return this.request(`/api/favorites/status/${videoId}`);
   }
 }
 

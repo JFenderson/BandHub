@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { favoritesApiClient, type FavoriteBand, type PaginatedResponse } from '@/lib/api/favorites';
 import { FollowButton } from '@/components/bands/FollowButton';
+import { getAuthTokens } from '@/lib/utils/cookies';
 
 export default function FollowingPage() {
   return (
@@ -25,22 +26,7 @@ function FollowingContent() {
 
   // Set up token provider
   useEffect(() => {
-    const getCookie = (name: string): string | null => {
-      if (typeof document === 'undefined') return null;
-      const nameEQ = name + '=';
-      const ca = document.cookie.split(';');
-      for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-      }
-      return null;
-    };
-
-    favoritesApiClient.setTokenProvider(() => ({
-      accessToken: getCookie('user_access_token'),
-      sessionToken: getCookie('user_session_token'),
-    }));
+    favoritesApiClient.setTokenProvider(getAuthTokens);
   }, []);
 
   const fetchFollowing = useCallback(async (page = 1) => {

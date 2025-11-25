@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useUser } from '@/contexts/UserContext';
 import { notificationsApiClient, type Notification } from '@/lib/api/notifications';
 import { NotificationItem } from './NotificationItem';
+import { getAuthTokens } from '@/lib/utils/cookies';
 
 interface NotificationBellProps {
   className?: string;
@@ -20,22 +21,7 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
 
   // Set up token provider for the API client
   useEffect(() => {
-    const getCookie = (name: string): string | null => {
-      if (typeof document === 'undefined') return null;
-      const nameEQ = name + '=';
-      const ca = document.cookie.split(';');
-      for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-      }
-      return null;
-    };
-
-    notificationsApiClient.setTokenProvider(() => ({
-      accessToken: getCookie('user_access_token'),
-      sessionToken: getCookie('user_session_token'),
-    }));
+    notificationsApiClient.setTokenProvider(getAuthTokens);
   }, []);
 
   // Fetch unread count periodically

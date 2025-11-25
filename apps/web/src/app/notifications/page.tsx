@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { notificationsApiClient, type Notification, type NotificationPreferences, type NotificationType } from '@/lib/api/notifications';
 import { NotificationItem } from '@/components/notifications/NotificationItem';
+import { getAuthTokens } from '@/lib/utils/cookies';
 
 type FilterType = 'all' | 'unread' | 'read';
 
@@ -28,22 +29,7 @@ function NotificationsContent() {
 
   // Set up token provider
   useEffect(() => {
-    const getCookie = (name: string): string | null => {
-      if (typeof document === 'undefined') return null;
-      const nameEQ = name + '=';
-      const ca = document.cookie.split(';');
-      for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-      }
-      return null;
-    };
-
-    notificationsApiClient.setTokenProvider(() => ({
-      accessToken: getCookie('user_access_token'),
-      sessionToken: getCookie('user_session_token'),
-    }));
+    notificationsApiClient.setTokenProvider(getAuthTokens);
   }, []);
 
   const fetchNotifications = useCallback(async (page = 1) => {

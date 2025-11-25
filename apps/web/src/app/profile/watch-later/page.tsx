@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { favoritesApiClient, type WatchLaterItem, type WatchLaterResponse } from '@/lib/api/favorites';
+import { getAuthTokens } from '@/lib/utils/cookies';
 
 type FilterType = 'all' | 'unwatched' | 'watched';
 
@@ -27,22 +28,7 @@ function WatchLaterContent() {
 
   // Set up token provider
   useEffect(() => {
-    const getCookie = (name: string): string | null => {
-      if (typeof document === 'undefined') return null;
-      const nameEQ = name + '=';
-      const ca = document.cookie.split(';');
-      for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-      }
-      return null;
-    };
-
-    favoritesApiClient.setTokenProvider(() => ({
-      accessToken: getCookie('user_access_token'),
-      sessionToken: getCookie('user_session_token'),
-    }));
+    favoritesApiClient.setTokenProvider(getAuthTokens);
   }, []);
 
   const fetchWatchLater = useCallback(async (page = 1) => {
