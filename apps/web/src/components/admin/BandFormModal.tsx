@@ -228,7 +228,7 @@ export default function BandFormModal({
                   type="text"
                   id="school"
                   name="school"
-                  value={formData.school}
+                  value={formData.school || ''}
                   onChange={handleChange}
                   required
                   disabled={isLoading}

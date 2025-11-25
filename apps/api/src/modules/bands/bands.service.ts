@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { CacheService } from '../../cache/cache.service';
@@ -12,6 +12,8 @@ const MAX_FEATURED_BANDS = 8;
 
 @Injectable()
 export class BandsService {
+  private readonly logger = new Logger(BandsService.name);
+
   constructor(
     private readonly bandsRepository: BandsRepository,
     private readonly cacheService: CacheService,
@@ -145,7 +147,7 @@ export class BandsService {
 
       return band;
     } catch (error) {
-      console.error('Error updating band:', error);
+      this.logger.error(`Error updating band ${id}:`, error);
       throw error;
     }
   }

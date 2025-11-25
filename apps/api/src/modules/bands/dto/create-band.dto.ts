@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsArray, IsUrl, Min, Max, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsArray, IsUrl, Min, Max, IsBoolean, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateBandDto {
@@ -87,7 +87,7 @@ export class CreateBandDto {
 
   @ApiPropertyOptional({ description: 'Founded year alias (not persisted)' })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   founded?: number;
 
   @ApiPropertyOptional({ description: 'Band colors (not persisted)' })
