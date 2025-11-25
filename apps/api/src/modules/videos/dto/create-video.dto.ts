@@ -1,3 +1,7 @@
+  @ApiPropertyOptional({ description: 'Content Creator ID' })
+  @IsOptional()
+  @IsString()
+  creatorId?: string;
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNumber, IsArray, IsOptional, IsUrl, Min, Max } from 'class-validator';
 

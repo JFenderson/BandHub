@@ -56,6 +56,47 @@ model Band {
   @@map("bands")
 }
 
+model ContentCreator {
+  id                String    @id @default(cuid())
+  
+  // Basic Info
+  name              String
+  youtubeChannelId  String    @unique
+  channelUrl        String
+  description       String?   @db.Text
+  logoUrl           String?   // Custom uploaded logo
+  thumbnailUrl      String?   // YouTube channel thumbnail (fallback)
+  
+  // Stats & Metrics
+  subscriberCount   Int       @default(0)
+  totalVideoCount   Int       @default(0)
+  videosInOurDb     Int       @default(0)
+  
+  // Quality & Trust Indicators
+  isVerified        Boolean   @default(false)
+  isFeatured        Boolean   @default(false)
+  qualityScore      Int       @default(0) // 0-100
+  
+  // Sync Tracking
+  lastSyncedAt      DateTime?
+  firstSyncedAt     DateTime?
+  lastFullSync      DateTime?
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  videos            Video[]
+  
+  @@index([youtubeChannelId])
+  @@index([isFeatured])
+  @@index([isVerified])
+  @@index([qualityScore])
+  @@index([createdAt])
+  @@map("content_creators")
+}
+
 model Video {
   id             String    @id @default(cuid())
   youtubeId      String    @unique @map("youtube_id")
@@ -82,6 +123,8 @@ model Video {
   opponentBand   Band?     @relation("OpponentBandVideos", fields: [opponentBandId], references: [id])
   favorites      FavoriteVideo[]
   watchLater     WatchLater[]
+  creatorId         String?
+  creator           ContentCreator? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
 
   @@index([bandId])
   @@index([opponentBandId])
@@ -93,6 +136,7 @@ model Video {
   @@index([bandId, categoryId])
   @@index([bandId, eventYear])
   @@index([title])
+  @@index([creatorId])
   @@map("videos")
 }
 

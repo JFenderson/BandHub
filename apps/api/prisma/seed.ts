@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { seedCategories, seedBands } from './seeders';
+import { seedCategories, seedBands, seedCreators } from './seeders';
 
 const prisma = new PrismaClient();
 
@@ -10,6 +10,7 @@ async function main() {
     // Order matters: seed categories first, then bands, then videos
     await seedCategories(prisma);
     await seedBands(prisma);
+    await seedCreators(prisma);
     
     // Optional: Trigger initial sync for bands with YouTube channel IDs
     if (process.env.SEED_WITH_SYNC === 'true') {
