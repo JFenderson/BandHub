@@ -58,6 +58,38 @@ export class BandsController {
     });
   }
 
+  // ========================================
+  // FEATURED BANDS ROUTES
+  // ========================================
+
+  @Get('featured')
+  @ApiOperation({ summary: 'Get featured bands for homepage carousel' })
+  @ApiResponse({ status: 200, description: 'Featured bands retrieved successfully' })
+  async getFeaturedBands() {
+    return this.bandsService.getFeaturedBands();
+  }
+
+    @Get('featured-recommendations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get smart recommendations for bands to feature' })
+  @ApiResponse({ status: 200, description: 'Recommendations retrieved successfully' })
+  async getFeaturedRecommendations() {
+    const recommendations = await this.featuredRecommendationsService.getRecommendations();
+    return { recommendations };
+  }
+
+  @Get('featured-analytics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get featured bands analytics' })
+  @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
+  async getFeaturedAnalytics() {
+    return this.bandsService.getFeaturedAnalytics();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a band by ID' })
   @ApiResponse({ status: 200, description: 'Band retrieved successfully' })
@@ -271,16 +303,7 @@ export class BandsController {
     }
   }
 
-  // ========================================
-  // FEATURED BANDS ROUTES
-  // ========================================
 
-  @Get('featured')
-  @ApiOperation({ summary: 'Get featured bands for homepage carousel' })
-  @ApiResponse({ status: 200, description: 'Featured bands retrieved successfully' })
-  async getFeaturedBands() {
-    return this.bandsService.getFeaturedBands();
-  }
 
   @Post(':id/track-featured-click')
   @ApiOperation({ summary: 'Track click on featured band' })
@@ -325,24 +348,5 @@ export class BandsController {
     return this.bandsService.updateFeaturedOrder(data);
   }
 
-  @Get('featured-recommendations')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get smart recommendations for bands to feature' })
-  @ApiResponse({ status: 200, description: 'Recommendations retrieved successfully' })
-  async getFeaturedRecommendations() {
-    const recommendations = await this.featuredRecommendationsService.getRecommendations();
-    return { recommendations };
-  }
 
-  @Get('featured-analytics')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get featured bands analytics' })
-  @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
-  async getFeaturedAnalytics() {
-    return this.bandsService.getFeaturedAnalytics();
-  }
 }
