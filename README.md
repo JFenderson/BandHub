@@ -293,7 +293,7 @@ The API is configured with CORS to allow cross-origin requests from the frontend
 - **Allowed Origins:** `http://localhost:3000` (configurable via `FRONTEND_URL` environment variable)
 - **Credentials:** Enabled (`true`)
 - **Allowed Methods:** `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`
-- **Allowed Headers:** `Content-Type`, `Authorization`
+- **Allowed Headers:** `Content-Type`, `Authorization`, `x-session-token`
 
 ## Building for Production
 
