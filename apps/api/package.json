@@ -16,13 +16,14 @@
     "clean": "rm -rf dist",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:reset": "prisma migrate reset --force",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:deploy": "prisma migrate deploy",
     "api-key:create": "tsx apps/api/scripts/create-api-key.ts"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@hbcu-band-hub/shared-types": "*",

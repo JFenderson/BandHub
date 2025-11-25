@@ -9,11 +9,14 @@ build
 .next
 out
 
-# Environment
+# Environment files
 .env
 .env.local
-.env.example
 .env.*.local
+
+# But keep .env.example files
+!.env.example
+!apps/*/.env.example
 
 # IDE
 .idea

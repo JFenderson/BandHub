@@ -541,7 +541,7 @@ const allHBCUBands: BandData[] = [
   },
 ];
 
-async function main() {
+export async function seedBands(prisma: PrismaClient) {
   console.log('🌱 Seeding all HBCU bands...');
 
   let added = 0;
@@ -572,12 +572,3 @@ async function main() {
   console.log(`   Updated: ${updated} bands`);
   console.log(`   Total: ${allHBCUBands.length} bands`);
 }
-
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

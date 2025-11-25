@@ -51,6 +51,12 @@ const categories = [
     description: 'Concert band and indoor performances',
     sortOrder: 8,
   },
+    {
+    name: 'Zero Quarter',
+    slug: 'zero-quarter',
+    description: 'Zero quarter performances',
+    sortOrder: 9,
+  },
   {
     name: 'Other',
     slug: 'other',
@@ -59,7 +65,7 @@ const categories = [
   },
 ];
 
-async function seedCategories() {
+export async function seedCategories(prisma: PrismaClient) {
   console.log('Seeding categories...');
   
   for (const category of categories) {
@@ -72,12 +78,3 @@ async function seedCategories() {
   
   console.log(`Seeded ${categories.length} categories`);
 }
-
-seedCategories()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
