@@ -11,6 +11,8 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { EmailModule } from './modules/email/email.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HealthModule } from './health/health.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { BandsSeedService } from './database/seeds/bands.seed';
@@ -45,6 +47,8 @@ import { APP_GUARD } from '@nestjs/core';
     AuthModule,
     UsersModule,
     EmailModule,
+    FavoritesModule,
+    NotificationsModule,
     SyncModule,
     // Utilities
     HealthModule,
