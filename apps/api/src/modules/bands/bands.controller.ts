@@ -58,10 +58,6 @@ export class BandsController {
     });
   }
 
-  // ========================================
-  // FEATURED BANDS ROUTES
-  // ========================================
-
   @Get('featured')
   @ApiOperation({ summary: 'Get featured bands for homepage carousel' })
   @ApiResponse({ status: 200, description: 'Featured bands retrieved successfully' })
@@ -90,6 +86,14 @@ export class BandsController {
     return this.bandsService.getFeaturedAnalytics();
   }
 
+  @Get('slug/:slug')
+  @ApiOperation({ summary: 'Get a band by slug' })
+  @ApiResponse({ status: 200, description: 'Band retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Band not found' })
+  async findBySlug(@Param('slug') slug: string) {
+    return this.bandsService.findBySlug(slug);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a band by ID' })
   @ApiResponse({ status: 200, description: 'Band retrieved successfully' })
@@ -98,13 +102,7 @@ export class BandsController {
     return this.bandsService.findById(id);
   }
 
-  @Get('slug/:slug')
-  @ApiOperation({ summary: 'Get a band by slug' })
-  @ApiResponse({ status: 200, description: 'Band retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'Band not found' })
-  async findBySlug(@Param('slug') slug: string) {
-    return this.bandsService.findBySlug(slug);
-  }
+
 
   // ========================================
   // MODERATOR ROUTES
