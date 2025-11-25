@@ -3,6 +3,7 @@ export interface Band {
   slug: string;
   name: string;
   school: string;
+  schoolName?: string; // Database field name (alias for school)
   nickname?: string | null;
   city?: string | null;
   state?: string | null;

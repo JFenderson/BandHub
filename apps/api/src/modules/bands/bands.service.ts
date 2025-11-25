@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@prisma/client';
 import { CacheService } from '../../cache/cache.service';
 import { BandsRepository } from './bands.repository';
 import { CreateBandDto, UpdateBandDto, BandQueryDto, UpdateFeaturedOrderDto } from './dto';
@@ -94,10 +95,8 @@ export class BandsService {
       }
     }
 
-    const createData = {
-      ...data,
-      slug,
-    };
+    // Map frontend DTO fields to Prisma-compatible fields
+    const createData = this.mapDtoToCreateData(data, slug);
 
     const band = await this.bandsRepository.create(createData);
 
@@ -114,18 +113,19 @@ export class BandsService {
       throw new NotFoundException(`Band with ID ${id} not found`);
     }
 
-    // Create a mutable copy of the update data
-    const updateData: UpdateBandDto & { slug?: string } = { ...data };
+    // Map frontend DTO fields to Prisma-compatible fields
+    const updateData = this.mapDtoToUpdateData(data);
 
     // If name is being updated, regenerate slug
     if (data.name && data.name !== existing.name) {
-      updateData.slug = this.generateSlug(data.name);
+      const newSlug = this.generateSlug(data.name);
+      updateData.slug = newSlug;
       
       // Check if new slug conflicts with existing band
       try {
-        const conflicting = await this.bandsRepository.findBySlug(updateData.slug);
+        const conflicting = await this.bandsRepository.findBySlug(newSlug);
         if (conflicting && conflicting.id !== id) {
-          throw new BadRequestException(`Band with slug "${updateData.slug}" already exists`);
+          throw new BadRequestException(`Band with slug "${newSlug}" already exists`);
         }
       } catch (error) {
         // If NotFoundException, that's good - slug is available
@@ -135,14 +135,19 @@ export class BandsService {
       }
     }
 
-    const band = await this.bandsRepository.update(id, updateData);
+    try {
+      const band = await this.bandsRepository.update(id, updateData);
 
-    // Invalidate caches
-    await this.invalidateBandsCaches();
-    await this.cacheService.del(`band:${id}`);
-    await this.cacheService.del(`band:slug:${existing.slug}`);
+      // Invalidate caches
+      await this.invalidateBandsCaches();
+      await this.cacheService.del(`band:${id}`);
+      await this.cacheService.del(`band:slug:${existing.slug}`);
 
-    return band;
+      return band;
+    } catch (error) {
+      console.error('Error updating band:', error);
+      throw error;
+    }
   }
 
   async delete(id: string) {
@@ -192,6 +197,71 @@ export class BandsService {
     for (const pattern of patterns) {
       await this.cacheService.delPattern(pattern);
     }
+  }
+
+  /**
+   * Maps frontend DTO fields to Prisma-compatible fields for create operations
+   * Handles field name differences between frontend and database schema
+   */
+  private mapDtoToCreateData(data: CreateBandDto, slug: string): Prisma.BandCreateInput {
+    // Get school name from either 'school' or 'schoolName' field
+    const schoolName = data.school || data.schoolName || '';
+
+    const prismaData: Prisma.BandCreateInput = {
+      name: data.name,
+      slug,
+      schoolName,
+      city: data.city,
+      state: data.state,
+      conference: data.conference,
+      description: data.description,
+      foundedYear: data.foundedYear,
+      youtubeChannelId: data.youtubeChannelId,
+      youtubePlaylistIds: data.youtubePlaylistIds || [],
+      isActive: data.isActive ?? true,
+      isFeatured: data.isFeatured ?? false,
+    };
+
+    return prismaData;
+  }
+
+  /**
+   * Maps frontend DTO fields to Prisma-compatible fields for update operations
+   * Handles field name differences between frontend and database schema
+   */
+  private mapDtoToUpdateData(data: UpdateBandDto): Prisma.BandUpdateInput {
+    const prismaData: Prisma.BandUpdateInput = {};
+
+    // Map 'school' to 'schoolName' (frontend uses 'school', Prisma uses 'schoolName')
+    if (data.school !== undefined) {
+      prismaData.schoolName = data.school;
+    }
+    if (data.schoolName !== undefined) {
+      prismaData.schoolName = data.schoolName;
+    }
+
+    // Map name if provided
+    if (data.name !== undefined) {
+      prismaData.name = data.name;
+    }
+
+    // Map fields that exist in both frontend DTO and Prisma schema
+    if (data.city !== undefined) prismaData.city = data.city;
+    if (data.state !== undefined) prismaData.state = data.state;
+    if (data.conference !== undefined) prismaData.conference = data.conference;
+    if (data.description !== undefined) prismaData.description = data.description;
+    if (data.foundedYear !== undefined) prismaData.foundedYear = data.foundedYear;
+    if (data.youtubeChannelId !== undefined) prismaData.youtubeChannelId = data.youtubeChannelId;
+    if (data.youtubePlaylistIds !== undefined) prismaData.youtubePlaylistIds = data.youtubePlaylistIds;
+    if (data.isActive !== undefined) prismaData.isActive = data.isActive;
+    if (data.isFeatured !== undefined) prismaData.isFeatured = data.isFeatured;
+    if (data.logoUrl !== undefined) prismaData.logoUrl = data.logoUrl;
+    if (data.bannerUrl !== undefined) prismaData.bannerUrl = data.bannerUrl;
+
+    // Note: Fields like 'nickname', 'division', 'founded', 'colors', 'website' from frontend
+    // are intentionally not mapped as they don't exist in the Prisma schema
+
+    return prismaData;
   }
 
   async updateLogo(id: string, logoUrl: string) {
