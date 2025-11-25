@@ -30,7 +30,7 @@ import {
 } from './dto/watch-later.dto';
 
 @ApiTags('favorites')
-@Controller('api/favorites')
+@Controller('favorites')
 @UseGuards(UserAuthGuard)
 @ApiBearerAuth()
 export class FavoritesController {
