@@ -14,6 +14,7 @@ import { SyncBandProcessor } from './processors/sync-band.processor';
 import { SyncAllBandsProcessor } from './processors/sync-all-bands.processor';
 import { ProcessVideoProcessor } from './processors/process-video.processor';
 import { CleanupProcessor } from './processors/cleanup.processor';
+import { NotificationProcessor } from './processors/notification.processor';
 
 // Scheduler
 import { SyncScheduler } from './scheduler/sync.scheduler';
@@ -101,6 +102,7 @@ import { SyncScheduler } from './scheduler/sync.scheduler';
     SyncAllBandsProcessor,
     ProcessVideoProcessor,
     CleanupProcessor,
+    NotificationProcessor,
     
     // Scheduler
     SyncScheduler,
