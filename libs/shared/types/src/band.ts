@@ -21,6 +21,8 @@ export interface Band {
   syncStatus?: string;
   isActive: boolean;
   isFeatured?: boolean;
+  featuredOrder?: number | null;
+  featuredSince?: string | null;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -75,4 +77,69 @@ export interface BandQueryParams {
   isActive?: boolean;
   page?: number;
   limit?: number;
+}
+
+// Featured Band types
+export interface FeaturedBandVideo {
+  id: string;
+  title: string;
+  thumbnailUrl: string;
+  duration: number;
+  viewCount: number;
+  publishedAt: string;
+}
+
+export interface FeaturedBandResponse {
+  id: string;
+  name: string;
+  school: string;
+  description: string | null;
+  logoUrl: string | null;
+  slug: string;
+  schoolColors?: {
+    primary: string;
+    secondary: string;
+  };
+  videoCount: number;
+  recentVideos: FeaturedBandVideo[];
+  featuredOrder: number;
+  featuredSince: string | null;
+}
+
+export interface FeaturedBandsResponse {
+  bands: FeaturedBandResponse[];
+}
+
+export interface UpdateFeaturedOrderDto {
+  bands: Array<{
+    id: string;
+    featuredOrder: number;
+  }>;
+}
+
+export interface FeaturedBandRecommendation {
+  band: Band;
+  score: number;
+  reasoning: string[];
+  suggestedAction?: string;
+}
+
+export interface FeaturedRecommendationsResponse {
+  recommendations: FeaturedBandRecommendation[];
+}
+
+export interface FeaturedBandAnalytics {
+  bandId: string;
+  bandName: string;
+  totalClicks: number;
+  clickThroughRate: number;
+  averagePosition: number;
+  daysFeatured: number;
+}
+
+export interface FeaturedBandAnalyticsResponse {
+  analytics: FeaturedBandAnalytics[];
+  totalFeaturedClicks: number;
+  averageCTR: number;
+  bestPerformingPosition: number;
 }

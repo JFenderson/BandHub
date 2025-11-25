@@ -27,18 +27,22 @@ model Band {
   syncStatus         SyncStatus @default(PENDING) @map("sync_status")
   isActive           Boolean    @default(true) @map("is_active")
   isFeatured         Boolean    @default(false) @map("is_featured")
+  featuredOrder      Int?       @map("featured_order")
+  featuredSince      DateTime?  @map("featured_since")
   createdAt          DateTime   @default(now()) @map("created_at")
   updatedAt          DateTime   @updatedAt @map("updated_at")
   searchKeywords     String[]   @default([]) @map("search_keywords")
   videos             Video[]    @relation("BandVideos")
   opponentVideos     Video[]    @relation("OpponentBandVideos")
   syncJobs           SyncJob[]
+  featuredClicks     FeaturedBandClick[]
 
   @@index([slug])
   @@index([schoolName])
   @@index([state])
   @@index([conference])
   @@index([isActive, isFeatured])
+  @@index([featuredOrder])
   @@map("bands")
 }
 
@@ -303,4 +307,16 @@ model SearchLog {
   @@index([createdAt(sort: Desc)])
   @@index([userId])
   @@map("search_logs")
+}
+
+model FeaturedBandClick {
+  id          String   @id @default(cuid())
+  bandId      String   @map("band_id")
+  band        Band     @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  clickedAt   DateTime @default(now()) @map("clicked_at")
+  sessionId   String?  @map("session_id")
+
+  @@index([bandId])
+  @@index([clickedAt])
+  @@map("featured_band_clicks")
 }

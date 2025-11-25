@@ -4,12 +4,14 @@ import { useState } from 'react';
 import type { Band } from '@/types/api';
 import BandLogo from '@/components/bands/BandLogo';
 import { format } from 'date-fns';
+import { apiClient } from '@/lib/api-client';
 
 interface BandTableProps {
   bands: Band[];
   onEdit: (band: Band) => void;
   onDelete: (band: Band) => void;
   onSync: (band: Band) => void;
+  onToggleFeatured?: (band: Band) => void;
   loading?: boolean;
 }
 
@@ -18,10 +20,33 @@ export default function BandTable({
   onEdit,
   onDelete,
   onSync,
+  onToggleFeatured,
   loading = false,
 }: BandTableProps) {
   const [selectedBands, setSelectedBands] = useState<Set<string>>(new Set());
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [togglingFeatured, setTogglingFeatured] = useState<Set<string>>(new Set());
+
+  const handleToggleFeatured = async (band: Band) => {
+    if (togglingFeatured.has(band.id)) return;
+    
+    setTogglingFeatured(prev => new Set([...prev, band.id]));
+    try {
+      await apiClient.toggleBandFeatured(band.id);
+      if (onToggleFeatured) {
+        onToggleFeatured(band);
+      }
+    } catch (error) {
+      console.error('Failed to toggle featured:', error);
+      alert(error instanceof Error ? error.message : 'Failed to toggle featured status');
+    } finally {
+      setTogglingFeatured(prev => {
+        const next = new Set(prev);
+        next.delete(band.id);
+        return next;
+      });
+    }
+  };
 
   const formatLocation = (city?: string | null, state?: string | null): string => {
     if (city && state) return `${city}, ${state}`;
@@ -120,6 +145,9 @@ export default function BandTable({
               Last Sync
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Featured
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Status
             </th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -184,6 +212,29 @@ export default function BandTable({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleToggleFeatured(band)}
+                      disabled={togglingFeatured.has(band.id)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 ${
+                        band.isFeatured ? 'bg-yellow-500' : 'bg-gray-200'
+                      }`}
+                      role="switch"
+                      aria-checked={band.isFeatured}
+                      title={band.isFeatured ? 'Unfeature band' : 'Feature band'}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          band.isFeatured ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    {band.isFeatured && band.featuredOrder && (
+                      <span className="text-xs text-gray-500">#{band.featuredOrder}</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-2">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -194,11 +245,6 @@ export default function BandTable({
                     >
                       {band.isActive ? 'Active' : 'Inactive'}
                     </span>
-                    {band.isFeatured && (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        Featured
-                      </span>
-                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -286,7 +332,7 @@ export default function BandTable({
               </tr>
               {expandedRows.has(band.id) && (
                 <tr key={`${band.id}-details`}>
-                  <td colSpan={9} className="px-6 py-4 bg-gray-50">
+                  <td colSpan={10} className="px-6 py-4 bg-gray-50">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Description:</span>

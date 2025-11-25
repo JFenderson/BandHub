@@ -2,10 +2,12 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '../../cache/cache.service';
 import { BandsRepository } from './bands.repository';
-import { CreateBandDto, UpdateBandDto, BandQueryDto } from './dto';
+import { CreateBandDto, UpdateBandDto, BandQueryDto, UpdateFeaturedOrderDto } from './dto';
 import { PrismaService } from '../../database/prisma.service';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
+
+const MAX_FEATURED_BANDS = 8;
 
 @Injectable()
 export class BandsService {
@@ -269,5 +271,297 @@ export class BandsService {
       where: { id },
       data: { logoUrl: null },
     });
+  }
+
+  // =====================================
+  // FEATURED BANDS METHODS
+  // =====================================
+
+  /**
+   * Get all featured bands ordered by featuredOrder
+   */
+  async getFeaturedBands() {
+    const cacheKey = 'bands:featured';
+    
+    const cached = await this.cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const featuredBands = await this.prismaService.band.findMany({
+      where: {
+        isFeatured: true,
+        isActive: true,
+      },
+      orderBy: {
+        featuredOrder: 'asc',
+      },
+      include: {
+        videos: {
+          where: { isHidden: false },
+          orderBy: { publishedAt: 'desc' },
+          take: 3,
+          select: {
+            id: true,
+            title: true,
+            thumbnailUrl: true,
+            duration: true,
+            viewCount: true,
+            publishedAt: true,
+          },
+        },
+        _count: {
+          select: {
+            videos: {
+              where: { isHidden: false },
+            },
+          },
+        },
+      },
+    });
+
+    const response = {
+      bands: featuredBands.map(band => ({
+        id: band.id,
+        name: band.name,
+        school: band.schoolName,
+        description: band.description,
+        logoUrl: band.logoUrl,
+        slug: band.slug,
+        schoolColors: this.parseSchoolColors(band.description),
+        videoCount: band._count.videos,
+        recentVideos: band.videos,
+        featuredOrder: band.featuredOrder || 0,
+        featuredSince: band.featuredSince,
+      })),
+    };
+
+    // Cache for 5 minutes
+    await this.cacheService.set(cacheKey, response, 300);
+
+    return response;
+  }
+
+  /**
+   * Toggle featured status for a band
+   */
+  async toggleFeatured(bandId: string) {
+    const band = await this.prismaService.band.findUnique({
+      where: { id: bandId },
+    });
+
+    if (!band) {
+      throw new NotFoundException(`Band with ID ${bandId} not found`);
+    }
+
+    if (band.isFeatured) {
+      // Unfeaturing - remove featured status
+      const updatedBand = await this.prismaService.band.update({
+        where: { id: bandId },
+        data: {
+          isFeatured: false,
+          featuredOrder: null,
+          // Keep featuredSince for historical tracking
+        },
+      });
+
+      // Reorder remaining featured bands
+      await this.reorderFeaturedBands();
+      await this.invalidateFeaturedCaches();
+
+      return updatedBand;
+    } else {
+      // Featuring - check max limit
+      const featuredCount = await this.prismaService.band.count({
+        where: { isFeatured: true },
+      });
+
+      if (featuredCount >= MAX_FEATURED_BANDS) {
+        throw new BadRequestException(
+          `Maximum of ${MAX_FEATURED_BANDS} featured bands allowed. Please unfeature a band first.`,
+        );
+      }
+
+      // Get next available order position
+      const nextOrder = featuredCount + 1;
+
+      const updatedBand = await this.prismaService.band.update({
+        where: { id: bandId },
+        data: {
+          isFeatured: true,
+          featuredOrder: nextOrder,
+          featuredSince: band.featuredSince || new Date(),
+        },
+      });
+
+      await this.invalidateFeaturedCaches();
+
+      return updatedBand;
+    }
+  }
+
+  /**
+   * Bulk update featured order for multiple bands
+   */
+  async updateFeaturedOrder(data: UpdateFeaturedOrderDto) {
+    // Validate all bands exist and are featured
+    const bandIds = data.bands.map(b => b.id);
+    const bands = await this.prismaService.band.findMany({
+      where: {
+        id: { in: bandIds },
+        isFeatured: true,
+      },
+    });
+
+    if (bands.length !== bandIds.length) {
+      throw new BadRequestException('Some bands are not featured or do not exist');
+    }
+
+    // Validate order numbers are unique and within range
+    const orders = new Set(data.bands.map(b => b.featuredOrder));
+    if (orders.size !== data.bands.length) {
+      throw new BadRequestException('Featured order values must be unique');
+    }
+
+    // Update each band's order
+    await this.prismaService.$transaction(
+      data.bands.map(item =>
+        this.prismaService.band.update({
+          where: { id: item.id },
+          data: { featuredOrder: item.featuredOrder },
+        }),
+      ),
+    );
+
+    await this.invalidateFeaturedCaches();
+
+    return { message: 'Featured order updated successfully' };
+  }
+
+  /**
+   * Track click on featured band
+   */
+  async trackFeaturedClick(bandId: string, sessionId?: string) {
+    const band = await this.prismaService.band.findUnique({
+      where: { id: bandId },
+    });
+
+    if (!band) {
+      throw new NotFoundException(`Band with ID ${bandId} not found`);
+    }
+
+    await this.prismaService.featuredBandClick.create({
+      data: {
+        bandId,
+        sessionId,
+      },
+    });
+
+    return { message: 'Click tracked successfully' };
+  }
+
+  /**
+   * Get featured bands analytics
+   */
+  async getFeaturedAnalytics() {
+    const featuredBands = await this.prismaService.band.findMany({
+      where: { isFeatured: true },
+      include: {
+        _count: {
+          select: {
+            featuredClicks: true,
+          },
+        },
+      },
+    });
+
+    // Get total page views for CTR calculation (simplified estimate)
+    const totalClicks = await this.prismaService.featuredBandClick.count();
+    
+    // Calculate analytics for each featured band
+    const analytics = featuredBands.map(band => {
+      const daysFeatured = band.featuredSince
+        ? Math.max(1, Math.floor((Date.now() - new Date(band.featuredSince).getTime()) / (24 * 60 * 60 * 1000)))
+        : 0;
+
+      return {
+        bandId: band.id,
+        bandName: band.name,
+        totalClicks: band._count.featuredClicks,
+        clickThroughRate: totalClicks > 0 ? (band._count.featuredClicks / totalClicks) * 100 : 0,
+        averagePosition: band.featuredOrder || 0,
+        daysFeatured,
+      };
+    });
+
+    // Find best performing position
+    const clicksByPosition = await this.prismaService.featuredBandClick.groupBy({
+      by: ['bandId'],
+      _count: true,
+    });
+
+    const positionPerformance = new Map<number, number>();
+    for (const click of clicksByPosition) {
+      const band = featuredBands.find(b => b.id === click.bandId);
+      if (band && band.featuredOrder) {
+        const current = positionPerformance.get(band.featuredOrder) || 0;
+        positionPerformance.set(band.featuredOrder, current + click._count);
+      }
+    }
+
+    let bestPosition = 1;
+    let maxClicks = 0;
+    positionPerformance.forEach((clicks, position) => {
+      if (clicks > maxClicks) {
+        maxClicks = clicks;
+        bestPosition = position;
+      }
+    });
+
+    return {
+      analytics,
+      totalFeaturedClicks: totalClicks,
+      averageCTR: featuredBands.length > 0 ? 100 / featuredBands.length : 0,
+      bestPerformingPosition: bestPosition,
+    };
+  }
+
+  /**
+   * Helper: Reorder featured bands after one is removed
+   */
+  private async reorderFeaturedBands() {
+    const featuredBands = await this.prismaService.band.findMany({
+      where: { isFeatured: true },
+      orderBy: { featuredOrder: 'asc' },
+    });
+
+    await this.prismaService.$transaction(
+      featuredBands.map((band, index) =>
+        this.prismaService.band.update({
+          where: { id: band.id },
+          data: { featuredOrder: index + 1 },
+        }),
+      ),
+    );
+  }
+
+  /**
+   * Helper: Parse school colors from description (simplified)
+   * In a real implementation, this would be stored in a separate field
+   */
+  private parseSchoolColors(description: string | null): { primary: string; secondary: string } | undefined {
+    // Default colors if no specific colors found
+    return {
+      primary: '#1e3a5f',
+      secondary: '#c5a900',
+    };
+  }
+
+  /**
+   * Helper: Invalidate featured bands caches
+   */
+  private async invalidateFeaturedCaches() {
+    await this.cacheService.del('bands:featured');
+    await this.invalidateBandsCaches();
   }
 }
