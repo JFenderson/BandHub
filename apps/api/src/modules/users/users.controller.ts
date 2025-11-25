@@ -26,7 +26,7 @@ import { UserAuthGuard } from './guards/user-auth.guard';
 import { CurrentUser, CurrentUserData } from './decorators/current-user.decorator';
 
 @ApiTags('users')
-@Controller('api/users')
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
