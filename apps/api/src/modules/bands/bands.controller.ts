@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -17,6 +18,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { BandsService } from './bands.service';
+import { FeaturedRecommendationsService } from './featured-recommendations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -24,6 +26,7 @@ import { CurrentUser, CurrentUserData } from '../../common/decorators/current-us
 import { diskStorage } from 'multer';
 import { processUploadedImage } from '../../common/utils/image-processing.util';
 import { unlink } from 'fs/promises';
+import { UpdateFeaturedOrderDto } from './dto';
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@hbcu-band-hub/prisma';
@@ -31,7 +34,10 @@ import { AdminRole } from '@hbcu-band-hub/prisma';
 @ApiTags('Bands')
 @Controller('bands')
 export class BandsController {
-  constructor(private readonly bandsService: BandsService) {}
+  constructor(
+    private readonly bandsService: BandsService,
+    private readonly featuredRecommendationsService: FeaturedRecommendationsService,
+  ) {}
 
   // ========================================
   // PUBLIC ROUTES
@@ -263,5 +269,80 @@ export class BandsController {
       }
       throw error;
     }
+  }
+
+  // ========================================
+  // FEATURED BANDS ROUTES
+  // ========================================
+
+  @Get('featured')
+  @ApiOperation({ summary: 'Get featured bands for homepage carousel' })
+  @ApiResponse({ status: 200, description: 'Featured bands retrieved successfully' })
+  async getFeaturedBands() {
+    return this.bandsService.getFeaturedBands();
+  }
+
+  @Post(':id/track-featured-click')
+  @ApiOperation({ summary: 'Track click on featured band' })
+  @ApiResponse({ status: 201, description: 'Click tracked successfully' })
+  async trackFeaturedClick(
+    @Param('id') id: string,
+    @Body('sessionId') sessionId?: string,
+  ) {
+    return this.bandsService.trackFeaturedClick(id, sessionId);
+  }
+
+  // ========================================
+  // ADMIN FEATURED BANDS ROUTES
+  // ========================================
+
+  @Patch(':id/featured')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Toggle featured status for a band' })
+  @ApiResponse({ status: 200, description: 'Featured status toggled successfully' })
+  @ApiResponse({ status: 400, description: 'Max featured bands limit reached' })
+  @ApiResponse({ status: 404, description: 'Band not found' })
+  async toggleFeatured(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.bandsService.toggleFeatured(id);
+  }
+
+  @Patch('featured-order')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update featured bands order' })
+  @ApiResponse({ status: 200, description: 'Featured order updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid order data' })
+  async updateFeaturedOrder(
+    @Body() data: UpdateFeaturedOrderDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.bandsService.updateFeaturedOrder(data);
+  }
+
+  @Get('featured-recommendations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get smart recommendations for bands to feature' })
+  @ApiResponse({ status: 200, description: 'Recommendations retrieved successfully' })
+  async getFeaturedRecommendations() {
+    const recommendations = await this.featuredRecommendationsService.getRecommendations();
+    return { recommendations };
+  }
+
+  @Get('featured-analytics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get featured bands analytics' })
+  @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
+  async getFeaturedAnalytics() {
+    return this.bandsService.getFeaturedAnalytics();
   }
 }

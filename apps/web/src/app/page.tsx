@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { BandCard } from '@/components/bands/BandCard';
 import { VideoCard } from '@/components/videos/VideoCard';
+import FeaturedBandsCarousel from '@/components/home/FeaturedBandsCarousel';
 
 export default async function HomePage() {
   // Fetch featured content - using try/catch for resilience
@@ -38,13 +39,16 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Featured Bands Section */}
+      {/* Featured Bands Carousel */}
+      <FeaturedBandsCarousel />
+
+      {/* All Bands Section */}
       <section className="py-16 bg-gray-50">
         <div className="container-custom">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Featured Bands</h2>
-              <p className="text-gray-600 mt-2">Explore HBCU marching band programs</p>
+              <h2 className="text-3xl font-bold text-gray-900">Explore More Bands</h2>
+              <p className="text-gray-600 mt-2">Discover HBCU marching band programs</p>
             </div>
             <Link href="/bands" className="text-primary-600 hover:text-primary-700 font-medium">
               View All →

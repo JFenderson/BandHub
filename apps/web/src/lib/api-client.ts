@@ -405,6 +405,39 @@ async getSyncStatus(): Promise<any> {
 async getSyncJobStatus(jobId: string): Promise<any> {
   return this.request<any>(`/api/sync/job/${jobId}`);
 }
+
+// Featured Bands methods
+async getFeaturedBands(): Promise<{ bands: any[] }> {
+  return this.request<{ bands: any[] }>(`/api/bands/featured`);
+}
+
+async trackFeaturedClick(bandId: string, sessionId?: string): Promise<{ message: string }> {
+  return this.request<{ message: string }>(`/api/bands/${bandId}/track-featured-click`, {
+    method: 'POST',
+    body: JSON.stringify({ sessionId }),
+  });
+}
+
+async toggleBandFeatured(bandId: string): Promise<any> {
+  return this.request<any>(`/api/bands/${bandId}/featured`, {
+    method: 'PATCH',
+  });
+}
+
+async updateFeaturedOrder(bands: Array<{ id: string; featuredOrder: number }>): Promise<{ message: string }> {
+  return this.request<{ message: string }>(`/api/bands/featured-order`, {
+    method: 'PATCH',
+    body: JSON.stringify({ bands }),
+  });
+}
+
+async getFeaturedRecommendations(): Promise<{ recommendations: any[] }> {
+  return this.request<{ recommendations: any[] }>(`/api/bands/featured-recommendations`);
+}
+
+async getFeaturedAnalytics(): Promise<any> {
+  return this.request<any>(`/api/bands/featured-analytics`);
+}
 }
 
 export const apiClient = new ApiClient(API_URL);
