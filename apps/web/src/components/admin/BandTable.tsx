@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import type { Band } from '@/types/api';
 import BandLogo from '@/components/bands/BandLogo';
 import { format } from 'date-fns';
@@ -157,9 +157,8 @@ export default function BandTable({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {bands.map((band) => (
-            <>
+            <Fragment key={band.id}>
               <tr
-                key={band.id}
                 className={`hover:bg-gray-50 ${
                   expandedRows.has(band.id) ? 'bg-gray-50' : ''
                 }`}
@@ -362,7 +361,7 @@ export default function BandTable({
                   </td>
                 </tr>
               )}
-            </>
+            </Fragment>
           ))}
         </tbody>
       </table>
