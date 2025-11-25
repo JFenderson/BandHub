@@ -265,4 +265,191 @@ export class EmailService {
       </p>
     `);
   }
+
+  // ============ NOTIFICATION EMAIL TEMPLATES ============
+
+  /**
+   * Send new video notification email
+   */
+  async sendNewVideoNotificationEmail(
+    email: string,
+    name: string,
+    bandName: string,
+    videoTitle: string,
+    videoId: string,
+    thumbnailUrl: string,
+  ): Promise<void> {
+    const videoUrl = `${this.appUrl}/videos/${videoId}`;
+    const html = this.getNewVideoNotificationTemplate(name, bandName, videoTitle, videoUrl, thumbnailUrl);
+    await this.sendEmail({
+      to: email,
+      subject: `New video from ${bandName}`,
+      html,
+      text: `Hi ${name}, ${bandName} just posted a new video: ${videoTitle}. Watch it now: ${videoUrl}`,
+    });
+  }
+
+  /**
+   * Send weekly digest email
+   */
+  async sendWeeklyDigestEmail(
+    email: string,
+    name: string,
+    videos: Array<{
+      id: string;
+      title: string;
+      bandName: string;
+      thumbnailUrl: string;
+    }>,
+  ): Promise<void> {
+    const html = this.getWeeklyDigestTemplate(name, videos);
+    await this.sendEmail({
+      to: email,
+      subject: 'Your weekly HBCU Band Hub digest',
+      html,
+      text: `Hi ${name}, here's your weekly digest of ${videos.length} new videos from bands you follow.`,
+    });
+  }
+
+  /**
+   * Send upcoming event notification email
+   */
+  async sendUpcomingEventEmail(
+    email: string,
+    name: string,
+    eventName: string,
+    bandName: string,
+    eventDate: Date,
+    bandId: string,
+  ): Promise<void> {
+    const bandUrl = `${this.appUrl}/bands/${bandId}`;
+    const html = this.getUpcomingEventTemplate(name, eventName, bandName, eventDate, bandUrl);
+    await this.sendEmail({
+      to: email,
+      subject: `Upcoming: ${eventName}`,
+      html,
+      text: `Hi ${name}, ${bandName} will be performing at ${eventName} on ${eventDate.toLocaleDateString()}. Check their page: ${bandUrl}`,
+    });
+  }
+
+  private getNewVideoNotificationTemplate(
+    name: string,
+    bandName: string,
+    videoTitle: string,
+    videoUrl: string,
+    thumbnailUrl: string,
+  ): string {
+    return this.getBaseTemplate(`
+      <h2 style="margin: 0 0 16px; color: #111827; font-size: 20px;">New Video from ${bandName}</h2>
+      <p style="margin: 0 0 16px; color: #374151; line-height: 1.6;">
+        Hi ${name}, ${bandName} just posted a new video!
+      </p>
+      <div style="margin: 0 0 24px; border-radius: 8px; overflow: hidden;">
+        <a href="${videoUrl}" style="display: block;">
+          <img src="${thumbnailUrl}" alt="${videoTitle}" style="width: 100%; height: auto; display: block;" />
+        </a>
+      </div>
+      <p style="margin: 0 0 24px; color: #111827; font-size: 16px; font-weight: 500;">
+        ${videoTitle}
+      </p>
+      <a href="${videoUrl}" style="display: inline-block; padding: 12px 24px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">
+        Watch Now
+      </a>
+      <p style="margin: 24px 0 0; color: #6b7280; font-size: 14px;">
+        <a href="${this.appUrl}/profile/following" style="color: #dc2626;">Manage your followed bands</a>
+      </p>
+    `);
+  }
+
+  private getWeeklyDigestTemplate(
+    name: string,
+    videos: Array<{
+      id: string;
+      title: string;
+      bandName: string;
+      thumbnailUrl: string;
+    }>,
+  ): string {
+    const videoItems = videos.slice(0, 5).map(video => `
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="width: 120px; vertical-align: top;">
+                <a href="${this.appUrl}/videos/${video.id}">
+                  <img src="${video.thumbnailUrl}" alt="${video.title}" style="width: 120px; height: 68px; object-fit: cover; border-radius: 4px;" />
+                </a>
+              </td>
+              <td style="padding-left: 12px; vertical-align: top;">
+                <a href="${this.appUrl}/videos/${video.id}" style="color: #111827; text-decoration: none; font-weight: 500; display: block; margin-bottom: 4px;">
+                  ${video.title}
+                </a>
+                <span style="color: #6b7280; font-size: 14px;">${video.bandName}</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `).join('');
+
+    return this.getBaseTemplate(`
+      <h2 style="margin: 0 0 16px; color: #111827; font-size: 20px;">Your Weekly Digest</h2>
+      <p style="margin: 0 0 24px; color: #374151; line-height: 1.6;">
+        Hi ${name}, here's what's new from the bands you follow this week!
+      </p>
+      <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        ${videoItems}
+      </table>
+      ${videos.length > 5 ? `
+        <p style="margin: 24px 0; color: #6b7280; text-align: center;">
+          And ${videos.length - 5} more videos...
+        </p>
+      ` : ''}
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="${this.appUrl}/profile/favorites" style="display: inline-block; padding: 12px 24px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">
+          View All Videos
+        </a>
+      </div>
+      <p style="margin: 24px 0 0; color: #6b7280; font-size: 14px; text-align: center;">
+        <a href="${this.appUrl}/notifications" style="color: #dc2626;">Manage notification settings</a>
+      </p>
+    `);
+  }
+
+  private getUpcomingEventTemplate(
+    name: string,
+    eventName: string,
+    bandName: string,
+    eventDate: Date,
+    bandUrl: string,
+  ): string {
+    const formattedDate = eventDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    return this.getBaseTemplate(`
+      <h2 style="margin: 0 0 16px; color: #111827; font-size: 20px;">Upcoming Event</h2>
+      <p style="margin: 0 0 16px; color: #374151; line-height: 1.6;">
+        Hi ${name}, ${bandName} will be performing soon!
+      </p>
+      <div style="background-color: #f9fafb; border-radius: 8px; padding: 24px; margin: 0 0 24px;">
+        <h3 style="margin: 0 0 8px; color: #111827; font-size: 18px;">${eventName}</h3>
+        <p style="margin: 0 0 4px; color: #374151;">
+          <strong>Band:</strong> ${bandName}
+        </p>
+        <p style="margin: 0; color: #374151;">
+          <strong>Date:</strong> ${formattedDate}
+        </p>
+      </div>
+      <a href="${bandUrl}" style="display: inline-block; padding: 12px 24px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500;">
+        View Band Page
+      </a>
+      <p style="margin: 24px 0 0; color: #6b7280; font-size: 14px;">
+        <a href="${this.appUrl}/notifications" style="color: #dc2626;">Manage notification settings</a>
+      </p>
+    `);
+  }
 }

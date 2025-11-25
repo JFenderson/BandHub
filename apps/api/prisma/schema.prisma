@@ -36,6 +36,7 @@ model Band {
   opponentVideos     Video[]    @relation("OpponentBandVideos")
   syncJobs           SyncJob[]
   featuredClicks     FeaturedBandClick[]
+  followers          FavoriteBand[]
 
   @@index([slug])
   @@index([schoolName])
@@ -70,6 +71,8 @@ model Video {
   band           Band      @relation("BandVideos", fields: [bandId], references: [id], onDelete: Cascade)
   category       Category? @relation(fields: [categoryId], references: [id])
   opponentBand   Band?     @relation("OpponentBandVideos", fields: [opponentBandId], references: [id])
+  favorites      FavoriteVideo[]
+  watchLater     WatchLater[]
 
   @@index([bandId])
   @@index([opponentBandId])
@@ -219,6 +222,11 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
   sessions                UserSession[]
+  favoriteVideos          FavoriteVideo[]
+  favoriteBands           FavoriteBand[]
+  watchLater              WatchLater[]
+  notifications           Notification[]
+  notificationPreferences NotificationPreference?
 
   @@index([email])
   @@map("users")
@@ -319,4 +327,88 @@ model FeaturedBandClick {
   @@index([bandId])
   @@index([clickedAt])
   @@map("featured_band_clicks")
+}
+
+// ============ FAVORITES AND BOOKMARKS MODELS ============
+
+model FavoriteVideo {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  videoId   String   @map("video_id")
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@index([videoId])
+  @@map("favorite_videos")
+}
+
+model FavoriteBand {
+  id                   String   @id @default(cuid())
+  userId               String   @map("user_id")
+  bandId               String   @map("band_id")
+  notificationsEnabled Boolean  @default(true) @map("notifications_enabled")
+  createdAt            DateTime @default(now()) @map("created_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  band Band @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, bandId])
+  @@index([userId])
+  @@index([bandId])
+  @@map("favorite_bands")
+}
+
+model WatchLater {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  videoId   String    @map("video_id")
+  watched   Boolean   @default(false)
+  watchedAt DateTime? @map("watched_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@index([videoId])
+  @@map("watch_later")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      String   // 'NEW_VIDEO', 'UPCOMING_EVENT', 'WEEKLY_DIGEST'
+  title     String
+  message   String   @db.Text
+  data      Json?    // Additional data (videoId, bandId, etc.)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id                 String   @id @default(cuid())
+  userId             String   @unique @map("user_id")
+  emailNewVideo      Boolean  @default(true) @map("email_new_video")
+  emailUpcoming      Boolean  @default(true) @map("email_upcoming")
+  emailWeeklyDigest  Boolean  @default(true) @map("email_weekly_digest")
+  inAppNotifications Boolean  @default(true) @map("in_app_notifications")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notification_preferences")
 }
