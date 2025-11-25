@@ -32,6 +32,14 @@ model Band {
   createdAt          DateTime   @default(now()) @map("created_at")
   updatedAt          DateTime   @updatedAt @map("updated_at")
   searchKeywords     String[]   @default([]) @map("search_keywords")
+  
+  // Sync tracking fields for historical backfill
+  firstSyncedAt      DateTime?  @map("first_synced_at")     // When we first synced this band
+  earliestVideoDate  DateTime?  @map("earliest_video_date") // Oldest video we have for this band
+  latestVideoDate    DateTime?  @map("latest_video_date")   // Newest video we have for this band
+  totalVideoCount    Int        @default(0) @map("total_video_count") // Cache of video count
+  lastFullSync       DateTime?  @map("last_full_sync")      // Last time we did a complete historical sync
+  
   videos             Video[]    @relation("BandVideos")
   opponentVideos     Video[]    @relation("OpponentBandVideos")
   syncJobs           SyncJob[]
@@ -44,6 +52,7 @@ model Band {
   @@index([conference])
   @@index([isActive, isFeatured])
   @@index([featuredOrder])
+  @@index([youtubeChannelId])
   @@map("bands")
 }
 
@@ -180,11 +189,22 @@ model SyncJob {
   startedAt     DateTime?     @map("started_at")
   completedAt   DateTime?     @map("completed_at")
   createdAt     DateTime      @default(now()) @map("created_at")
+  
+  // Sync parameters for historical backfill
+  publishedAfter  DateTime?   @map("published_after")
+  publishedBefore DateTime?   @map("published_before")
+  maxVideos       Int?        @map("max_videos")
+  
+  // Quota tracking
+  quotaUsed       Int         @default(0) @map("quota_used")
+  errorMessage    String?     @map("error_message")
+  
   band          Band?         @relation(fields: [bandId], references: [id], onDelete: SetNull)
 
   @@index([bandId])
   @@index([status])
   @@index([createdAt(sort: Desc)])
+  @@index([bandId, status])
   @@map("sync_jobs")
 }
 
@@ -293,6 +313,7 @@ enum SyncJobType {
   FULL_SYNC
   INCREMENTAL_SYNC
   SINGLE_VIDEO
+  CHANNEL_SYNC
 }
 
 enum SyncJobStatus {

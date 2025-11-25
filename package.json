@@ -27,7 +27,8 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
-    "clean": "turbo run clean && rm -rf node_modules dist"
+    "clean": "turbo run clean && rm -rf node_modules dist",
+    "backfill": "tsx apps/api/src/scripts/backfill-historical-videos.ts"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

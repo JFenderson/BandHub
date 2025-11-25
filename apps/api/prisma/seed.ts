@@ -11,6 +11,13 @@ async function main() {
     await seedCategories(prisma);
     await seedBands(prisma);
     
+    // Optional: Trigger initial sync for bands with YouTube channel IDs
+    if (process.env.SEED_WITH_SYNC === 'true') {
+      console.log('\n📺 SEED_WITH_SYNC enabled - Initial video sync would be triggered');
+      console.log('   Note: To sync videos, run: npm run backfill');
+      console.log('   Or use the admin API endpoints after the application starts.');
+    }
+    
     // Add more seeders here as needed:
     // await seedVideos(prisma);
     // await seedAdminUsers(prisma);
