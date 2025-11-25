@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsArray, IsUrl, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsArray, IsUrl, Min, Max, IsBoolean, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateBandDto {
@@ -6,9 +6,15 @@ export class CreateBandDto {
   @IsString()
   name!: string;
 
-  @ApiProperty({ example: 'Jackson State University' })
+  @ApiPropertyOptional({ example: 'Jackson State University' })
+  @IsOptional()
   @IsString()
-  schoolName!: string;
+  schoolName?: string;
+
+  @ApiPropertyOptional({ example: 'Jackson State University', description: 'School name (alias for schoolName)' })
+  @IsOptional()
+  @IsString()
+  school?: string;
 
   @ApiProperty({ example: 'Jackson' })
   @IsString()
@@ -55,4 +61,42 @@ export class CreateBandDto {
   @IsArray()
   @IsString({ each: true })
   youtubePlaylistIds?: string[];
+
+  @ApiPropertyOptional({ description: 'Whether the band is active', default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'Whether the band is featured', default: false })
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
+
+  // Fields that may be sent from frontend but are not in the Prisma schema
+  // Marked as optional to accept them without validation errors
+
+  @ApiPropertyOptional({ description: 'Band nickname (not persisted)' })
+  @IsOptional()
+  @IsString()
+  nickname?: string;
+
+  @ApiPropertyOptional({ description: 'Division (not persisted)' })
+  @IsOptional()
+  @IsString()
+  division?: string;
+
+  @ApiPropertyOptional({ description: 'Founded year alias (not persisted)' })
+  @IsOptional()
+  @IsNumber()
+  founded?: number;
+
+  @ApiPropertyOptional({ description: 'Band colors (not persisted)' })
+  @IsOptional()
+  @IsString()
+  colors?: string;
+
+  @ApiPropertyOptional({ description: 'Website URL (not persisted)' })
+  @IsOptional()
+  @IsString()
+  website?: string;
 }

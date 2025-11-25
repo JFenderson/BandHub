@@ -228,7 +228,7 @@ export default function BandFormModal({
                   type="text"
                   id="school"
                   name="school"
-                  value={formData.school}
+                  value={formData.school || ''}
                   onChange={handleChange}
                   required
                   disabled={isLoading}
@@ -247,7 +247,7 @@ export default function BandFormModal({
                   type="text"
                   id="city"
                   name="city"
-                  value={formData.city}
+                  value={formData.city || ''}
                   onChange={handleChange}
                   required
                   disabled={isLoading}
@@ -263,7 +263,7 @@ export default function BandFormModal({
                   type="text"
                   id="state"
                   name="state"
-                  value={formData.state}
+                  value={formData.state || ''}
                   onChange={handleChange}
                   required
                   disabled={isLoading}
@@ -280,7 +280,7 @@ export default function BandFormModal({
                 <select
                   id="conference"
                   name="conference"
-                  value={formData.conference}
+                  value={formData.conference || ''}
                   onChange={handleChange}
                   disabled={isLoading}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
@@ -303,7 +303,7 @@ export default function BandFormModal({
               <textarea
                 id="description"
                 name="description"
-                value={formData.description}
+                value={formData.description || ''}
                 onChange={handleChange}
                 disabled={isLoading}
                 rows={3}
@@ -338,7 +338,7 @@ export default function BandFormModal({
                   type="url"
                   id="website"
                   name="website"
-                  value={formData.website}
+                  value={formData.website || ''}
                   onChange={handleChange}
                   disabled={isLoading}
                   placeholder="https://..."
@@ -363,7 +363,7 @@ export default function BandFormModal({
                     type="text"
                     id="youtubeChannelId"
                     name="youtubeChannelId"
-                    value={formData.youtubeChannelId}
+                    value={formData.youtubeChannelId || ''}
                     onChange={handleChange}
                     disabled={isLoading}
                     placeholder="UC..."

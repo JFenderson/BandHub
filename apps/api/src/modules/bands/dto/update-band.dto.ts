@@ -17,6 +17,11 @@ export class UpdateBandDto {
   @IsString()
   schoolName?: string;
 
+  @ApiPropertyOptional({ description: 'School name (alias for schoolName)' })
+  @IsOptional()
+  @IsString()
+  school?: string;
+
   @ApiPropertyOptional({ description: 'City where the school is located' })
   @IsOptional()
   @IsString()
@@ -73,4 +78,32 @@ export class UpdateBandDto {
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean;
+
+  // Fields that may be sent from frontend but are not in the Prisma schema
+  // Marked as optional to accept them without validation errors
+
+  @ApiPropertyOptional({ description: 'Band nickname (not persisted)' })
+  @IsOptional()
+  @IsString()
+  nickname?: string;
+
+  @ApiPropertyOptional({ description: 'Division (not persisted)' })
+  @IsOptional()
+  @IsString()
+  division?: string;
+
+  @ApiPropertyOptional({ description: 'Founded year alias (not persisted)' })
+  @IsOptional()
+  @IsNumber()
+  founded?: number;
+
+  @ApiPropertyOptional({ description: 'Band colors (not persisted)' })
+  @IsOptional()
+  @IsString()
+  colors?: string;
+
+  @ApiPropertyOptional({ description: 'Website URL (not persisted)' })
+  @IsOptional()
+  @IsString()
+  website?: string;
 }
