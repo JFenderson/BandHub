@@ -5,6 +5,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
 
+// Configuration constants
+const CAROUSEL_CONFIG = {
+  AUTO_ROTATE_INTERVAL: 5000, // 5 seconds
+  DESCRIPTION_MAX_LENGTH: 150,
+  DEFAULT_DESCRIPTION: 'Explore this amazing HBCU band and their performances.',
+  DEFAULT_PRIMARY_COLOR: '#1e3a5f',
+  DEFAULT_SECONDARY_COLOR: '#c5a900',
+};
+
 interface FeaturedBandVideo {
   id: string;
   title: string;
@@ -71,17 +80,22 @@ export default function FeaturedBandsCarousel() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Auto-rotate every 5 seconds
+  // Calculate max index for carousel navigation
+  const calculateMaxIndex = useCallback(() => {
+    return Math.max(0, bands.length - visibleCount);
+  }, [bands.length, visibleCount]);
+
+  // Auto-rotate carousel
   const startAutoPlay = useCallback(() => {
     if (autoPlayRef.current) {
       clearInterval(autoPlayRef.current);
     }
     autoPlayRef.current = setInterval(() => {
       if (!isPaused && bands.length > visibleCount) {
-        setCurrentIndex((prev) => (prev + 1) % Math.max(1, bands.length - visibleCount + 1));
+        setCurrentIndex((prev) => (prev + 1) % (calculateMaxIndex() + 1));
       }
-    }, 5000);
-  }, [isPaused, bands.length, visibleCount]);
+    }, CAROUSEL_CONFIG.AUTO_ROTATE_INTERVAL);
+  }, [isPaused, bands.length, visibleCount, calculateMaxIndex]);
 
   useEffect(() => {
     if (bands.length > visibleCount) {
@@ -101,7 +115,7 @@ export default function FeaturedBandsCarousel() {
   };
 
   const goToNext = () => {
-    setCurrentIndex((prev) => Math.min(bands.length - visibleCount, prev + 1));
+    setCurrentIndex((prev) => Math.min(calculateMaxIndex(), prev + 1));
     startAutoPlay();
   };
 
@@ -121,10 +135,10 @@ export default function FeaturedBandsCarousel() {
   };
 
   // Truncate description
-  const truncateDescription = (text: string | null, maxLength: number = 150) => {
-    if (!text) return 'Explore this amazing HBCU band and their performances.';
-    if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength).trim() + '...';
+  const truncateDescription = (text: string | null) => {
+    if (!text) return CAROUSEL_CONFIG.DEFAULT_DESCRIPTION;
+    if (text.length <= CAROUSEL_CONFIG.DESCRIPTION_MAX_LENGTH) return text;
+    return text.slice(0, CAROUSEL_CONFIG.DESCRIPTION_MAX_LENGTH).trim() + '...';
   };
 
   if (loading) {
@@ -151,7 +165,7 @@ export default function FeaturedBandsCarousel() {
     return null; // Don't show section if no featured bands
   }
 
-  const maxIndex = Math.max(0, bands.length - visibleCount);
+  const maxIndex = calculateMaxIndex();
   const dotCount = maxIndex + 1;
 
   return (
@@ -213,14 +227,14 @@ export default function FeaturedBandsCarousel() {
                   <div
                     className="bg-white rounded-xl shadow-lg overflow-hidden h-full hover:shadow-xl transition-shadow"
                     style={{
-                      borderTop: `4px solid ${band.schoolColors?.primary || '#1e3a5f'}`,
+                      borderTop: `4px solid ${band.schoolColors?.primary || CAROUSEL_CONFIG.DEFAULT_PRIMARY_COLOR}`,
                     }}
                   >
                     {/* Band Header with Logo */}
                     <div
                       className="p-6 flex items-center gap-4"
                       style={{
-                        background: `linear-gradient(135deg, ${band.schoolColors?.primary || '#1e3a5f'}20, ${band.schoolColors?.secondary || '#c5a900'}20)`,
+                        background: `linear-gradient(135deg, ${band.schoolColors?.primary || CAROUSEL_CONFIG.DEFAULT_PRIMARY_COLOR}20, ${band.schoolColors?.secondary || CAROUSEL_CONFIG.DEFAULT_SECONDARY_COLOR}20)`,
                       }}
                     >
                       <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center overflow-hidden flex-shrink-0">

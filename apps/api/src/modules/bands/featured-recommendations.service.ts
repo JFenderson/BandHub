@@ -2,6 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { Prisma } from '@prisma/client';
 
+// Configuration constants for the recommendation algorithm
+const RECOMMENDATION_CONFIG = {
+  // Time periods in days
+  RECENT_ACTIVITY_DAYS: 30,
+  RECENT_SYNC_DAYS: 7,
+  // Scoring weights (should sum to 1.0)
+  ACTIVITY_WEIGHT: 0.4,
+  POPULARITY_WEIGHT: 0.3,
+  DIVERSITY_WEIGHT: 0.2,
+  RECENCY_WEIGHT: 0.1,
+  // Thresholds
+  HIGH_ENGAGEMENT_VIEWS: 10000,
+};
+
 interface RecommendationScore {
   activityScore: number;
   popularityScore: number;
@@ -65,7 +79,7 @@ export class FeaturedRecommendationsService {
           where: {
             isHidden: false,
             publishedAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+              gte: new Date(Date.now() - RECOMMENDATION_CONFIG.RECENT_ACTIVITY_DAYS * 24 * 60 * 60 * 1000),
             },
           },
           select: {
@@ -124,34 +138,36 @@ export class FeaturedRecommendationsService {
     band: BandWithStats,
     featuredConferences: Set<string>,
   ): RecommendationScore {
-    // Activity Score (40% weight)
+    // Activity Score
     const recentVideosCount = band.videos.length;
     const lastSyncRecent = band.lastSyncAt
-      ? (Date.now() - new Date(band.lastSyncAt).getTime()) < 7 * 24 * 60 * 60 * 1000
+      ? (Date.now() - new Date(band.lastSyncAt).getTime()) < RECOMMENDATION_CONFIG.RECENT_SYNC_DAYS * 24 * 60 * 60 * 1000
       : false;
     const activityScore = Math.min(
       (recentVideosCount * 10) + (lastSyncRecent ? 20 : 0),
       100,
-    ) * 0.4;
+    ) * RECOMMENDATION_CONFIG.ACTIVITY_WEIGHT;
 
-    // Popularity Score (30% weight)
+    // Popularity Score
     const totalVideos = band._count.videos;
     const totalViews = band.videos.reduce((sum, v) => sum + v.viewCount, 0);
     const avgViews = totalVideos > 0 ? totalViews / totalVideos : 0;
     const popularityScore = Math.min(
       (totalVideos * 2) + (avgViews / 1000),
       100,
-    ) * 0.3;
+    ) * RECOMMENDATION_CONFIG.POPULARITY_WEIGHT;
 
-    // Diversity Score (20% weight)
+    // Diversity Score
     const isUnderrepresentedConference = band.conference
       ? !featuredConferences.has(band.conference)
       : true;
-    const diversityScore = isUnderrepresentedConference ? 100 * 0.2 : 50 * 0.2;
+    const diversityScore = isUnderrepresentedConference 
+      ? 100 * RECOMMENDATION_CONFIG.DIVERSITY_WEIGHT 
+      : 50 * RECOMMENDATION_CONFIG.DIVERSITY_WEIGHT;
 
-    // Recency Penalty (10% weight) - Bonus for never featured
+    // Recency Penalty - Bonus for never featured
     const neverFeatured = !band.featuredSince;
-    const recencyPenalty = neverFeatured ? 100 * 0.1 : 0;
+    const recencyPenalty = neverFeatured ? 100 * RECOMMENDATION_CONFIG.RECENCY_WEIGHT : 0;
 
     return {
       activityScore,
@@ -195,14 +211,14 @@ export class FeaturedRecommendationsService {
       const daysSinceSync = Math.floor(
         (Date.now() - new Date(band.lastSyncAt).getTime()) / (24 * 60 * 60 * 1000),
       );
-      if (daysSinceSync < 7) {
+      if (daysSinceSync < RECOMMENDATION_CONFIG.RECENT_SYNC_DAYS) {
         reasoning.push('Recently synced (active channel)');
       }
     }
 
     // Video engagement
     const totalViews = band.videos.reduce((sum, v) => sum + v.viewCount, 0);
-    if (totalViews > 10000) {
+    if (totalViews > RECOMMENDATION_CONFIG.HIGH_ENGAGEMENT_VIEWS) {
       reasoning.push('High engagement rate');
     }
 

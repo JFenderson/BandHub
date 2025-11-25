@@ -38,7 +38,7 @@ export default function BandTable({
       }
     } catch (error) {
       console.error('Failed to toggle featured:', error);
-      alert(error instanceof Error ? error.message : 'Failed to toggle featured status');
+      // The error will be handled by the parent component through onToggleFeatured callback
     } finally {
       setTogglingFeatured(prev => {
         const next = new Set(prev);

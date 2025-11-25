@@ -76,9 +76,14 @@ function SortableBandItem({ band, onUnfeature, hasQualityWarning, warningReason 
       </div>
 
       {/* Band Logo */}
-      <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
+      <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden flex-shrink-0 relative">
         {band.logoUrl ? (
-          <img src={band.logoUrl} alt={band.name} className="w-full h-full object-cover" />
+          <img 
+            src={band.logoUrl} 
+            alt={band.name} 
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">
             {band.name.charAt(0)}
