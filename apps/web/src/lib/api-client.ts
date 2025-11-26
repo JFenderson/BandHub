@@ -1,9 +1,11 @@
 import type { 
   Band, 
   Video, 
+  Creator,
   PaginatedResponse, 
   VideoFilters, 
   BandFilters,
+  CreatorFilters,
   ApiResponse,
   AdminVideoFilters,
   VideoDetail,
@@ -320,6 +322,46 @@ class ApiClient {
 
   async getCategories(): Promise<any[]> {
     return this.request<any[]>(`/api/categories`);
+  }
+
+  // Creator methods
+  async getCreators(filters?: CreatorFilters): Promise<PaginatedResponse<Creator>> {
+    const params = new URLSearchParams();
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.isFeatured !== undefined) params.append('isFeatured', String(filters.isFeatured));
+    if (filters?.isVerified !== undefined) params.append('isVerified', String(filters.isVerified));
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const query = params.toString();
+    return this.request<PaginatedResponse<Creator>>(
+      `/api/creators${query ? `?${query}` : ''}`
+    );
+  }
+
+  async getCreator(id: string): Promise<Creator> {
+    return this.request<Creator>(`/api/creators/${id}`);
+  }
+
+  async getCreatorVideos(id: string, filters?: VideoFilters): Promise<PaginatedResponse<Video>> {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const query = params.toString();
+    return this.request<PaginatedResponse<Video>>(
+      `/api/creators/${id}/videos${query ? `?${query}` : ''}`
+    );
+  }
+
+  async getFeaturedCreators(): Promise<PaginatedResponse<Creator>> {
+    return this.request<PaginatedResponse<Creator>>(`/api/creators/featured`);
   }
 
   // Admin video moderation methods

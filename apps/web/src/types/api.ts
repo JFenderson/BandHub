@@ -8,6 +8,29 @@ import type {
 // Remove the duplicate import from @hbcu-band-hub/shared
 // Remove the conflicting re-export
 
+// Content Creator type
+export interface Creator {
+  id: string;
+  name: string;
+  youtubeChannelId: string;
+  channelUrl: string;
+  description?: string | null;
+  logoUrl?: string | null;
+  thumbnailUrl?: string | null;
+  subscriberCount: number;
+  totalVideoCount: number;
+  videosInOurDb: number;
+  isVerified: boolean;
+  isFeatured: boolean;
+  qualityScore: number;
+  lastSyncedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    videos?: number;
+  };
+}
+
 // Extend the shared types with frontend-specific properties
 export type Band = SharedBand & {
   _count?: {
@@ -18,6 +41,15 @@ export type Band = SharedBand & {
 export type Video = SharedVideo & {
   band?: Band;
   opponentBand?: Band;
+  creator?: {
+    id: string;
+    name: string;
+    logoUrl?: string | null;
+    thumbnailUrl?: string | null;
+    isVerified?: boolean;
+    isFeatured?: boolean;
+    qualityScore?: number;
+  };
 };
 
 // Re-export VideoCategory (no changes needed)
@@ -132,4 +164,15 @@ export interface BulkVideoUpdateResponse {
   successfulIds: string[];
   failedIds: string[];
   errors?: { [videoId: string]: string };
+}
+
+// Creator filter types
+export interface CreatorFilters {
+  search?: string;
+  isFeatured?: boolean;
+  isVerified?: boolean;
+  sortBy?: 'qualityScore' | 'videosInOurDb' | 'name' | 'subscriberCount';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
 }

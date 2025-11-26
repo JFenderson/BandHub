@@ -41,6 +41,14 @@ export interface Video {
     name: string;
     school: string;
   };
+  creator?: {
+    id: string;
+    name: string;
+    logoUrl?: string | null;
+    thumbnailUrl?: string | null;
+    isVerified?: boolean;
+    isFeatured?: boolean;
+  };
 }
 
 export interface CreateVideoDto {
