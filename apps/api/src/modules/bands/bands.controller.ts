@@ -169,7 +169,7 @@ export class BandsController {
 
   @Post(':id/upload-logo')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @Roles(AdminRole.ADMIN, AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(
     FileInterceptor('logo', {
@@ -236,7 +236,7 @@ export class BandsController {
 
   @Post(':id/upload-banner')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @Roles(AdminRole.ADMIN, AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(
     FileInterceptor('banner', {
@@ -319,8 +319,8 @@ export class BandsController {
 
   @Patch(':id/featured')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
-  @ApiBearerAuth('JWT-auth')
+    @Roles(AdminRole.ADMIN, AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+    @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Toggle featured status for a band' })
   @ApiResponse({ status: 200, description: 'Featured status toggled successfully' })
   @ApiResponse({ status: 400, description: 'Max featured bands limit reached' })
@@ -334,7 +334,7 @@ export class BandsController {
 
   @Patch('featured-order')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+ @Roles(AdminRole.ADMIN, AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update featured bands order' })
   @ApiResponse({ status: 200, description: 'Featured order updated successfully' })

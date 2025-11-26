@@ -444,9 +444,12 @@ export class BandsService {
       return updatedBand;
     } else {
       // Featuring - check max limit
-      const featuredCount = await this.prismaService.band.count({
-        where: { isFeatured: true },
-      });
+   const featuredCount = await this.prismaService. band.count({
+  where: { 
+    isFeatured: true,
+    id: { not: bandId }, // Exclude the current band from count
+  },
+});
 
       if (featuredCount >= MAX_FEATURED_BANDS) {
         throw new BadRequestException(

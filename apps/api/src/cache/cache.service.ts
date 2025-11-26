@@ -54,16 +54,28 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     await this.client.del(key);
   }
 
-  async delPattern(pattern: string): Promise<void> {
-    try {
-      const keys = await this.client.keys(pattern);
+async delPattern(pattern: string): Promise<void> {
+  try {
+    // Use SCAN instead of KEYS for better performance
+    let cursor = '0';
+    do {
+      const [newCursor, keys] = await this.client.scan(
+        cursor,
+        'MATCH',
+        pattern,
+        'COUNT',
+        100
+      );
+      cursor = newCursor;
+      
       if (keys.length > 0) {
         await this.client.del(...keys);
       }
-    } catch (error) {
-      console.error(`Cache delPattern error for pattern ${pattern}:`, error);
-    }
+    } while (cursor !== '0');
+  } catch (error) {
+    console. error(`Cache delPattern error for pattern ${pattern}:`, error);
   }
+}
 
   async exists(key: string): Promise<boolean> {
     const result = await this.client.exists(key);

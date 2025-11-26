@@ -1,7 +1,4 @@
-  @ApiPropertyOptional({ description: 'Content Creator ID' })
-  @IsOptional()
-  @IsString()
-  creatorId?: string;
+
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNumber, IsArray, IsOptional, IsUrl, Min, Max } from 'class-validator';
 
@@ -80,4 +77,9 @@ export class CreateVideoDto {
   @Min(1)
   @Max(10)
   qualityScore?: number;
+
+  @ApiPropertyOptional({ description: 'Content Creator ID' })
+  @IsOptional()
+  @IsString()
+  creatorId?: string;
 }

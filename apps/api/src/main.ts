@@ -8,6 +8,10 @@ import { join } from 'path';
 async function bootstrap() {
    const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  const cacheService = app.get(CacheService);
+  await cacheService.delPattern('bands:*');
+  await cacheService.delPattern('videos:*');
+
   // Global prefix for all routes
   app.setGlobalPrefix('api');
 

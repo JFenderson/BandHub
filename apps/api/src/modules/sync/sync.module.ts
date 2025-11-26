@@ -3,9 +3,10 @@ import { SyncController, AdminSyncJobController, AdminQueueController, AdminSync
 import { SyncService } from './sync.service';
 import { QueueModule } from '../../queue/queue.module';
 import { DatabaseModule } from '../../database/database.module';
+import { YoutubeModule } from '../../youtube/youtube.module'; // Add this
 
 @Module({
-  imports: [QueueModule, DatabaseModule],
+  imports: [QueueModule, DatabaseModule, YoutubeModule],
   controllers: [SyncController, AdminSyncJobController, AdminQueueController, AdminSyncErrorController],
   providers: [SyncService],
   exports: [SyncService],

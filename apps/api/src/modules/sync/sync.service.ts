@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { QueueService } from '../../queue/queue.service';
 import { DatabaseService } from '../../database/database.service';
 import { QUEUE_NAMES, SyncMode } from '@hbcu-band-hub/shared-types';
@@ -7,12 +7,15 @@ import { SyncJobDetailDto, SyncJobListResponseDto } from './dto/sync-job-detail.
 import { QueueStatusDto, ErrorStatsResponseDto, ErrorStatDto } from './dto/queue-status.dto';
 import { TriggerSyncDto, TriggerSyncType } from './dto/trigger-sync.dto';
 import { Prisma } from '@prisma/client';
+import { YoutubeService } from '../../youtube/youtube.service';
 
 @Injectable()
 export class SyncService {
+  private readonly logger = new Logger(SyncService.name);
   constructor(
     private readonly queueService: QueueService,
     private readonly database: DatabaseService,
+    private readonly youtubeService: YoutubeService,
   ) {}
 
   /**
@@ -102,49 +105,99 @@ export class SyncService {
    * Sync all videos from a content creator's channel
    */
   async syncCreatorChannel(creatorId: string, options?: {
-    fullSync?: boolean;
-    publishedAfter?: Date;
-    publishedBefore?: Date;
-    maxVideos?: number;
-  }) {
-    const creator = await this.database.contentCreator.findUnique({ where: { id: creatorId } });
-    if (!creator) {
-      throw new Error(`Content creator not found: ${creatorId}`);
-    }
-
-    const videos: any[] = [];
-
-    let added = 0;
-    let updated = 0;
-    const errors: any[] = [];
-
-    for (const video of videos) {
-      const detection = SyncService.detectBands(`${video.title} ${video.description || ''}`);
-      try {
-        await this.upsertVideoWithCreator(video, detection.bandId, creatorId, detection.opponentBandId);
-        added++;
-      } catch (err: any) {
-        errors.push({ videoId: video.id, error: err.message });
-      }
-    }
-
-    await this.database.contentCreator.update({
-      where: { id: creatorId },
-      data: {
-        lastSyncedAt: new Date(),
-        videosInOurDb: added,
-      },
-    });
-
-    return {
-      creatorId,
-      added,
-      updated,
-      errors,
-      message: `Synced ${added} videos for creator ${creator.name}`,
-      options,
-    };
+  fullSync?: boolean;
+  publishedAfter?: Date;
+  publishedBefore?: Date;
+  maxVideos?: number;
+}) {
+  const creator = await this.database.contentCreator.findUnique({ 
+    where: { id: creatorId } 
+  });
+  
+  if (!creator) {
+    throw new Error(`Content creator not found: ${creatorId}`);
   }
+
+  this.logger.log(`Syncing videos from creator: ${creator.name}`);
+
+  // Fetch videos from YouTube channel
+    const videos = await this. youtubeService.getChannelVideos(
+      creator.youtubeChannelId,
+      options?. maxVideos || 50
+    );
+
+  let added = 0;
+  let updated = 0;
+  const errors: any[] = [];
+
+  for (const video of videos) {
+    try {
+      // Detect which HBCU bands appear in this video
+      const detection = SyncService.detectBands(
+        `${video.title} ${video.description || ''}`
+      );
+
+      // Save video with creator attribution
+      const existing = await this.database.video.findUnique({
+        where: { youtubeId: video.youtubeId },
+      });
+
+      if (existing) {
+        // Update existing video
+        await this.database.video.update({
+          where: { id: existing.id },
+          data: {
+            viewCount: video.viewCount,
+            title: video.title,
+            description: video.description,
+            thumbnailUrl: video.thumbnailUrl,
+            creatorId: creatorId,
+          },
+        });
+        updated++;
+      } else {
+        // Create new video
+        await this.database.video.create({
+          data: {
+            youtubeId: video.youtubeId,
+            title: video.title,
+            description: video.description || '',
+            thumbnailUrl: video.thumbnailUrl,
+            publishedAt: video.publishedAt,
+            duration: video.duration,
+            viewCount: video.viewCount,
+            creatorId: creatorId,
+            bandId: detection.bandId,
+            opponentBandId: detection.opponentBandId,
+          },
+        });
+        added++;
+      }
+    } catch (err: any) {
+      this.logger.error(`Error processing video ${video.youtubeId}: ${err.message}`);
+      errors.push({ videoId: video.youtubeId, error: err.message });
+    }
+  }
+
+  // Update creator stats
+  await this.database.contentCreator.update({
+    where: { id: creatorId },
+    data: {
+      lastSyncedAt: new Date(),
+      videosInOurDb: { increment: added },
+    },
+  });
+
+  return {
+    creatorId,
+    creatorName: creator.name,
+    videosProcessed: videos.length,
+    added,
+    updated,
+    errors,
+    message: `Synced ${added} new and ${updated} updated videos from ${creator.name}`,
+  };
+}
 
   /**
    * Sync all featured/verified creators (scheduled job)
