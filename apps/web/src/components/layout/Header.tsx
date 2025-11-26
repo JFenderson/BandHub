@@ -10,6 +10,7 @@ import { useUser } from '@/contexts/UserContext';
 const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Bands', href: '/bands' },
+  { name: 'Creators', href: '/creators' },
   { name: 'Videos', href: '/videos' },
   { name: 'About', href: '/about' },
 ];

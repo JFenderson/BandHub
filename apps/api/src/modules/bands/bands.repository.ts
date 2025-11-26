@@ -121,6 +121,16 @@ export class BandsRepository {
                 slug: true,
               },
             },
+            creator: {
+              select: {
+                id: true,
+                name: true,
+                logoUrl: true,
+                thumbnailUrl: true,
+                isVerified: true,
+                isFeatured: true,
+              },
+            },
           },
         },
         _count: {
@@ -154,6 +164,16 @@ export class BandsRepository {
                 id: true,
                 name: true,
                 slug: true,
+              },
+            },
+            creator: {
+              select: {
+                id: true,
+                name: true,
+                logoUrl: true,
+                thumbnailUrl: true,
+                isVerified: true,
+                isFeatured: true,
               },
             },
           },
