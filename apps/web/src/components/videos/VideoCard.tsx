@@ -54,7 +54,6 @@ export function VideoCard({ video }: VideoCardProps) {
               <Link 
                 href={`/creators/${video.creator.id}`}
                 className="font-medium hover:text-primary-600 transition-colors"
-                onClick={(e) => e.stopPropagation()}
               >
                 {video.creator.name}
               </Link>
@@ -66,7 +65,6 @@ export function VideoCard({ video }: VideoCardProps) {
               <Link 
                 href={`/bands/${video.band.slug}`}
                 className="font-medium hover:text-primary-600 transition-colors"
-                onClick={(e) => e.stopPropagation()}
               >
                 {video.band.name}
               </Link>
