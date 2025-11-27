@@ -1,0 +1,33 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build shared types
+        run: npm run build:shared
+      - name: Run unit and integration tests
+        run: npm test -- --runInBand
+      - name: Run web E2E smoke
+        run: npm run test:e2e -- --filter=@hbcu-band-hub/web || true
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            apps/api/test/coverage
+            apps/web/coverage
+            coverage
