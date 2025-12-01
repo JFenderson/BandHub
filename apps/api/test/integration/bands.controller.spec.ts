@@ -5,6 +5,7 @@ import { BandsService } from '../../src/modules/bands/bands.service';
 import { FeaturedRecommendationsService } from '../../src/modules/bands/featured-recommendations.service';
 import { JwtAuthGuard } from '../../src/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../src/common/guards/roles.guard';
+import { PaginatedResponse } from '@hbcu-band-hub/shared-types';
 
 const mockBandsService = {
   findAll: jest.fn(),
@@ -52,7 +53,7 @@ describe('BandsController (integration)', () => {
   it('responds with paginated data on GET /bands', async () => {
     mockBandsService.findAll.mockResolvedValue({ data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } });
 
-    const response = await controller.findAll(1 as any, 20 as any) as { data: unknown[]; meta: { page: number; limit: number; total: number; totalPages: number } };
+    const response = await controller.findAll(1 as any, 20 as any) as PaginatedResponse<unknown>;
 
     expect(response.meta.page).toBe(1);
     expect(mockBandsService.findAll).toHaveBeenCalledWith({ page: 1, limit: 20, search: undefined });
