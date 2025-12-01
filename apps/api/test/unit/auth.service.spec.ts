@@ -32,11 +32,17 @@ describe('AuthService (unit)', () => {
   it('hashes password on registration', async () => {
     const { service, prisma } = createMocks();
     prisma.adminUser.findUnique.mockResolvedValue(null);
-    prisma.adminUser.create.mockImplementation(({ data }: any) => ({ id: '1', ...data }));
+    prisma.adminUser.create.mockImplementation(({ data }: any) => ({
+      id: '1',
+      email: data.email,
+      name: data.name,
+      role: 'ADMIN',
+      createdAt: new Date(),
+    }));
 
     const user = await service.register({ email: 'a@b.com', name: 'A', password: 'secret' });
 
-    expect(user.passwordHash).toBeUndefined();
+    expect(user).not.toHaveProperty('passwordHash');
     expect(prisma.adminUser.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ passwordHash: expect.any(String) }),
