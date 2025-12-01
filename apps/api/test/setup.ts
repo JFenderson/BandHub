@@ -1,5 +1,5 @@
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/hbcu_band_hub_test';
+process.env.DATABASE_URL = process.env.DATABASE_URL;
 
 jest.setTimeout(30000);
 
