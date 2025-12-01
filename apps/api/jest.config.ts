@@ -14,7 +14,7 @@ const config: Config = {
   testEnvironment: 'node',
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   moduleNameMapper: {
-    '^@hbcu-band-hub/shared(.*)$': '<rootDir>/../../libs/shared/src$1',
+    '^@hbcu-band-hub/shared-types$': '<rootDir>/../../libs/shared/types/src/index.ts',
     '^@hbcu-band-hub/prisma$': '<rootDir>/../../libs/prisma/src',
   },
   coverageThreshold: {
