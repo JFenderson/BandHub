@@ -74,14 +74,18 @@ load_environment() {
     fi
 }
 
-# Pull latest code
+# Pull latest code (optional - disabled by default for CI/CD pipelines)
 pull_latest_code() {
-    log_info "Pulling latest code from repository..."
-    
-    git fetch origin
-    git pull origin main
-    
-    log_success "Code updated to latest version"
+    if [ "${PULL_LATEST_CODE:-false}" = "true" ]; then
+        log_info "Pulling latest code from repository..."
+        
+        git fetch origin
+        git pull origin main
+        
+        log_success "Code updated to latest version"
+    else
+        log_info "Skipping code pull (set PULL_LATEST_CODE=true to enable)"
+    fi
 }
 
 # Create database backup

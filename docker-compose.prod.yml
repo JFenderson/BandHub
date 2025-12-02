@@ -92,6 +92,9 @@ services:
       target: runner
     environment:
       NODE_ENV: production
+      # Note: DATABASE_URL uses env vars from .env file. For enhanced security in Docker Swarm,
+      # consider using a secrets-aware entrypoint script that reads from /run/secrets/*
+      # and constructs the DATABASE_URL at runtime.
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hbcu_band_hub}?schema=public
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -104,6 +107,8 @@ services:
     secrets:
       - jwt_secret
       - youtube_api_key
+      - postgres_user
+      - postgres_password
     depends_on:
       postgres:
         condition: service_healthy
@@ -180,6 +185,7 @@ services:
     container_name: hbcu-band-hub-worker-prod
     environment:
       NODE_ENV: production
+      # Note: DATABASE_URL uses env vars from .env file. See API service comment for security notes.
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hbcu_band_hub}?schema=public
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -189,6 +195,8 @@ services:
       MAX_YOUTUBE_CALLS_PER_MINUTE: ${MAX_YOUTUBE_CALLS_PER_MINUTE:-60}
     secrets:
       - youtube_api_key
+      - postgres_user
+      - postgres_password
     depends_on:
       postgres:
         condition: service_healthy

@@ -113,8 +113,10 @@ restore_database() {
     fi
     
     # Drop existing connections
+    # Use POSTGRES_ADMIN_DB for the admin database (defaults to 'postgres')
+    local admin_db="${POSTGRES_ADMIN_DB:-postgres}"
     log_info "Dropping existing database connections..."
-    docker exec "${POSTGRES_CONTAINER}" psql -U "${POSTGRES_USER}" -d postgres -c \
+    docker exec "${POSTGRES_CONTAINER}" psql -U "${POSTGRES_USER}" -d "${admin_db}" -c \
         "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${POSTGRES_DB}' AND pid <> pg_backend_pid();" \
         2>/dev/null || true
     
