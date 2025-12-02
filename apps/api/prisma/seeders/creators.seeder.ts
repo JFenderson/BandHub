@@ -33,7 +33,7 @@ const allCreators: CreateData[] = [
   {
     name: 'ShowtimeWeb',
     youtubeChannelId: 'UCns2OqWWjNOC7z1L3ib8FVg',
-    channelUrl: 'https://www.youtube. com/@ShowtimeWeb',
+    channelUrl: 'https://www.youtube.com/@ShowtimeWeb',
     description: 'One of the biggest HBCU and show-style marching band channels.',
     logoUrl: null,
     thumbnailUrl: null,
@@ -117,7 +117,7 @@ const allCreators: CreateData[] = [
   {
     name: 'Human Jukebox Media',
     youtubeChannelId: 'UC6VM7jSjZ7D4nF1DCJ2w-Gw',
-    channelUrl: 'https://www.youtube. com/@su_humanjukebox',
+    channelUrl: 'https://www.youtube.com/@su_humanjukebox',
     description: 'Southern University Human Jukebox official media channel.',
     logoUrl: null,
     thumbnailUrl: null,
@@ -131,7 +131,7 @@ const allCreators: CreateData[] = [
   {
     name: 'AAMU Marching Maroon & White',
     youtubeChannelId: 'UCWeUjEMXg_IjJvuk5Dm7-zQ',
-    channelUrl: 'https://www.youtube. com/@AAMUBAND',
+    channelUrl: 'https://www.youtube.com/@AAMUBAND',
     description: 'Official channel for Alabama A&M University\'s Marching Maroon & White.',
     logoUrl: null,
     thumbnailUrl: null,
@@ -159,7 +159,7 @@ const allCreators: CreateData[] = [
   {
     name: 'Lamiks Videos',
     youtubeChannelId: 'UCGmnZVoh86xlvPs-DMQP4QQ',
-    channelUrl: 'https://www.youtube. com/@LamiksVideos1',
+    channelUrl: 'https://www.youtube.com/@LamiksVideos1',
     description: 'HBCU marching band coverage and content.',
     logoUrl: null,
     thumbnailUrl: null,
@@ -271,7 +271,7 @@ const allCreators: CreateData[] = [
   {
     name: 'Prairie View Marching Storm',
     youtubeChannelId: 'UC6NQkWeJCQAguQ7xVt8NADQ',
-    channelUrl: 'https://www.youtube. com/@MarchingStorm',
+    channelUrl: 'https://www.youtube.com/@MarchingStorm',
     description: 'Official channel for Prairie View A&M University Marching Storm.',
     logoUrl: null,
     thumbnailUrl: null,
@@ -284,7 +284,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'BHN96',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCgpm2Pcb7xoByBZFeA87vTQ', 
     channelUrl: 'https://www.youtube.com/@BHN96',
     description: 'HBCU marching band coverage and content.',
     logoUrl: null,
@@ -298,7 +298,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'BGMM Media',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCRP2Xty4XpGFt7BCUTxFHdw', 
     channelUrl: 'https://www.youtube.com/@BGMMMedia',
     description: 'Official media for North Carolina A&T University Blue and Gold Marching Machine.',
     logoUrl: null,
@@ -312,7 +312,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'ronconful',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCYCapkN3xLrFuwKeeXbUOCw', 
     channelUrl: 'https://www.youtube.com/@ronconful',
     description: 'HBCU marching band coverage and content.',
     logoUrl: null,
@@ -326,7 +326,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Marching Hornet Media',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCE_nMi6Q0Y5gka-Eyj2Gu0Q', 
     channelUrl: 'https://www.youtube.com/@marchinghornetmedia1931',
     description: 'Official media for Alabama State University Mighty Marching Hornets.',
     logoUrl: null,
@@ -340,7 +340,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'VSU Marching Band',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCk0h7gTm0gYxoyLdvlyTM-Q', 
     channelUrl: 'https://www.youtube.com/@vsuband',
     description: 'Official channel for Virginia State University marching band.',
     logoUrl: null,
@@ -354,7 +354,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'UAPB Bands',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCWY_9gVTMoIgDvpXOipPChg', 
     channelUrl: 'https://www.youtube.com/@UAPBBands',
     description: 'Official channel for University of Arkansas at Pine Bluff marching band.',
     logoUrl: null,
@@ -368,7 +368,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'ASMB Media',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UC6Yj_43vYzBJSPzn3KiUvGA', 
     channelUrl: 'https://www.youtube.com/@ASMBmedia',
     description: 'Official media for Delaware State University Approaching Storm Marching Band.',
     logoUrl: null,
@@ -382,8 +382,8 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'BCU Marching Wildcats',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
-    channelUrl: 'https://www. youtube.com/@ThePrideofBCUMarchingWildcats',
+    youtubeChannelId: 'UCp43Tmu-IZ7lZiWTZOA-qbA', 
+    channelUrl: 'https://www.youtube.com/@ThePrideofBCUMarchingWildcats',
     description: 'Official channel for Bethune-Cookman University Marching Wildcats.',
     logoUrl: null,
     thumbnailUrl: null,
@@ -396,7 +396,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'The Marching 100',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCxFkX8EpOHdA-0xF4QYezxw', 
     channelUrl: 'https://www.youtube.com/@themarching100',
     description: 'Official channel for Florida A&M University Marching 100.',
     logoUrl: null,
@@ -410,7 +410,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'FVSU Blue Machine',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCppWYXIzyVvdMpuo3ADWLkw', 
     channelUrl: 'https://www.youtube.com/@fvsubluemachinemarchingban4392',
     description: 'Official channel for Fort Valley State University Blue Machine.',
     logoUrl: null,
@@ -424,8 +424,8 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'P. O.T. S. 1890',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
-    channelUrl: 'https://www.youtube.com/@p.o.t.s. 1890',
+    youtubeChannelId: 'UCdTFcZlpycgUQMZ6kEPVznQ', 
+    channelUrl: 'https://www.youtube.com/@p.o.t.s.1890',
     description: 'HBCU marching band coverage and content.',
     logoUrl: null,
     thumbnailUrl: null,
@@ -438,7 +438,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Bowie State University Bands',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UC0g8UINT6Sl1Y7GDACSbabQ', 
     channelUrl: 'https://www.youtube.com/@bowiestateuniversitybands',
     description: 'Official channel for Bowie State University marching band.',
     logoUrl: null,
@@ -452,7 +452,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Morgan State Bands',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCYHPg4Nl845658lEwmvLfXg', 
     channelUrl: 'https://www.youtube.com/@morganstatebands',
     description: 'Official channel for Morgan State University marching band.',
     logoUrl: null,
@@ -466,7 +466,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Sounds of Dynomite Media',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UC_wzC-VZphxNrM7rspmwpzA', 
     channelUrl: 'https://www.youtube.com/@SoundsofDynomiteMedia',
     description: 'Official media for Alcorn State University Sounds of Dyn-o-mite.',
     logoUrl: null,
@@ -480,7 +480,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Sound of Class',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCowlhisGdbAhKCJkevQ-u0g', 
     channelUrl: 'https://www.youtube.com/@soundofclass',
     description: 'HBCU marching band coverage and content.',
     logoUrl: null,
@@ -494,7 +494,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Fay State Bands',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UC0lFRGztE79ViN8XDI3hpFQ', 
     channelUrl: 'https://www.youtube.com/@FayStateBands',
     description: 'Official channel for Fayetteville State University marching band.',
     logoUrl: null,
@@ -508,7 +508,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Langston Marching Pride',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCYSfU25obF63pbP23_JG5Eg', 
     channelUrl: 'https://www.youtube.com/@langstonmarchingpride',
     description: 'Official channel for Langston University Marching Pride.',
     logoUrl: null,
@@ -522,7 +522,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'TSU Aristocrat of Bands',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCH3TvR0VUfixk6kwxuxkK5g', 
     channelUrl: 'https://www.youtube.com/@tsuaristocratofbands',
     description: 'Official channel for Tennessee State University Aristocrat of Bands.',
     logoUrl: null,
@@ -536,7 +536,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Hampton University Marching Force',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCuPsfIzCHWgM10HsT_NOLjQ', 
     channelUrl: 'https://www.youtube.com/@HUMarchingForce',
     description: 'Official channel for Hampton University Marching Force.',
     logoUrl: null,
@@ -550,7 +550,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Ocean of Soul Media',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCiiK-Yhqt_kEzbkGhCT_lsA', 
     channelUrl: 'https://www.youtube.com/@OceanofSoulMedia',
     description: 'Official media for Texas Southern University Ocean of Soul.',
     logoUrl: null,
@@ -564,7 +564,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'KKrank House',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCe5N7Uft9470SNeOLy7BFUA', 
     channelUrl: 'https://www.youtube.com/@KKrankHouseonYT',
     description: 'HBCU marching band coverage and content.',
     logoUrl: null,
@@ -578,7 +578,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Simmons College Marching Band',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCmvuyOkvYF9F6Hp4lZPnxbg', 
     channelUrl: 'https://www.youtube.com/@simmonscollegemarchingband',
     description: 'Official channel for Simmons College marching band.',
     logoUrl: null,
@@ -592,8 +592,8 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'GSU World Famed',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
-    channelUrl: 'https://www.youtube. com/@GSUWorldFamed',
+    youtubeChannelId: 'UCMjLDyHWed_kfj9f70hanDQ', 
+    channelUrl: 'https://www.youtube.com/@GSUWorldFamed',
     description: 'Official channel for Grambling State University World Famed Tiger Marching Band.',
     logoUrl: null,
     thumbnailUrl: null,
@@ -606,7 +606,7 @@ const allCreators: CreateData[] = [
   },
   {
     name: 'Jeff G Videos',
-    youtubeChannelId: '', // TODO: fill via YouTube Data API
+    youtubeChannelId: 'UCQ0yWPE-97rV3Ejbz-Qtz9A', 
     channelUrl: 'https://www.youtube.com/@JeffGVideos',
     description: 'HBCU marching band coverage and content.',
     logoUrl: null,

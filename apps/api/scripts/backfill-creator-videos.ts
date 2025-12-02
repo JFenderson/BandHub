@@ -125,7 +125,7 @@ async function main() {
 async function getCreatorsToSync() {
   const where: any = {
     NOT: {
-      youtubeChannelId: null,
+      youtubeChannelId: '',
     },
   };
 
