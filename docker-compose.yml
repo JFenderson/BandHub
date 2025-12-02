@@ -1,26 +1,175 @@
-version: '3.8'
+# ========================================
+# HBCU Band Hub - Development Docker Compose
+# ========================================
+# This file is for local development with hot reload support.
+# Run with: docker compose up -d
+# ========================================
 
 services:
+  # ========================================
+  # PostgreSQL Database
+  # ========================================
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     container_name: hbcu-band-hub-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hbcu_band_hub
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-hbcu_band_hub}
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-hbcu_band_hub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - hbcu-network
+    restart: unless-stopped
 
+  # ========================================
+  # Redis Cache
+  # ========================================
   redis:
     image: redis:7-alpine
     container_name: hbcu-band-hub-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - '6379:6379'
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - hbcu-network
+    restart: unless-stopped
 
+  # ========================================
+  # NestJS API (Development)
+  # ========================================
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: builder
+    container_name: hbcu-band-hub-api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-hbcu_band_hub}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      API_PORT: 3001
+      JWT_SECRET: ${JWT_SECRET:-development-secret-change-in-production}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+    ports:
+      - '3001:3001'
+    volumes:
+      - ./apps/api/src:/app/apps/api/src:ro
+      - ./apps/api/prisma:/app/apps/api/prisma
+      - ./libs:/app/libs:ro
+      - api_uploads:/app/apps/api/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - hbcu-network
+    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy && npm run dev:api"
+
+  # ========================================
+  # Next.js Frontend (Development)
+  # ========================================
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    container_name: hbcu-band-hub-web
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./apps/web/src:/app/apps/web/src:ro
+      - ./apps/web/public:/app/apps/web/public:ro
+      - ./libs:/app/libs:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - hbcu-network
+    restart: unless-stopped
+    command: npm run dev -- --hostname 0.0.0.0
+
+  # ========================================
+  # Background Worker (Development)
+  # ========================================
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+      target: builder
+    container_name: hbcu-band-hub-worker
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-hbcu_band_hub}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-3}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+      MAX_YOUTUBE_CALLS_PER_MINUTE: ${MAX_YOUTUBE_CALLS_PER_MINUTE:-60}
+    volumes:
+      - ./apps/worker/src:/app/apps/worker/src:ro
+      - ./apps/api/prisma:/app/apps/api/prisma:ro
+      - ./libs:/app/libs:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hbcu-network
+    restart: unless-stopped
+    command: npm run dev:worker
+
+# ========================================
+# Named Volumes
+# ========================================
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+  api_uploads:
+    driver: local
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  hbcu-network:
+    driver: bridge
+    name: hbcu-network

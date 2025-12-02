@@ -47,3 +47,9 @@ npm-debug.log*
 
 uploads/**/*
 !uploads/**/.gitkeep
+
+# Docker secrets (never commit!)
+secrets/
+
+# Backups
+backups/

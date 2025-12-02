@@ -1,0 +1,133 @@
+# ========================================
+# HBCU Band Hub - Test Docker Compose
+# ========================================
+# This file is for running tests in isolated containers.
+# Run with: docker compose -f docker-compose.test.yml up --abort-on-container-exit
+# ========================================
+
+services:
+  # ========================================
+  # PostgreSQL Test Database
+  # ========================================
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: hbcu-band-hub-db-test
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: hbcu_band_hub_test
+    ports:
+      - '5433:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d hbcu_band_hub_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - hbcu-test-network
+
+  # ========================================
+  # Redis Test Cache
+  # ========================================
+  redis-test:
+    image: redis:7-alpine
+    container_name: hbcu-band-hub-redis-test
+    command: redis-server --appendonly no
+    ports:
+      - '6380:6379'
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - hbcu-test-network
+
+  # ========================================
+  # API Tests
+  # ========================================
+  api-test:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: builder
+    container_name: hbcu-band-hub-api-test
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test_user:test_password@postgres-test:5432/hbcu_band_hub_test?schema=public
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+      API_PORT: 3001
+      JWT_SECRET: test-jwt-secret
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - hbcu-test-network
+    command: >
+      sh -c "
+        npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma &&
+        npm run test:e2e --workspace=@hbcu-band-hub/api
+      "
+
+  # ========================================
+  # Web Tests (E2E with Playwright)
+  # ========================================
+  web-test:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    container_name: hbcu-band-hub-web-test
+    environment:
+      NODE_ENV: test
+      NEXT_PUBLIC_API_URL: http://api-test:3001
+    depends_on:
+      - api-test
+    networks:
+      - hbcu-test-network
+    command: npm run test --workspace=@hbcu-band-hub/web
+
+  # ========================================
+  # Integration Test Runner
+  # ========================================
+  integration-test:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: builder
+    container_name: hbcu-band-hub-integration-test
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test_user:test_password@postgres-test:5432/hbcu_band_hub_test?schema=public
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+      JWT_SECRET: test-jwt-secret
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - hbcu-test-network
+    command: >
+      sh -c "
+        npx prisma migrate reset --force --schema=apps/api/prisma/schema.prisma &&
+        npm run test
+      "
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  hbcu-test-network:
+    driver: bridge
+    name: hbcu-test-network
