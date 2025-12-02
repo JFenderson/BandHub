@@ -1,16 +1,16 @@
-import type { 
-  Band, 
-  Video, 
+import type {
+  Band,
+  Video,
   Creator,
-  PaginatedResponse, 
-  VideoFilters, 
+  PaginatedResponse,
+  VideoFilters,
   BandFilters,
   CreatorFilters,
   ApiResponse,
   AdminVideoFilters,
   VideoDetail,
   BulkVideoUpdateRequest,
-  BulkVideoUpdateResponse
+  BulkVideoUpdateResponse,
 } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/types/auth';
@@ -51,10 +51,10 @@ class ApiClient {
   private async request<T>(
     endpoint: string,
     options?: RequestInit,
-    skipAuth: boolean = false
+    skipAuth: boolean = false,
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options?.headers,
@@ -64,7 +64,7 @@ class ApiClient {
     if (this.accessToken && !skipAuth) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
-    
+
     const config: RequestInit = {
       ...options,
       headers,
@@ -122,13 +122,13 @@ class ApiClient {
       '/api/auth/login',
       {
         method: 'POST',
-        body: JSON.stringify({ 
-          email: credentials.email, 
-          password: credentials.password 
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
           // rememberMe is not sent to backend, it's handled client-side via cookie duration
         }),
       },
-      true // Skip auth for login
+      true, // Skip auth for login
     );
 
     // Store tokens
@@ -152,7 +152,7 @@ class ApiClient {
         method: 'POST',
         body: JSON.stringify({ refreshToken: this.refreshToken }),
       },
-      true // Skip auth for refresh
+      true, // Skip auth for refresh
     );
 
     // Update tokens
@@ -171,13 +171,10 @@ class ApiClient {
     }
 
     try {
-      await this.request<{ message: string }>(
-        '/api/auth/logout',
-        {
-          method: 'POST',
-          body: JSON.stringify({ refreshToken: this.refreshToken }),
-        }
-      );
+      await this.request<{ message: string }>('/api/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken: this.refreshToken }),
+      });
     } finally {
       // Clear tokens even if logout request fails
       this.setAccessToken(null);
@@ -194,9 +191,7 @@ class ApiClient {
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const query = params.toString();
-    return this.request<PaginatedResponse<Band>>(
-      `/api/bands${query ? `?${query}` : ''}`
-    );
+    return this.request<PaginatedResponse<Band>>(`/api/bands${query ? `?${query}` : ''}`);
   }
 
   async getBand(slug: string): Promise<Band> {
@@ -229,11 +224,11 @@ class ApiClient {
 
     const url = `${this.baseUrl}/api/bands/${id}/upload-logo`;
     const headers: HeadersInit = {};
-    
+
     if (this.accessToken) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
-    
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -261,11 +256,11 @@ class ApiClient {
 
     const url = `${this.baseUrl}/api/bands/${id}/upload-banner`;
     const headers: HeadersInit = {};
-    
+
     if (this.accessToken) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
-    
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -306,9 +301,7 @@ class ApiClient {
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const query = params.toString();
-    return this.request<PaginatedResponse<Video>>(
-      `/api/videos${query ? `?${query}` : ''}`
-    );
+    return this.request<PaginatedResponse<Video>>(`/api/videos${query ? `?${query}` : ''}`);
   }
 
   async getVideo(id: string): Promise<Video> {
@@ -336,9 +329,7 @@ class ApiClient {
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const query = params.toString();
-    return this.request<PaginatedResponse<Creator>>(
-      `/api/creators${query ? `?${query}` : ''}`
-    );
+    return this.request<PaginatedResponse<Creator>>(`/api/creators${query ? `?${query}` : ''}`);
   }
 
   async getCreator(id: string): Promise<Creator> {
@@ -356,7 +347,7 @@ class ApiClient {
 
     const query = params.toString();
     return this.request<PaginatedResponse<Video>>(
-      `/api/creators/${id}/videos${query ? `?${query}` : ''}`
+      `/api/creators/${id}/videos${query ? `?${query}` : ''}`,
     );
   }
 
@@ -380,7 +371,8 @@ class ApiClient {
     if (filters?.eventName) params.append('eventName', filters.eventName);
     if (filters?.search) params.append('search', filters.search);
     if (filters?.hiddenStatus) params.append('hiddenStatus', filters.hiddenStatus);
-    if (filters?.categorizationStatus) params.append('categorizationStatus', filters.categorizationStatus);
+    if (filters?.categorizationStatus)
+      params.append('categorizationStatus', filters.categorizationStatus);
     if (filters?.tags) params.append('tags', filters.tags);
     if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
     if (filters?.dateTo) params.append('dateTo', filters.dateTo);
@@ -410,7 +402,7 @@ class ApiClient {
       qualityScore?: number;
       isHidden?: boolean;
       hideReason?: string;
-    }
+    },
   ): Promise<VideoDetail> {
     return this.request<VideoDetail>(`/api/admin/videos/${videoId}`, {
       method: 'PUT',
@@ -425,61 +417,69 @@ class ApiClient {
     });
   }
 
+  // Sync methods
+  async triggerFullSync(): Promise<any> {
+    return this.request<any>(`/api/sync/trigger`, {
+      method: 'POST',
+    });
+  }
 
-// Sync methods
-async triggerFullSync(): Promise<any> {
-  return this.request<any>(`/api/sync/trigger`, {
-    method: 'POST',
-  });
-}
+  async triggerBandSync(
+    bandId: string,
+    syncType: 'channel' | 'playlist' | 'search' = 'channel',
+  ): Promise<any> {
+    return this.request<any>(`/api/sync/band/${bandId}`, {
+      method: 'POST',
+      body: JSON.stringify({ syncType }),
+    });
+  }
 
-async triggerBandSync(bandId: string, syncType: 'channel' | 'playlist' | 'search' = 'channel'): Promise<any> {
-  return this.request<any>(`/api/sync/band/${bandId}`, {
-    method: 'POST',
-    body: JSON.stringify({ syncType }),
-  });
-}
+  async getSyncStatus(): Promise<any> {
+    return this.request<any>(`/api/sync/status`);
+  }
 
-async getSyncStatus(): Promise<any> {
-  return this.request<any>(`/api/sync/status`);
-}
+  async getSyncJobStatus(jobId: string): Promise<any> {
+    return this.request<any>(`/api/sync/job/${jobId}`);
+  }
 
-async getSyncJobStatus(jobId: string): Promise<any> {
-  return this.request<any>(`/api/sync/job/${jobId}`);
-}
+  // Featured Bands methods
+  async getFeaturedBands(): Promise<{ bands: any[] }> {
+    return this.request<{ bands: any[] }>(`/api/bands/featured`);
+  }
 
-// Featured Bands methods
-async getFeaturedBands(): Promise<{ bands: any[] }> {
-  return this.request<{ bands: any[] }>(`/api/bands/featured`);
-}
+  async trackFeaturedClick(bandId: string, sessionId?: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/bands/${bandId}/track-featured-click`, {
+      method: 'POST',
+      body: JSON.stringify({ sessionId }),
+    });
+  }
 
-async trackFeaturedClick(bandId: string, sessionId?: string): Promise<{ message: string }> {
-  return this.request<{ message: string }>(`/api/bands/${bandId}/track-featured-click`, {
-    method: 'POST',
-    body: JSON.stringify({ sessionId }),
-  });
-}
+  async toggleBandFeatured(bandId: string): Promise<any> {
+    return this.request<any>(`/api/bands/${bandId}/featured`, {
+      method: 'PATCH',
+    });
+  }
 
-async toggleBandFeatured(bandId: string): Promise<any> {
-  return this.request<any>(`/api/bands/${bandId}/featured`, {
-    method: 'PATCH',
-  });
-}
+  async updateFeaturedOrder(
+    bands: Array<{ id: string; featuredOrder: number }>,
+  ): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/bands/featured-order`, {
+      method: 'PATCH',
+      body: JSON.stringify({ bands }),
+    });
+  }
 
-async updateFeaturedOrder(bands: Array<{ id: string; featuredOrder: number }>): Promise<{ message: string }> {
-  return this.request<{ message: string }>(`/api/bands/featured-order`, {
-    method: 'PATCH',
-    body: JSON.stringify({ bands }),
-  });
-}
+  async getFeaturedRecommendations(): Promise<{ recommendations: any[] }> {
+    return this.request<{ recommendations: any[] }>(`/api/bands/featured-recommendations`);
+  }
 
-async getFeaturedRecommendations(): Promise<{ recommendations: any[] }> {
-  return this.request<{ recommendations: any[] }>(`/api/bands/featured-recommendations`);
-}
+  async getFeaturedAnalytics(): Promise<any> {
+    return this.request<any>(`/api/bands/featured-analytics`);
+  }
 
-async getFeaturedAnalytics(): Promise<any> {
-  return this.request<any>(`/api/bands/featured-analytics`);
-}
+  async getCategories(): Promise<VideoCategory[]> {
+    return this.request<VideoCategory[]>(`/api/categories`);
+  }
 }
 
 export const apiClient = new ApiClient(API_URL);

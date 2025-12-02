@@ -12,7 +12,7 @@ interface CreatorsPageProps {
 
 export default async function CreatorsPage({ searchParams }: CreatorsPageProps) {
   const page = parseInt(searchParams.page || '1');
-  const limit = 12;
+  const limit = 50;
 
   const { data: creators, meta } = await apiClient.getCreators({
     search: searchParams.search,

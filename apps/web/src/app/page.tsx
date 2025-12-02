@@ -7,12 +7,16 @@ import FeaturedBandsCarousel from '@/components/home/FeaturedBandsCarousel';
 export default async function HomePage() {
   // Fetch featured content - using try/catch for resilience
   const [bandsResult, videosResult] = await Promise.allSettled([
-    apiClient.getBands({ limit: 6 }),
-    apiClient.getVideos({ limit: 8, sortBy: 'publishedAt', sortOrder: 'desc' }),
+    apiClient.getBands({ limit: 10 }),
+    apiClient.getVideos({ limit: 10, sortBy: 'publishedAt', sortOrder: 'desc' }),
+    apiClient.getCategories(),
   ]);
 
   const bands = bandsResult.status === 'fulfilled' ? bandsResult.value.data : [];
   const videos = videosResult.status === 'fulfilled' ? videosResult.value.data : [];
+  const categories = categoriesResult.status === 'fulfilled' 
+    ? categoriesResult.value.slice(0, 6)  // Limit to 6 for display
+    : [];
 
   return (
     <div className="bg-white">
@@ -96,22 +100,24 @@ export default async function HomePage() {
         </div>
 
         {/* Categories Preview */}
-        <div className="mt-16">
-          <h3 className="text-2xl font-bold text-gray-900 mb-6">Browse by Category</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {['Fifth Quarter', 'Field Show', 'Stand Battle', 'Parade', 'Practice', 'Concert Band'].map((category) => (
-              <Link
-                key={category}
-                href={`/videos?category=${category.toLowerCase().replace(' ', '-')}`}
-                className="bg-gradient-to-br from-gray-50 to-gray-100 hover:from-primary-50 hover:to-primary-100 border border-gray-200 hover:border-primary-300 rounded-lg p-6 text-center transition-all group"
-              >
-                <p className="font-medium text-gray-900 group-hover:text-primary-700">
-                  {category}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
+  {categories.length > 0 && (
+    <div className="mt-16">
+      <h3 className="text-2xl font-bold text-gray-900 mb-6">Browse by Category</h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {categories.map((category) => (
+          <Link
+            key={category. slug}
+            href={`/videos?category=${category.slug}`}
+            className="bg-gradient-to-br from-gray-50 to-gray-100 hover:from-primary-50 hover:to-primary-100 border border-gray-200 hover:border-primary-300 rounded-lg p-6 text-center transition-all group"
+          >
+            <p className="font-medium text-gray-900 group-hover:text-primary-700">
+              {category.name}
+            </p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )}
       </section>
 
       {/* Stats Section */}
