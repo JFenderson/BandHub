@@ -16,8 +16,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { HealthModule } from './health/health.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { YoutubeModule } from './youtube/youtube.module';
-import { BandsSeedService } from './database/seeds/bands.seed';
-import { CategoriesSeedService } from './database/seeds/categories.seed';
 import { PrismaModule } from '@hbcu-band-hub/prisma';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -62,7 +60,6 @@ import { CreatorsModule } from './modules/creators/creators.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard, // Apply rate limiting globally
     },
-    CategoriesSeedService, // ← It should be here, not in imports
     // ... other providers
   ],
 })
