@@ -28,7 +28,9 @@
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
     "clean": "turbo run clean && rm -rf node_modules dist",
-    "backfill": "tsx apps/api/src/scripts/backfill-historical-videos.ts"
+    "backfill": "tsx apps/api/src/scripts/backfill-historical-videos.ts",
+    "backfill:bands": "tsx apps/api/scripts/backfill-band-videos.ts",
+    "backfill:creators": "tsx apps/api/scripts/backfill-creator-videos.ts"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

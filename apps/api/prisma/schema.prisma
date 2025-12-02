@@ -45,6 +45,7 @@ model Band {
   syncJobs           SyncJob[]
   featuredClicks     FeaturedBandClick[]
   followers          FavoriteBand[]
+  youtubeVideos      YouTubeVideo[]
 
   @@index([slug])
   @@index([schoolName])
@@ -95,6 +96,59 @@ model ContentCreator {
   @@index([qualityScore])
   @@index([createdAt])
   @@map("content_creators")
+
+  // Relations for YouTubeVideo
+  youtubeVideos     YouTubeVideo[]
+}
+
+// ============ YOUTUBE VIDEO METADATA MODEL ============
+// Separate table for storing raw YouTube video metadata before curation
+model YouTubeVideo {
+  id             String    @id @default(cuid())
+  youtubeId      String    @unique @map("youtube_id")
+  title          String
+  description    String?   @db.Text
+  thumbnailUrl   String    @map("thumbnail_url")
+  url            String    // Full YouTube URL: https://www.youtube.com/watch?v={videoId}
+  duration       Int       @default(0) // Duration in seconds
+  publishedAt    DateTime  @map("published_at")
+  viewCount      Int       @default(0) @map("view_count")
+  likeCount      Int       @default(0) @map("like_count")
+  channelId      String    @map("channel_id")
+  channelTitle   String?   @map("channel_title")
+  
+  // Relations - can be linked to band, creator, or both
+  bandId         String?   @map("band_id")
+  band           Band?     @relation(fields: [bandId], references: [id], onDelete: SetNull)
+  creatorId      String?   @map("creator_id")
+  creator        ContentCreator? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  
+  // Sync tracking
+  syncStatus     SyncStatus @default(PENDING) @map("sync_status")
+  lastSyncedAt   DateTime?  @map("last_synced_at")
+  syncErrors     String[]   @default([]) @map("sync_errors")
+  
+  // Metadata
+  isPromoted     Boolean   @default(false) @map("is_promoted") // Promoted to main Video table
+  promotedAt     DateTime? @map("promoted_at")
+  qualityScore   Int       @default(0) @map("quality_score") // 0-100 auto-calculated score
+  
+  // Timestamps
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Indexes for search and filtering
+  @@index([bandId])
+  @@index([creatorId])
+  @@index([publishedAt(sort: Desc)])
+  @@index([viewCount(sort: Desc)])
+  @@index([bandId, publishedAt(sort: Desc)])
+  @@index([creatorId, publishedAt(sort: Desc)])
+  @@index([channelId])
+  @@index([syncStatus])
+  @@index([isPromoted])
+  @@index([qualityScore(sort: Desc)])
+  @@map("youtube_videos")
 }
 
 model Video {

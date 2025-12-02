@@ -5,6 +5,8 @@ import { YoutubeService } from './youtube.service';
 import { YoutubeSyncService } from './youtube-sync.service';
 import { YoutubeSyncScheduler } from './youtube-sync.scheduler';
 import { SyncAdminController } from './sync-admin.controller';
+import { YouTubeAdminController } from './youtube-admin.controller';
+import { YouTubeVideoRepository } from './youtube-video.repository';
 import { DatabaseModule } from '../database/database.module';
 
 @Module({
@@ -13,12 +15,13 @@ import { DatabaseModule } from '../database/database.module';
     ScheduleModule.forRoot(),
     DatabaseModule,
   ],
-  controllers: [SyncAdminController],
+  controllers: [SyncAdminController, YouTubeAdminController],
   providers: [
     YoutubeService,
     YoutubeSyncService,
     YoutubeSyncScheduler,
+    YouTubeVideoRepository,
   ],
-  exports: [YoutubeService, YoutubeSyncService, YoutubeSyncScheduler],
+  exports: [YoutubeService, YoutubeSyncService, YoutubeSyncScheduler, YouTubeVideoRepository],
 })
 export class YoutubeModule {}
