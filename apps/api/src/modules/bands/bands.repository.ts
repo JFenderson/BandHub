@@ -87,7 +87,7 @@ export class BandsRepository {
           },
         },
       }),
-      this.db.band.count({ where: {} }),
+      this.db.band.count({ where }),
     ]);
 
     return {

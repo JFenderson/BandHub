@@ -173,7 +173,7 @@ export class VideosRepository {
           },
         },
       }),
-      this.db.video.count({ where: { isHidden: false } }),
+      this.db.video.count({ where }),
     ]);
 
     return {
