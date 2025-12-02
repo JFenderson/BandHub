@@ -124,7 +124,9 @@ async function main() {
 
 async function getCreatorsToSync() {
   const where: any = {
-    youtubeChannelId: { not: null },
+    NOT: {
+      youtubeChannelId: null,
+    },
   };
 
   if (specificCreatorId) {
