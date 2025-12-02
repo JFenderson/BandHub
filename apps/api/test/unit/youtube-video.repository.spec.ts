@@ -210,7 +210,7 @@ describe('YouTubeVideoRepository', () => {
   });
 
   describe('upsert', () => {
-    it('should create video if not exists', async () => {
+    it('should create video if not exists and return isNew=true', async () => {
       const videoData = {
         youtubeId: 'abc123',
         title: 'New Video',
@@ -222,6 +222,9 @@ describe('YouTubeVideoRepository', () => {
         channelTitle: 'Channel Name',
       };
 
+      // Mock findUnique to return null (video doesn't exist)
+      mockPrisma.youTubeVideo.findUnique.mockResolvedValue(null);
+      
       mockPrisma.youTubeVideo.upsert.mockResolvedValue({
         id: '1',
         ...videoData,
@@ -235,12 +238,48 @@ describe('YouTubeVideoRepository', () => {
 
       const result = await repository.upsert(videoData);
 
-      expect(result.id).toBe('1');
+      expect(result.record.id).toBe('1');
+      expect(result.isNew).toBe(true);
       expect(mockPrisma.youTubeVideo.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { youtubeId: 'abc123' },
         }),
       );
+    });
+
+    it('should update video if exists and return isNew=false', async () => {
+      const videoData = {
+        youtubeId: 'abc123',
+        title: 'Updated Video',
+        description: 'Description',
+        thumbnailUrl: 'https://img.youtube.com/vi/abc123/hqdefault.jpg',
+        url: 'https://www.youtube.com/watch?v=abc123',
+        publishedAt: new Date(),
+        channelId: 'channel1',
+        channelTitle: 'Channel Name',
+      };
+
+      // Mock findUnique to return existing video
+      mockPrisma.youTubeVideo.findUnique.mockResolvedValue({
+        id: '1',
+        youtubeId: 'abc123',
+      });
+      
+      mockPrisma.youTubeVideo.upsert.mockResolvedValue({
+        id: '1',
+        ...videoData,
+        duration: 0,
+        viewCount: 0,
+        likeCount: 0,
+        syncStatus: SyncStatus.COMPLETED,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await repository.upsert(videoData);
+
+      expect(result.record.id).toBe('1');
+      expect(result.isNew).toBe(false);
     });
   });
 

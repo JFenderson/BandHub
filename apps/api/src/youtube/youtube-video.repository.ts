@@ -234,8 +234,12 @@ export class YouTubeVideoRepository {
 
   /**
    * Upsert a YouTube video (create or update)
+   * Returns the record with isNew flag indicating if it was created
    */
-  async upsert(data: YouTubeVideoCreateInput) {
+  async upsert(data: YouTubeVideoCreateInput): Promise<{ record: any; isNew: boolean }> {
+    // First check if the record exists
+    const existing = await this.findByYoutubeId(data.youtubeId);
+    
     const updateData: Prisma.YouTubeVideoUpdateInput = {
       title: data.title,
       description: data.description,
@@ -256,7 +260,7 @@ export class YouTubeVideoRepository {
       updateData.creator = { connect: { id: data.creatorId } };
     }
 
-    return this.db.youTubeVideo.upsert({
+    const record = await this.db.youTubeVideo.upsert({
       where: { youtubeId: data.youtubeId },
       create: {
         youtubeId: data.youtubeId,
@@ -278,6 +282,8 @@ export class YouTubeVideoRepository {
       },
       update: updateData,
     });
+
+    return { record, isNew: !existing };
   }
 
   /**

@@ -110,10 +110,7 @@ export class YouTubeAdminController {
         bandId: band.id,
       });
 
-      // Check if it was a create or update based on createdAt vs updatedAt
-      const isNew = upsertResult.createdAt.getTime() === upsertResult.updatedAt.getTime() ||
-                   Math.abs(upsertResult.createdAt.getTime() - upsertResult.updatedAt.getTime()) < 1000;
-      if (isNew) added++;
+      if (upsertResult.isNew) added++;
       else updated++;
     }
 
@@ -197,9 +194,7 @@ export class YouTubeAdminController {
         creatorId: creator.id,
       });
 
-      const isNew = upsertResult.createdAt.getTime() === upsertResult.updatedAt.getTime() ||
-                   Math.abs(upsertResult.createdAt.getTime() - upsertResult.updatedAt.getTime()) < 1000;
-      if (isNew) added++;
+      if (upsertResult.isNew) added++;
       else updated++;
     }
 
@@ -392,16 +387,41 @@ export class YouTubeAdminController {
   private resetDailyQuotaIfNeeded(): void {
     const now = new Date();
     
-    // YouTube API quota resets at midnight Pacific Time
+    // YouTube API quota resets at midnight Pacific Time (UTC-8 or UTC-7 during DST)
     if (now >= this.quotaResetTime) {
       this.dailyQuotaUsed = 0;
       
-      // Set next reset time to next midnight Pacific
-      const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-      const nextMidnight = new Date(pacificNow);
-      nextMidnight.setDate(nextMidnight.getDate() + 1);
-      nextMidnight.setHours(0, 0, 0, 0);
-      this.quotaResetTime = nextMidnight;
+      // Calculate next midnight Pacific Time in UTC
+      // Pacific is UTC-8 (PST) or UTC-7 (PDT during daylight saving)
+      const pacificOffset = this.getPacificOffset(now);
+      const pacificHours = now.getUTCHours() + pacificOffset;
+      
+      // Calculate how many hours until midnight Pacific
+      const hoursUntilMidnight = pacificHours >= 0 
+        ? 24 - pacificHours 
+        : Math.abs(pacificHours);
+      
+      this.quotaResetTime = new Date(now.getTime() + hoursUntilMidnight * 60 * 60 * 1000);
+      this.quotaResetTime.setUTCMinutes(0, 0, 0);
     }
+  }
+
+  private getPacificOffset(date: Date): number {
+    // Check if date is in DST (PDT: UTC-7) or PST (UTC-8)
+    // DST in US: Second Sunday in March to First Sunday in November
+    const year = date.getUTCFullYear();
+    const marchSecondSunday = this.getNthSundayOfMonth(year, 2, 2); // March, 2nd Sunday
+    const novFirstSunday = this.getNthSundayOfMonth(year, 10, 1); // November, 1st Sunday
+    
+    const isDST = date >= marchSecondSunday && date < novFirstSunday;
+    return isDST ? -7 : -8;
+  }
+
+  private getNthSundayOfMonth(year: number, month: number, n: number): Date {
+    const date = new Date(Date.UTC(year, month, 1, 10, 0, 0)); // 10 AM UTC (2 AM Pacific)
+    const dayOfWeek = date.getUTCDay();
+    const firstSunday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+    date.setUTCDate(firstSunday + (n - 1) * 7);
+    return date;
   }
 }
