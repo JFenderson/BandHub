@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@hbcu-band-hub/prisma';
+import { DatabaseService } from '../../database/database.service';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: DatabaseService) {}
 
   /**
    * Get all categories sorted by sortOrder

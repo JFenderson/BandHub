@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PrismaService } from '@hbcu-band-hub/prisma';
+import { DatabaseService } from '../../../database/database.service';
 
 export interface JwtPayload {
   sub: string;
@@ -14,7 +14,7 @@ export interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private configService: ConfigService,
-    private prisma: PrismaService,
+    private prisma: DatabaseService,
   ) {
     const secret = configService.get<string>('JWT_SECRET');
     if (!secret) {

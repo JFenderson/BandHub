@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { FavoritesService } from './favorites.service';
-import { PrismaService } from '@hbcu-band-hub/prisma';
+import { DatabaseService } from '../../database/database.service';
 
-// Mock PrismaService
-const mockPrismaService = {
+// Mock DatabaseService
+const mockDatabaseService = {
   video: {
     findUnique: jest.fn(),
   },
@@ -44,7 +44,7 @@ describe('FavoritesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FavoritesService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: DatabaseService, useValue: mockDatabaseService },
       ],
     }).compile();
 
@@ -72,41 +72,41 @@ describe('FavoritesService', () => {
     };
 
     it('should add video to favorites successfully', async () => {
-      mockPrismaService.video.findUnique.mockResolvedValue(mockVideo);
-      mockPrismaService.favoriteVideo.findUnique.mockResolvedValue(null);
-      mockPrismaService.favoriteVideo.create.mockResolvedValue(mockFavorite);
+      mockDatabaseService.video.findUnique.mockResolvedValue(mockVideo);
+      mockDatabaseService.favoriteVideo.findUnique.mockResolvedValue(null);
+      mockDatabaseService.favoriteVideo.create.mockResolvedValue(mockFavorite);
 
       const result = await service.addFavoriteVideo(userId, videoId);
 
       expect(result).toEqual(mockFavorite);
-      expect(mockPrismaService.video.findUnique).toHaveBeenCalledWith({
+      expect(mockDatabaseService.video.findUnique).toHaveBeenCalledWith({
         where: { id: videoId },
       });
-      expect(mockPrismaService.favoriteVideo.create).toHaveBeenCalled();
+      expect(mockDatabaseService.favoriteVideo.create).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if video does not exist', async () => {
-      mockPrismaService.video.findUnique.mockResolvedValue(null);
+      mockDatabaseService.video.findUnique.mockResolvedValue(null);
 
       await expect(service.addFavoriteVideo(userId, videoId)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException if video is already favorited', async () => {
-      mockPrismaService.video.findUnique.mockResolvedValue(mockVideo);
-      mockPrismaService.favoriteVideo.findUnique.mockResolvedValue(mockFavorite);
+      mockDatabaseService.video.findUnique.mockResolvedValue(mockVideo);
+      mockDatabaseService.favoriteVideo.findUnique.mockResolvedValue(mockFavorite);
 
       await expect(service.addFavoriteVideo(userId, videoId)).rejects.toThrow(ConflictException);
     });
 
     it('should add notes when provided', async () => {
       const notes = 'Great performance!';
-      mockPrismaService.video.findUnique.mockResolvedValue(mockVideo);
-      mockPrismaService.favoriteVideo.findUnique.mockResolvedValue(null);
-      mockPrismaService.favoriteVideo.create.mockResolvedValue({ ...mockFavorite, notes });
+      mockDatabaseService.video.findUnique.mockResolvedValue(mockVideo);
+      mockDatabaseService.favoriteVideo.findUnique.mockResolvedValue(null);
+      mockDatabaseService.favoriteVideo.create.mockResolvedValue({ ...mockFavorite, notes });
 
       await service.addFavoriteVideo(userId, videoId, { notes });
 
-      expect(mockPrismaService.favoriteVideo.create).toHaveBeenCalledWith(
+      expect(mockDatabaseService.favoriteVideo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ notes }),
         }),
@@ -120,19 +120,19 @@ describe('FavoritesService', () => {
     const mockFavorite = { id: 'fav-1', userId, videoId };
 
     it('should remove video from favorites successfully', async () => {
-      mockPrismaService.favoriteVideo.findUnique.mockResolvedValue(mockFavorite);
-      mockPrismaService.favoriteVideo.delete.mockResolvedValue(mockFavorite);
+      mockDatabaseService.favoriteVideo.findUnique.mockResolvedValue(mockFavorite);
+      mockDatabaseService.favoriteVideo.delete.mockResolvedValue(mockFavorite);
 
       const result = await service.removeFavoriteVideo(userId, videoId);
 
       expect(result).toEqual({ message: 'Video removed from favorites' });
-      expect(mockPrismaService.favoriteVideo.delete).toHaveBeenCalledWith({
+      expect(mockDatabaseService.favoriteVideo.delete).toHaveBeenCalledWith({
         where: { id: mockFavorite.id },
       });
     });
 
     it('should throw NotFoundException if video is not in favorites', async () => {
-      mockPrismaService.favoriteVideo.findUnique.mockResolvedValue(null);
+      mockDatabaseService.favoriteVideo.findUnique.mockResolvedValue(null);
 
       await expect(service.removeFavoriteVideo(userId, videoId)).rejects.toThrow(NotFoundException);
     });
@@ -143,7 +143,7 @@ describe('FavoritesService', () => {
     const videoId = 'video-1';
 
     it('should return true if video is favorited', async () => {
-      mockPrismaService.favoriteVideo.findUnique.mockResolvedValue({ id: 'fav-1' });
+      mockDatabaseService.favoriteVideo.findUnique.mockResolvedValue({ id: 'fav-1' });
 
       const result = await service.isVideoFavorited(userId, videoId);
 
@@ -151,7 +151,7 @@ describe('FavoritesService', () => {
     });
 
     it('should return false if video is not favorited', async () => {
-      mockPrismaService.favoriteVideo.findUnique.mockResolvedValue(null);
+      mockDatabaseService.favoriteVideo.findUnique.mockResolvedValue(null);
 
       const result = await service.isVideoFavorited(userId, videoId);
 
@@ -180,28 +180,28 @@ describe('FavoritesService', () => {
     };
 
     it('should follow band successfully', async () => {
-      mockPrismaService.band.findUnique.mockResolvedValue(mockBand);
-      mockPrismaService.favoriteBand.findUnique.mockResolvedValue(null);
-      mockPrismaService.favoriteBand.create.mockResolvedValue(mockFollow);
+      mockDatabaseService.band.findUnique.mockResolvedValue(mockBand);
+      mockDatabaseService.favoriteBand.findUnique.mockResolvedValue(null);
+      mockDatabaseService.favoriteBand.create.mockResolvedValue(mockFollow);
 
       const result = await service.followBand(userId, bandId);
 
       expect(result).toEqual(mockFollow);
-      expect(mockPrismaService.band.findUnique).toHaveBeenCalledWith({
+      expect(mockDatabaseService.band.findUnique).toHaveBeenCalledWith({
         where: { id: bandId },
       });
-      expect(mockPrismaService.favoriteBand.create).toHaveBeenCalled();
+      expect(mockDatabaseService.favoriteBand.create).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if band does not exist', async () => {
-      mockPrismaService.band.findUnique.mockResolvedValue(null);
+      mockDatabaseService.band.findUnique.mockResolvedValue(null);
 
       await expect(service.followBand(userId, bandId)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException if already following', async () => {
-      mockPrismaService.band.findUnique.mockResolvedValue(mockBand);
-      mockPrismaService.favoriteBand.findUnique.mockResolvedValue(mockFollow);
+      mockDatabaseService.band.findUnique.mockResolvedValue(mockBand);
+      mockDatabaseService.favoriteBand.findUnique.mockResolvedValue(mockFollow);
 
       await expect(service.followBand(userId, bandId)).rejects.toThrow(ConflictException);
     });
@@ -213,19 +213,19 @@ describe('FavoritesService', () => {
     const mockFollow = { id: 'follow-1', userId, bandId };
 
     it('should unfollow band successfully', async () => {
-      mockPrismaService.favoriteBand.findUnique.mockResolvedValue(mockFollow);
-      mockPrismaService.favoriteBand.delete.mockResolvedValue(mockFollow);
+      mockDatabaseService.favoriteBand.findUnique.mockResolvedValue(mockFollow);
+      mockDatabaseService.favoriteBand.delete.mockResolvedValue(mockFollow);
 
       const result = await service.unfollowBand(userId, bandId);
 
       expect(result).toEqual({ message: 'Unfollowed band' });
-      expect(mockPrismaService.favoriteBand.delete).toHaveBeenCalledWith({
+      expect(mockDatabaseService.favoriteBand.delete).toHaveBeenCalledWith({
         where: { id: mockFollow.id },
       });
     });
 
     it('should throw NotFoundException if not following', async () => {
-      mockPrismaService.favoriteBand.findUnique.mockResolvedValue(null);
+      mockDatabaseService.favoriteBand.findUnique.mockResolvedValue(null);
 
       await expect(service.unfollowBand(userId, bandId)).rejects.toThrow(NotFoundException);
     });
@@ -235,12 +235,12 @@ describe('FavoritesService', () => {
     const bandId = 'band-1';
 
     it('should return follower count', async () => {
-      mockPrismaService.favoriteBand.count.mockResolvedValue(42);
+      mockDatabaseService.favoriteBand.count.mockResolvedValue(42);
 
       const result = await service.getBandFollowerCount(bandId);
 
       expect(result).toBe(42);
-      expect(mockPrismaService.favoriteBand.count).toHaveBeenCalledWith({
+      expect(mockDatabaseService.favoriteBand.count).toHaveBeenCalledWith({
         where: { bandId },
       });
     });
@@ -264,25 +264,25 @@ describe('FavoritesService', () => {
     };
 
     it('should add video to watch later successfully', async () => {
-      mockPrismaService.video.findUnique.mockResolvedValue(mockVideo);
-      mockPrismaService.watchLater.findUnique.mockResolvedValue(null);
-      mockPrismaService.watchLater.create.mockResolvedValue(mockWatchLater);
+      mockDatabaseService.video.findUnique.mockResolvedValue(mockVideo);
+      mockDatabaseService.watchLater.findUnique.mockResolvedValue(null);
+      mockDatabaseService.watchLater.create.mockResolvedValue(mockWatchLater);
 
       const result = await service.addToWatchLater(userId, videoId);
 
       expect(result).toEqual(mockWatchLater);
-      expect(mockPrismaService.watchLater.create).toHaveBeenCalled();
+      expect(mockDatabaseService.watchLater.create).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if video does not exist', async () => {
-      mockPrismaService.video.findUnique.mockResolvedValue(null);
+      mockDatabaseService.video.findUnique.mockResolvedValue(null);
 
       await expect(service.addToWatchLater(userId, videoId)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException if already in watch later', async () => {
-      mockPrismaService.video.findUnique.mockResolvedValue(mockVideo);
-      mockPrismaService.watchLater.findUnique.mockResolvedValue(mockWatchLater);
+      mockDatabaseService.video.findUnique.mockResolvedValue(mockVideo);
+      mockDatabaseService.watchLater.findUnique.mockResolvedValue(mockWatchLater);
 
       await expect(service.addToWatchLater(userId, videoId)).rejects.toThrow(ConflictException);
     });
@@ -294,8 +294,8 @@ describe('FavoritesService', () => {
     const mockWatchLater = { id: 'wl-1', userId, videoId, watched: false };
 
     it('should mark video as watched', async () => {
-      mockPrismaService.watchLater.findUnique.mockResolvedValue(mockWatchLater);
-      mockPrismaService.watchLater.update.mockResolvedValue({ 
+      mockDatabaseService.watchLater.findUnique.mockResolvedValue(mockWatchLater);
+      mockDatabaseService.watchLater.update.mockResolvedValue({ 
         ...mockWatchLater, 
         watched: true, 
         watchedAt: new Date() 
@@ -304,7 +304,7 @@ describe('FavoritesService', () => {
       const result = await service.updateWatchLater(userId, videoId, { watched: true });
 
       expect(result.watched).toBe(true);
-      expect(mockPrismaService.watchLater.update).toHaveBeenCalledWith(
+      expect(mockDatabaseService.watchLater.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ watched: true }),
         }),
@@ -312,8 +312,8 @@ describe('FavoritesService', () => {
     });
 
     it('should mark video as unwatched', async () => {
-      mockPrismaService.watchLater.findUnique.mockResolvedValue({ ...mockWatchLater, watched: true });
-      mockPrismaService.watchLater.update.mockResolvedValue({ 
+      mockDatabaseService.watchLater.findUnique.mockResolvedValue({ ...mockWatchLater, watched: true });
+      mockDatabaseService.watchLater.update.mockResolvedValue({ 
         ...mockWatchLater, 
         watched: false, 
         watchedAt: null 
@@ -325,7 +325,7 @@ describe('FavoritesService', () => {
     });
 
     it('should throw NotFoundException if not in watch later', async () => {
-      mockPrismaService.watchLater.findUnique.mockResolvedValue(null);
+      mockDatabaseService.watchLater.findUnique.mockResolvedValue(null);
 
       await expect(service.updateWatchLater(userId, videoId, { watched: true })).rejects.toThrow(NotFoundException);
     });
@@ -335,7 +335,7 @@ describe('FavoritesService', () => {
     const userId = 'user-1';
 
     it('should return correct stats', async () => {
-      mockPrismaService.watchLater.count
+      mockDatabaseService.watchLater.count
         .mockResolvedValueOnce(10) // total
         .mockResolvedValueOnce(6); // watched
 
@@ -354,8 +354,8 @@ describe('FavoritesService', () => {
     const videoId = 'video-1';
 
     it('should return combined status', async () => {
-      mockPrismaService.favoriteVideo.findUnique.mockResolvedValue({ id: 'fav-1' });
-      mockPrismaService.watchLater.findUnique.mockResolvedValue(null);
+      mockDatabaseService.favoriteVideo.findUnique.mockResolvedValue({ id: 'fav-1' });
+      mockDatabaseService.watchLater.findUnique.mockResolvedValue(null);
 
       const result = await service.getVideoStatus(userId, videoId);
 

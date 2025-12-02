@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { QueueName, CleanupVideosJobData } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
-import { PrismaService } from '@hbcu-band-hub/prisma';
+import { PrismaService } from '../services/prisma.service';
 
 @Processor(QueueName.MAINTENANCE, {
   concurrency: 1,  // Run maintenance jobs one at a time

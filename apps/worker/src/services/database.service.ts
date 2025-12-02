@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@hbcu-band-hub/prisma';
+import { PrismaService } from './prisma.service';
 import { Band, Video, Category, Prisma, SyncStatus, SyncJobType, SyncJobStatus } from '@prisma/client';
 import { YouTubeVideoMetadata } from '@hbcu-band-hub/shared-types';
 import { 

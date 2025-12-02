@@ -29,7 +29,7 @@ import { unlink } from 'fs/promises';
 import { UpdateFeaturedOrderDto } from './dto';
 
 // Import AdminRole from generated Prisma client
-import { AdminRole } from '@hbcu-band-hub/prisma';
+import { AdminRole } from '@prisma/client';
 
 @ApiTags('Bands')
 @Controller('bands')

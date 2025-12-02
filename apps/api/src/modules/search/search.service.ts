@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import { DatabaseService } from '../../database/database.service';
 import { Prisma } from '@prisma/client';
 
 export interface SearchFilters {
@@ -53,7 +53,7 @@ export interface SearchResult {
 
 @Injectable()
 export class SearchService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: DatabaseService) {}
 
   /**
    * Advanced multi-faceted search with weighted results

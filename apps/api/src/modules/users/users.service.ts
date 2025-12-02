@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { PrismaService } from '@hbcu-band-hub/prisma';
+import { DatabaseService } from '../../database/database.service';
 import { EmailService } from '../email/email.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto, UserLoginResponseDto } from './dto/login-user.dto';
@@ -28,7 +28,7 @@ export class UsersService {
   private readonly RESET_TOKEN_EXPIRY_HOURS = 1;
 
   constructor(
-    private prisma: PrismaService,
+    private prisma: DatabaseService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,

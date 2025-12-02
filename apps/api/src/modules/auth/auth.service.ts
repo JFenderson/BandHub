@@ -7,7 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../../database/prisma.service';
+import { DatabaseService } from '../../database/database.service';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenResponseDto } from './dto/refresh-token.dto';
@@ -22,7 +22,7 @@ export class AuthService {
   private readonly LOCKOUT_DURATION_MINUTES = 15;
 
   constructor(
-    private prisma: PrismaService,
+    private prisma: DatabaseService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}

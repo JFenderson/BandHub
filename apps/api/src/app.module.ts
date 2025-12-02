@@ -16,7 +16,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { HealthModule } from './health/health.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { YoutubeModule } from './youtube/youtube.module';
-import { PrismaModule } from '@hbcu-band-hub/prisma';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CreatorsModule } from './modules/creators/creators.module';
@@ -37,7 +36,6 @@ import { CreatorsModule } from './modules/creators/creators.module';
     DatabaseModule,
     CacheModule,
     QueueModule,
-    PrismaModule,
     // Feature modules
     BandsModule,
     VideosModule,

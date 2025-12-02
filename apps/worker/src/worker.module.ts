@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { QueueName } from '@hbcu-band-hub/shared-types';
-import { PrismaModule } from '@hbcu-band-hub/prisma';
 
 // Services
 import { YouTubeService } from './services/youtube.service';
 import { DatabaseService } from './services/database.service';
+import { PrismaService } from './services/prisma.service';
 
 // Processors
 import { SyncBandProcessor } from './processors/sync-band.processor';
@@ -26,9 +26,6 @@ import { SyncScheduler } from './scheduler/sync.scheduler';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
-    
-    // Database
-    PrismaModule,
     
     // Enable scheduled jobs
     ScheduleModule.forRoot(),
@@ -94,6 +91,7 @@ import { SyncScheduler } from './scheduler/sync.scheduler';
   ],
   providers: [
     // Services
+    PrismaService,
     YouTubeService,
     DatabaseService,
     

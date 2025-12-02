@@ -19,7 +19,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 
 // Import AdminRole from generated Prisma client
-import { AdminRole } from '@hbcu-band-hub/prisma';
+import { AdminRole } from '@prisma/client';
 
 @ApiTags('Videos')
 @Controller('videos')

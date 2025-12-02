@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma.service';
+import { DatabaseService } from '../../database/database.service';
 import { SyncJobStatus, Prisma } from '@prisma/client';
 import {
   DashboardStatsDto,
@@ -17,7 +17,7 @@ import { VideoDetailDto } from './dto/video-detail.dto';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: DatabaseService) {}
 
   /**
    * Get dashboard statistics

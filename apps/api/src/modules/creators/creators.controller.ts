@@ -16,7 +16,7 @@ import { VideoQueryDto } from '../videos/dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { AdminRole } from '@hbcu-band-hub/prisma';
+import { AdminRole } from '@prisma/client';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Creators')

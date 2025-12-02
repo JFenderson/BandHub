@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { CacheService } from '../../cache/cache.service';
 import { BandsRepository } from './bands.repository';
 import { CreateBandDto, UpdateBandDto, BandQueryDto, UpdateFeaturedOrderDto } from './dto';
-import { PrismaService } from '../../database/prisma.service';
+import { DatabaseService } from '../../database/database.service';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
 
@@ -18,7 +18,7 @@ export class BandsService {
     private readonly bandsRepository: BandsRepository,
     private readonly cacheService: CacheService,
     private readonly configService: ConfigService,
-    private readonly prismaService: PrismaService,
+    private readonly prismaService: DatabaseService,
   ) {}
 
   async findAll(query: BandQueryDto) {

@@ -7,6 +7,7 @@
     "start": "cd ../.. && node apps/api/dist/apps/api/src/main.js",
     "start:dev": "nest start --watch --entryFile apps/api/src/main",
     "start:prod": "cd ../.. && node apps/api/dist/apps/api/src/main.js",
+    "predev": "prisma generate",
     "dev": "nest start --watch --entryFile apps/api/src/main",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "test": "jest --config jest.config.ts",
@@ -89,8 +90,7 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@hbcu-band-hub/shared(.*)$": "<rootDir>/../../../libs/shared/src$1",
-      "^@hbcu-band-hub/prisma$": "<rootDir>/../../../libs/prisma/src"
+      "^@hbcu-band-hub/shared(.*)$": "<rootDir>/../../../libs/shared/src$1"
     }
   }
 }

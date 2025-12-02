@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@hbcu-band-hub/prisma';
+import { DatabaseService } from '../../../database/database.service';
 import { randomBytes } from 'crypto';
 
 /**
@@ -9,7 +9,7 @@ import { randomBytes } from 'crypto';
 export class ApiKeyService {
   private readonly logger = new Logger(ApiKeyService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: DatabaseService) {}
 
   /**
    * Generate a new API key

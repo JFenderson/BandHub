@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { EmailService } from '../email/email.service';
-import { PrismaService } from '@hbcu-band-hub/prisma';
+import { DatabaseService } from '../../database/database.service';
 
 // Mock bcrypt module
 jest.mock('bcrypt', () => ({
@@ -15,8 +15,8 @@ jest.mock('bcrypt', () => ({
 // Import bcrypt after mocking
 import * as bcrypt from 'bcrypt';
 
-// Mock PrismaService
-const mockPrismaService = {
+// Mock DatabaseService
+const mockDatabaseService = {
   user: {
     findUnique: jest.fn(),
     create: jest.fn(),
@@ -70,7 +70,7 @@ describe('UsersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: DatabaseService, useValue: mockDatabaseService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: EmailService, useValue: mockEmailService },
@@ -91,14 +91,14 @@ describe('UsersService', () => {
     };
 
     it('should successfully register a new user', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.user.create.mockResolvedValue({
+      mockDatabaseService.user.findUnique.mockResolvedValue(null);
+      mockDatabaseService.user.create.mockResolvedValue({
         id: 'user-1',
         email: registerDto.email,
         name: registerDto.name,
         createdAt: new Date(),
       });
-      mockPrismaService.emailVerificationToken.create.mockResolvedValue({
+      mockDatabaseService.emailVerificationToken.create.mockResolvedValue({
         id: 'token-1',
         token: 'hashed-token',
       });
@@ -112,7 +112,7 @@ describe('UsersService', () => {
     });
 
     it('should throw ConflictException if user already exists', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue({
+      mockDatabaseService.user.findUnique.mockResolvedValue({
         id: 'existing-user',
         email: registerDto.email,
       });
@@ -137,10 +137,10 @@ describe('UsersService', () => {
     };
 
     it('should successfully login a user', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      mockPrismaService.user.update.mockResolvedValue(mockUser);
-      mockPrismaService.userSession.create.mockResolvedValue({
+      mockDatabaseService.user.update.mockResolvedValue(mockUser);
+      mockDatabaseService.userSession.create.mockResolvedValue({
         id: 'session-1',
         token: 'hashed-session-token',
       });
@@ -153,13 +153,13 @@ describe('UsersService', () => {
     });
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockDatabaseService.user.findUnique.mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException for wrong password', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
@@ -168,13 +168,13 @@ describe('UsersService', () => {
 
   describe('forgotPassword', () => {
     it('should send password reset email for existing user', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue({
+      mockDatabaseService.user.findUnique.mockResolvedValue({
         id: 'user-1',
         email: 'test@example.com',
         name: 'Test User',
       });
-      mockPrismaService.passwordResetToken.deleteMany.mockResolvedValue({ count: 0 });
-      mockPrismaService.passwordResetToken.create.mockResolvedValue({
+      mockDatabaseService.passwordResetToken.deleteMany.mockResolvedValue({ count: 0 });
+      mockDatabaseService.passwordResetToken.create.mockResolvedValue({
         id: 'token-1',
         token: 'hashed-token',
       });
@@ -185,7 +185,7 @@ describe('UsersService', () => {
     });
 
     it('should not throw error for non-existing user (prevent email enumeration)', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockDatabaseService.user.findUnique.mockResolvedValue(null);
 
       await expect(service.forgotPassword({ email: 'nonexistent@example.com' })).resolves.not.toThrow();
       expect(mockEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
@@ -194,12 +194,12 @@ describe('UsersService', () => {
 
   describe('verifyEmail', () => {
     it('should verify email with valid token', async () => {
-      mockPrismaService.emailVerificationToken.findUnique.mockResolvedValue({
+      mockDatabaseService.emailVerificationToken.findUnique.mockResolvedValue({
         id: 'token-1',
         userId: 'user-1',
         expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
       });
-      mockPrismaService.$transaction.mockImplementation(async (fn) => {
+      mockDatabaseService.$transaction.mockImplementation(async (fn) => {
         return fn;
       });
 
@@ -207,13 +207,13 @@ describe('UsersService', () => {
     });
 
     it('should throw BadRequestException for invalid token', async () => {
-      mockPrismaService.emailVerificationToken.findUnique.mockResolvedValue(null);
+      mockDatabaseService.emailVerificationToken.findUnique.mockResolvedValue(null);
 
       await expect(service.verifyEmail('invalid-token')).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException for expired token', async () => {
-      mockPrismaService.emailVerificationToken.findUnique.mockResolvedValue({
+      mockDatabaseService.emailVerificationToken.findUnique.mockResolvedValue({
         id: 'token-1',
         userId: 'user-1',
         expiresAt: new Date(Date.now() - 3600000), // 1 hour ago
@@ -237,10 +237,10 @@ describe('UsersService', () => {
         passwordHash: '$2b$12$hashedpassword',
       };
 
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       (bcrypt.hash as jest.Mock).mockResolvedValue('$2b$12$newhashedpassword');
-      mockPrismaService.$transaction.mockImplementation(async (operations) => {
+      mockDatabaseService.$transaction.mockImplementation(async (operations) => {
         return operations;
       });
 
@@ -249,7 +249,7 @@ describe('UsersService', () => {
     });
 
     it('should throw BadRequestException for incorrect current password', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue({
+      mockDatabaseService.user.findUnique.mockResolvedValue({
         id: 'user-1',
         passwordHash: '$2b$12$hashedpassword',
       });
@@ -273,7 +273,7 @@ describe('UsersService', () => {
         },
       ];
 
-      mockPrismaService.userSession.findMany.mockResolvedValue(mockSessions);
+      mockDatabaseService.userSession.findMany.mockResolvedValue(mockSessions);
 
       const result = await service.getSessions('user-1');
 
@@ -289,12 +289,12 @@ describe('UsersService', () => {
         name: 'Test User',
       };
 
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      mockPrismaService.user.delete.mockResolvedValue(mockUser);
+      mockDatabaseService.user.findUnique.mockResolvedValue(mockUser);
+      mockDatabaseService.user.delete.mockResolvedValue(mockUser);
 
       await service.deleteAccount('user-1');
 
-      expect(mockPrismaService.user.delete).toHaveBeenCalledWith({
+      expect(mockDatabaseService.user.delete).toHaveBeenCalledWith({
         where: { id: 'user-1' },
       });
       expect(mockEmailService.sendAccountDeletedEmail).toHaveBeenCalledWith(
