@@ -6,7 +6,7 @@ import FeaturedBandsCarousel from '@/components/home/FeaturedBandsCarousel';
 
 export default async function HomePage() {
   // Fetch featured content - using try/catch for resilience
-  const [bandsResult, videosResult] = await Promise.allSettled([
+  const [bandsResult, videosResult, categoriesResult] = await Promise.allSettled([
     apiClient.getBands({ limit: 10 }),
     apiClient.getVideos({ limit: 10, sortBy: 'publishedAt', sortOrder: 'desc' }),
     apiClient.getCategories(),

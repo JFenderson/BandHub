@@ -130,13 +130,9 @@ export class VideosRepository {
     // Execute the query with relationships
     const [videos, total] = await Promise.all([
       this.db.video.findMany({
-         where: {
-      isHidden: false
-    },
-    orderBy: {
-      publishedAt: "desc"
-    },
-    skip: skip,
+         where,
+    orderBy,
+    skip,
         take: limit,
         include: {
           band: {
