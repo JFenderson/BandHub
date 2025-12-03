@@ -20,16 +20,13 @@ import { YoutubeModule } from './youtube/youtube.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CreatorsModule } from './modules/creators/creators.module';
+import { SecretsModule } from './modules/secrets-manager/secrets.module';
+import { AppConfigModule } from './modules/config/config.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: [
-        '../../.env', // Root . env for monorepo
-        '. env', // Fallback to local .env if exists
-      ],
-    }),
+    // Configuration with validation (replaces basic ConfigModule.forRoot)
+    AppConfigModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -41,6 +38,7 @@ import { CreatorsModule } from './modules/creators/creators.module';
     DatabaseModule,
     CacheModule,
     QueueModule,
+    SecretsModule, // Centralized secrets management
     // Feature modules
     BandsModule,
     VideosModule,

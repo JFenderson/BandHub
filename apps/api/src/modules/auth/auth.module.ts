@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -9,6 +9,8 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { DatabaseModule } from '../../database/database.module';
 import { ApiKeyService } from './services/api-key.service';
+import { JwtRotationService } from './services/jwt-rotation.service';
+import { SecurityAuditService } from './services/security-audit.service';
 import { ApiKeysController } from './controllers/api-keys.controller';
 import { SessionService } from './services/session.service';
 import { MfaService } from './services/mfa.service';
@@ -30,7 +32,7 @@ import { MagicLinkController } from './controllers/magic-link.controller';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
+      useFactory: (configService: ConfigService): JwtModuleOptions => {
         const secret = configService.get<string>('JWT_SECRET');
         if (!secret) {
           throw new Error('JWT_SECRET environment variable is required');
@@ -59,6 +61,7 @@ import { MagicLinkController } from './controllers/magic-link.controller';
     PasswordController,
     MagicLinkController,
   ],
+  controllers: [AuthController, ApiKeysController],
   providers: [
     AuthService,
     JwtStrategy,
@@ -70,6 +73,8 @@ import { MagicLinkController } from './controllers/magic-link.controller';
     MagicLinkService,
     OAuthService,
     DeviceFingerprintService,
+    JwtRotationService,
+    SecurityAuditService,
   ],
   exports: [
     AuthService,
@@ -84,6 +89,8 @@ import { MagicLinkController } from './controllers/magic-link.controller';
     MagicLinkService,
     OAuthService,
     DeviceFingerprintService,
+    JwtRotationService,
+    SecurityAuditService,
   ],
 })
 export class AuthModule {}
