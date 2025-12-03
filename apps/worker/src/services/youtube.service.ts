@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { google, youtube_v3 } from 'googleapis';
 import { ConfigService } from '@nestjs/config';
 import { YouTubeVideoMetadata } from '@hbcu-band-hub/shared-types';
+import { CircuitBreakerService } from '../external/circuit-breaker.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 // Custom error types for better error handling upstream
 export class YouTubeQuotaExceededError extends Error {
@@ -31,11 +33,31 @@ export class YouTubeService {
   private lastResetTime = Date.now();
   private readonly MAX_CALLS_PER_MINUTE = 60;  // Conservative limit
   
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private circuitBreakerService: CircuitBreakerService,
+    private metricsService: MetricsService,
+  ) {
     this.youtube = google.youtube({
       version: 'v3',
       auth: this.configService.get<string>('YOUTUBE_API_KEY'),
     });
+  }
+
+  private async protectedCall<T>(endpoint: string, fn: () => Promise<T>): Promise<T> {
+    this.metricsService.startYouTubeCall();
+    try {
+      const res = await this.circuitBreakerService.fire(fn, endpoint);
+      this.metricsService.incrementYouTube(endpoint);
+      return res as T;
+    } catch (err: any) {
+      if (err?.message === 'circuit_open') {
+        this.metricsService.recordCircuitOpen();
+      }
+      throw err;
+    } finally {
+      this.metricsService.endYouTubeCall();
+    }
   }
   
   /**
@@ -57,18 +79,20 @@ export class YouTubeService {
     
     try {
       // First, search for video IDs
-      const searchResponse = await this.youtube.search.list({
-        part: ['id'],
-        q: params.query,
-        channelId: params.channelId,
-        publishedAfter: params.publishedAfter?.toISOString(),
-        maxResults: params.maxResults || 50,
-        pageToken: params.pageToken,
-        type: ['video'],
-        order: 'date',  // Most recent first
-        relevanceLanguage: 'en',
-        safeSearch: 'none',
-      });
+      const searchResponse = await this.protectedCall('youtube.search.list', () =>
+        this.youtube.search.list({
+          part: ['id'],
+          q: params.query,
+          channelId: params.channelId,
+          publishedAfter: params.publishedAfter?.toISOString(),
+          maxResults: params.maxResults || 50,
+          pageToken: params.pageToken,
+          type: ['video'],
+          order: 'date', // Most recent first
+          relevanceLanguage: 'en',
+          safeSearch: 'none',
+        }),
+      );
       
       this.apiCallCount++;
       
@@ -113,10 +137,12 @@ export class YouTubeService {
     const allVideos: YouTubeVideoMetadata[] = [];
     
     for (const chunk of chunks) {
-      const response = await this.youtube.videos.list({
-        part: ['snippet', 'contentDetails', 'statistics'],
-        id: chunk,
-      });
+      const response = await this.protectedCall('youtube.videos.list', () =>
+        this.youtube.videos.list({
+          part: ['snippet', 'contentDetails', 'statistics'],
+          id: chunk,
+        }),
+      );
       
       this.apiCallCount++;
       
@@ -181,10 +207,12 @@ export class YouTubeService {
     
     try {
       // Get the uploads playlist ID for the channel
-      const channelResponse = await this.youtube.channels.list({
-        part: ['contentDetails'],
-        id: [params.channelId],
-      });
+      const channelResponse = await this.protectedCall('youtube.channels.list', () =>
+        this.youtube.channels.list({
+          part: ['contentDetails'],
+          id: [params.channelId],
+        }),
+      );
       
       this.apiCallCount++;
       
@@ -197,11 +225,13 @@ export class YouTubeService {
       }
       
       // Get videos from the uploads playlist
-      const playlistResponse = await this.youtube.playlistItems.list({
-        part: ['contentDetails'],
-        playlistId: uploadsPlaylistId,
-        maxResults: params.maxResults || 50,
-      });
+      const playlistResponse = await this.protectedCall('youtube.playlistItems.list', () =>
+        this.youtube.playlistItems.list({
+          part: ['contentDetails'],
+          playlistId: uploadsPlaylistId,
+          maxResults: params.maxResults || 50,
+        }),
+      );
       
       this.apiCallCount++;
       

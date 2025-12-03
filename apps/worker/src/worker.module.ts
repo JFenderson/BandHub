@@ -2,12 +2,14 @@ import { Module, Global } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { MetricsModule } from './metrics/metrics.module';
 import { QueueName } from '@hbcu-band-hub/shared-types';
 
 // Services
 import { YouTubeService } from './services/youtube.service';
 import { DatabaseService } from './services/database.service';
 import { PrismaService } from './services/prisma.service';
+import { CircuitBreakerService } from './external/circuit-breaker.service';
 
 // Processors
 import { SyncBandProcessor } from './processors/sync-band.processor';
@@ -29,6 +31,8 @@ import { SyncScheduler } from './scheduler/sync.scheduler';
     
     // Enable scheduled jobs
     ScheduleModule.forRoot(),
+    // Worker metrics (exposes /metrics on configured port)
+    MetricsModule,
     
     // BullMQ configuration
     BullModule.forRootAsync({
@@ -94,6 +98,10 @@ import { SyncScheduler } from './scheduler/sync.scheduler';
     PrismaService,
     YouTubeService,
     DatabaseService,
+    
+    // Metrics
+    // MetricsModule is imported so MetricsService is available application-wide
+    CircuitBreakerService,
     
     // Processors
     SyncBandProcessor,
