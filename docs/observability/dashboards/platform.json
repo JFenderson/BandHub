@@ -1,0 +1,62 @@
+{
+  "title": "BandHub Platform Health",
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "API Latency (p50/p95/p99)",
+      "targets": [
+        { "expr": "histogram_quantile(0.5, sum(rate(bandhub_api_latency_seconds_bucket[5m])) by (le))" },
+        { "expr": "histogram_quantile(0.95, sum(rate(bandhub_api_latency_seconds_bucket[5m])) by (le))" },
+        { "expr": "histogram_quantile(0.99, sum(rate(bandhub_api_latency_seconds_bucket[5m])) by (le))" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Database Slow Queries",
+      "targets": [
+        {
+          "expr": "sum(rate(bandhub_db_query_seconds_bucket{le=\"+Inf\"}[5m])) - sum(rate(bandhub_db_query_seconds_bucket{le=\"0.5\"}[5m]))"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Redis Cache Hit/Miss",
+      "targets": [
+        { "expr": "sum(rate(bandhub_redis_hits_total[5m]))" },
+        { "expr": "sum(rate(bandhub_redis_misses_total[5m]))" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "YouTube Quota",
+      "targets": [
+        { "expr": "bandhub_youtube_quota_remaining" },
+        { "expr": "bandhub_youtube_quota_used" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Video Sync Job Success/Failure",
+      "targets": [
+        { "expr": "sum(rate(bandhub_video_sync_results_total{result=\"success\"}[5m]))" },
+        { "expr": "sum(rate(bandhub_video_sync_results_total{result=\"failure\"}[5m]))" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Authentication Events",
+      "targets": [
+        { "expr": "sum(rate(bandhub_auth_events_total[5m])) by (type)" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Featured Band Click-Through",
+      "targets": [
+        { "expr": "sum(rate(bandhub_featured_band_clicks_total[5m])) by (band_id)" }
+      ]
+    }
+  ]
+}

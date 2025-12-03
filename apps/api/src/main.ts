@@ -4,10 +4,23 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import { CacheService } from './cache/cache.service';
+import {
+  correlationIdMiddleware,
+  createHttpLogger,
+  initSentry,
+  startTracing,
+} from '@hbcu-band-hub/observability';
+import * as Sentry from '@sentry/node';
 
 async function bootstrap() {
-   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  startTracing('api');
+  initSentry('api');
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: false,
+  });
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(correlationIdMiddleware as never);
+  app.use(createHttpLogger());
 
   // const cacheService = app.get(CacheService);
   // await cacheService.delPattern('bands:*');
@@ -17,24 +30,24 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Enable CORS for frontend
-app.enableCors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: process.env.NODE_ENV === 'production' 
-    ? [
-        'Content-Type',
-        'Authorization',
-        'x-session-token',
-        'cache-control',
-        'x-requested-with',
-        'accept',
-        'origin',
-      ]
-    : '*', // Allow all headers in development
-  exposedHeaders: ['set-cookie'],
-  maxAge: 3600, // Cache preflight for 1 hour
-});
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: process.env.NODE_ENV === 'production'
+      ? [
+          'Content-Type',
+          'Authorization',
+          'x-session-token',
+          'cache-control',
+          'x-requested-with',
+          'accept',
+          'origin',
+        ]
+      : '*', // Allow all headers in development
+    exposedHeaders: ['set-cookie'],
+    maxAge: 3600, // Cache preflight for 1 hour
+  });
 
   // Global validation pipe - validates all incoming DTOs
   app.useGlobalPipes(

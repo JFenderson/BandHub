@@ -18,6 +18,7 @@ import { SyncModule } from './modules/sync/sync.module';
 import { YoutubeModule } from './youtube/youtube.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { ObservabilityModule } from './observability/observability.module';
 import { CreatorsModule } from './modules/creators/creators.module';
 
 @Module({
@@ -56,6 +57,7 @@ import { CreatorsModule } from './modules/creators/creators.module';
     CreatorsModule,
     // Utilities
     HealthModule,
+    ObservabilityModule,
   ],
   providers: [
     {
