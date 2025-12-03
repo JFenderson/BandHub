@@ -75,7 +75,7 @@ export class VideosRepository {
 
     // Tags filtering
     if (tags) {
-      const tagList = tags.split(',').map(tag => tag.trim());
+      const tagList = tags.split(',').map((tag) => tag.trim());
       where.tags = {
         hasSome: tagList,
       };
@@ -98,7 +98,7 @@ export class VideosRepository {
         },
         {
           tags: {
-            hasSome: search.split(' ').map(term => term.trim()),
+            hasSome: search.split(' ').map((term) => term.trim()),
           },
         },
         {
@@ -130,9 +130,9 @@ export class VideosRepository {
     // Execute the query with relationships
     const [videos, total] = await Promise.all([
       this.db.video.findMany({
-         where,
-    orderBy,
-    skip,
+        where,
+        orderBy,
+       ...(skip > 0 && { skip }),
         take: limit,
         include: {
           band: {

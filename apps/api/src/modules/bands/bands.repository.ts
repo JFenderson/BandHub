@@ -71,9 +71,9 @@ export class BandsRepository {
     // Execute the query
     const [bands, total] = await Promise.all([
       this.db.band.findMany({
-            where,
-    orderBy,
-    skip, 
+        where,
+        orderBy,
+        ...(skip > 0 && { skip }),
         take: limit,
         include: {
           _count: {

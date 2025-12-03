@@ -4,14 +4,14 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "start": "cd ../.. && node apps/api/dist/apps/api/src/main.js",
-    "start:dev": "nest start --watch --entryFile apps/api/src/main",
-    "start:prod": "cd ../.. && node apps/api/dist/apps/api/src/main.js",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main.js",
     "predev": "prisma generate",
-    "dev": "nest start --watch --entryFile apps/api/src/main",
-    "lint": "eslint \"{src,test}/**/*.ts\" --fix",
+    "dev": "nest start --watch",
+    "lint": "eslint \"{src,test}/**/*. ts\" --fix",
     "test": "jest --config jest.config.ts",
-    "test:watch": "jest --config jest.config.ts --watch",
+    "test:watch": "jest --config jest.config. ts --watch",
     "test:cov": "jest --config jest.config.ts --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "clean": "rm -rf dist",
@@ -21,7 +21,8 @@
     "prisma:reset": "prisma migrate reset --force",
     "prisma:studio": "prisma studio",
     "prisma:deploy": "prisma migrate deploy",
-    "api-key:create": "tsx apps/api/scripts/create-api-key.ts"
+    "api-key:create": "tsx scripts/create-api-key.ts",
+    "promote:videos": "tsx scripts/promote-videos.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

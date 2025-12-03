@@ -40,7 +40,6 @@
     "form-data": "^4.0.5",
     "node-fetch": "^2.7.0",
     "prettier": "^3.3.0",
-    "prisma": "^5.22.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "turbo": "^2.1.0",
@@ -52,10 +51,11 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/schedule": "^6.0.1",
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "5.22.0",
     "bullmq": "^5.64.0",
     "googleapis": "^166.0.0",
-    "ioredis": "^5.8.2"
+    "ioredis": "^5.8.2",
+    "prisma": "5.22.0"
   },
   "engines": {
     "node": ">=20.0.0"

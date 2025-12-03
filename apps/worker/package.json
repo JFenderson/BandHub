@@ -5,10 +5,10 @@
   "scripts": {
     "build": "nest build",
     "start": "node dist/main.js",
-    "start:dev": "nest start --watch --entryFile apps/worker/src/main",
-    "start:debug": "nest start --debug --watch --entryFile apps/worker/src/main",
-    "start:prod": "node dist/apps/worker/src/main.js",
-    "dev": "nest start --watch --entryFile apps/worker/src/main"
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main.js",
+    "dev": "nest start --watch"
   },
   "dependencies": {
     "@hbcu-band-hub/shared-types": "*",

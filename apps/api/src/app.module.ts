@@ -24,6 +24,10 @@ import { CreatorsModule } from './modules/creators/creators.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        '../../.env', // Root . env for monorepo
+        '. env', // Fallback to local .env if exists
+      ],
     }),
     ThrottlerModule.forRoot([
       {
@@ -54,7 +58,7 @@ import { CreatorsModule } from './modules/creators/creators.module';
     HealthModule,
   ],
   providers: [
-        {
+    {
       provide: APP_GUARD,
       useClass: ThrottlerGuard, // Apply rate limiting globally
     },
