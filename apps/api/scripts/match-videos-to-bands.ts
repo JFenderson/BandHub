@@ -16,13 +16,33 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Parse command line arguments
+// Parse command line arguments with validation
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
-const limitIndex = args.indexOf('--limit');
-const processLimit = limitIndex !== -1 ? parseInt(args[limitIndex + 1]) : Infinity;
-const minConfidenceIndex = args.indexOf('--min-confidence');
-const minConfidence = minConfidenceIndex !== -1 ? parseInt(args[minConfidenceIndex + 1]) : 30;
+
+function parseIntArg(argName: string, defaultValue: number, min?: number, max?: number): number {
+  const index = args.indexOf(argName);
+  if (index === -1 || index + 1 >= args.length) {
+    return defaultValue;
+  }
+  const value = parseInt(args[index + 1], 10);
+  if (isNaN(value)) {
+    console.warn(`⚠️  Invalid ${argName} value, using default: ${defaultValue}`);
+    return defaultValue;
+  }
+  if (min !== undefined && value < min) {
+    console.warn(`⚠️  ${argName} must be >= ${min}, using: ${min}`);
+    return min;
+  }
+  if (max !== undefined && value > max) {
+    console.warn(`⚠️  ${argName} must be <= ${max}, using: ${max}`);
+    return max;
+  }
+  return value;
+}
+
+const processLimit = parseIntArg('--limit', Infinity, 1);
+const minConfidence = parseIntArg('--min-confidence', 30, 0, 100);
 
 // State name abbreviations for alias generation
 const stateAbbreviations: Record<string, string[]> = {
@@ -248,12 +268,15 @@ function generateAliases(band: { name: string; schoolName: string; state: string
   }
 
   // Special school-specific aliases
+  // NOTE: We use unique prefixes for short aliases to avoid conflicts
+  // between schools with similar abbreviations
   const schoolUpper = band.schoolName.toUpperCase();
   if (schoolUpper.includes('JACKSON STATE')) {
     aliases.push('jsu', 'j-state', 'jackson st', 'jackson');
   }
   if (schoolUpper.includes('SOUTHERN UNIVERSITY')) {
-    aliases.push('su', 'southern', 'southern u', 'subr');
+    // Use 'subr' (Southern University Baton Rouge) to differentiate
+    aliases.push('subr', 'southern', 'southern u', 'southern university baton rouge');
   }
   if (schoolUpper.includes('FLORIDA A&M')) {
     aliases.push('famu', 'florida am', 'florida a&m', 'fam');
@@ -262,13 +285,14 @@ function generateAliases(band: { name: string; schoolName: string; state: string
     aliases.push('gsu', 'grambling', 'grambling st');
   }
   if (schoolUpper.includes('HOWARD')) {
-    aliases.push('howard', 'hu', 'howard u');
+    aliases.push('howard', 'howard u', 'howard university');
   }
   if (schoolUpper.includes('TENNESSEE STATE')) {
-    aliases.push('tsu', 'tennessee st', 'tn state');
+    // Use 'tnsu' to differentiate from Texas Southern
+    aliases.push('tnsu', 'tennessee st', 'tn state', 'tennessee state');
   }
   if (schoolUpper.includes('TEXAS SOUTHERN')) {
-    aliases.push('txsu', 'tsu', 'texas southern', 'tx southern');
+    aliases.push('txsu', 'texas southern', 'tx southern');
   }
   if (schoolUpper.includes('PRAIRIE VIEW')) {
     aliases.push('pvamu', 'pv', 'prairie view');
@@ -277,7 +301,7 @@ function generateAliases(band: { name: string; schoolName: string; state: string
     aliases.push('nsu', 'norfolk', 'norfolk st');
   }
   if (schoolUpper.includes('HAMPTON')) {
-    aliases.push('hu', 'hampton', 'hampton u');
+    aliases.push('hampton', 'hampton u', 'hampton university');
   }
   if (schoolUpper.includes('MORGAN STATE')) {
     aliases.push('msu', 'morgan', 'morgan st');
@@ -292,10 +316,11 @@ function generateAliases(band: { name: string; schoolName: string; state: string
     aliases.push('aamu', 'alabama am');
   }
   if (schoolUpper.includes('ALABAMA STATE')) {
-    aliases.push('asu', 'bama state', 'alabama st');
+    // Use 'alasu' to differentiate from other state schools
+    aliases.push('alasu', 'bama state', 'alabama st', 'alabama state');
   }
   if (schoolUpper.includes('ALCORN')) {
-    aliases.push('alcorn', 'asu', 'alcorn st');
+    aliases.push('alcorn', 'alcorn st', 'alcorn state');
   }
   if (schoolUpper.includes('MISSISSIPPI VALLEY')) {
     aliases.push('mvsu', 'valley', 'miss valley');
@@ -307,7 +332,8 @@ function generateAliases(band: { name: string; schoolName: string; state: string
     aliases.push('wssu', 'winston salem', 'winston-salem');
   }
   if (schoolUpper.includes('FAYETTEVILLE STATE')) {
-    aliases.push('fsu', 'fayetteville');
+    // Use 'faysu' to differentiate from Florida State
+    aliases.push('faysu', 'fayetteville', 'fayetteville state');
   }
   if (schoolUpper.includes('CLARK ATLANTA')) {
     aliases.push('cau', 'clark', 'clark atlanta');
@@ -316,25 +342,28 @@ function generateAliases(band: { name: string; schoolName: string; state: string
     aliases.push('morehouse', 'house');
   }
   if (schoolUpper.includes('BOWIE STATE')) {
-    aliases.push('bsu', 'bowie');
+    // Use 'bowsu' to differentiate
+    aliases.push('bowsu', 'bowie', 'bowie state');
   }
   if (schoolUpper.includes('DELAWARE STATE')) {
-    aliases.push('dsu', 'delaware', 'del state');
+    aliases.push('desu', 'delaware', 'del state');
   }
   if (schoolUpper.includes('CENTRAL STATE')) {
-    aliases.push('csu', 'central state');
+    // Use 'csosu' for Central State of Ohio to differentiate
+    aliases.push('csosu', 'central state', 'central state ohio');
   }
   if (schoolUpper.includes('LANGSTON')) {
-    aliases.push('lu', 'langston');
+    aliases.push('langston', 'langston university');
   }
   if (schoolUpper.includes('TUSKEGEE')) {
-    aliases.push('tuskegee', 'tu');
+    aliases.push('tuskegee', 'tuskegee university');
   }
   if (schoolUpper.includes('MILES COLLEGE')) {
     aliases.push('miles', 'miles college');
   }
   if (schoolUpper.includes('ALBANY STATE')) {
-    aliases.push('asu', 'albany');
+    // Use 'albysu' to differentiate from Alabama State
+    aliases.push('albysu', 'albany', 'albany state');
   }
   if (schoolUpper.includes('FORT VALLEY')) {
     aliases.push('fvsu', 'fort valley');
@@ -346,7 +375,8 @@ function generateAliases(band: { name: string; schoolName: string; state: string
     aliases.push('ecsu', 'elizabeth city');
   }
   if (schoolUpper.includes('VIRGINIA STATE')) {
-    aliases.push('vsu', 'va state', 'virginia st');
+    // Use 'vasu' to differentiate from Valdosta State
+    aliases.push('vasu', 'va state', 'virginia st', 'virginia state');
   }
 
   // Remove duplicates and empty strings
@@ -379,14 +409,15 @@ function findMatches(
     let bestMatchType: MatchResult['matchType'] = 'abbreviation';
 
     for (const alias of band.aliases) {
-      // Skip very short aliases that might cause false positives
-      if (alias.length < 2) continue;
+      // Skip very short aliases (2 chars or less) that might cause false positives
+      // Minimum 3 characters required for matching
+      if (alias.length < 3) continue;
 
       // Check if alias appears in text
-      // Use word boundary matching for short aliases
+      // Use word boundary matching for short aliases (3-4 chars)
       let found = false;
       if (alias.length <= 4) {
-        // For short aliases like JSU, use word boundary
+        // For short aliases like JSU, FAMU, use strict word boundary
         const regex = new RegExp(`\\b${escapeRegex(alias)}\\b`, 'i');
         found = regex.test(lowerText);
       } else {
@@ -564,14 +595,15 @@ async function main() {
 
     // Check for battle video
     const isBattle = isBattleVideo(searchText);
-    let opponentBandId: string | null = null;
 
     if (isBattle && matches.length >= 2) {
       // Find second band for battle video
       const secondMatch = matches.find((m) => m.bandId !== topMatch.bandId);
       if (secondMatch && secondMatch.score >= minConfidence) {
-        opponentBandId = secondMatch.bandId;
         stats.battleVideos++;
+        // Note: YouTubeVideo model doesn't have opponentBandId field (only Video model does)
+        // Battle opponent info is detected and tracked for statistics only
+        // When videos are promoted to Video table, opponent can be set then
       } else {
         stats.singleBand++;
       }
@@ -588,16 +620,13 @@ async function main() {
     // Update database (if not dry run)
     if (!dryRun) {
       try {
-        const updateData: { bandId: string; qualityScore?: number } = {
-          bandId: topMatch.bandId,
-        };
-
-        // Store match confidence as quality score (if desired)
-        updateData.qualityScore = topMatch.score;
-
         await prisma.youTubeVideo.update({
           where: { id: video.id },
-          data: updateData,
+          data: {
+            bandId: topMatch.bandId,
+            // Store match confidence as quality score
+            qualityScore: topMatch.score,
+          },
         });
       } catch (error) {
         console.error(`   ❌ Error updating video ${video.youtubeId}: ${error}`);
