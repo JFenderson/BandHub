@@ -19,7 +19,7 @@ import { YoutubeModule } from './youtube/youtube.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CreatorsModule } from './modules/creators/creators.module';
-import { SecretsModule } from './modules/secrets/secrets.module';
+import { SecretsModule } from './modules/secrets-manager/secrets.module';
 import { AppConfigModule } from './modules/config/config.module';
 
 @Module({
