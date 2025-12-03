@@ -16,7 +16,8 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@hbcu-band-hub/shared-types": ["../../libs/shared/types"]
+      "@hbcu-band-hub/shared-types": ["../../libs/shared/types"],
+      "@hbcu-band-hub/observability": ["../../libs/observability/src"]
     }
   },
   "include": ["src/**/*"],

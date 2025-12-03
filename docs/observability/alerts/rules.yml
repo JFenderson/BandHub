@@ -1,0 +1,63 @@
+groups:
+  - name: bandhub-api
+    rules:
+      - alert: ApiHighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(bandhub_api_latency_seconds_bucket[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API latency p95 above 1s"
+          description: "Latency above SLO for more than 5 minutes"
+      - alert: ApiErrorRateSpike
+        expr: sum(rate(bandhub_api_latency_seconds_count{status_code!~"2.."}[5m])) / sum(rate(bandhub_api_latency_seconds_count[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API error rate >5%"
+          description: "Sustained elevated error rate"
+  - name: bandhub-backend
+    rules:
+      - alert: DatabaseSlowQueries
+        expr: sum(rate(bandhub_db_query_seconds_bucket{le="+Inf"}[5m])) - sum(rate(bandhub_db_query_seconds_bucket{le="0.5"}[5m])) > 25
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High slow-query volume"
+          description: "Prisma queries slower than 500ms exceed threshold"
+      - alert: RedisMissBurst
+        expr: sum(rate(bandhub_redis_misses_total[5m])) > sum(rate(bandhub_redis_hits_total[5m]))
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis miss rate dominates"
+          description: "Cache efficiency degraded"
+      - alert: YoutubeQuotaRisk
+        expr: bandhub_youtube_quota_remaining < 2000
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "YouTube quota low"
+          description: "Remaining quota below 2000 units"
+  - name: bandhub-jobs
+    rules:
+      - alert: VideoSyncFailures
+        expr: sum(rate(bandhub_video_sync_results_total{result="failure"}[10m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Video sync failures detected"
+          description: "Investigate worker logs and spans"
+      - alert: AuthenticationAnomalies
+        expr: sum(rate(bandhub_auth_events_total{type="failed"}[10m])) / sum(rate(bandhub_auth_events_total[10m])) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Auth failure ratio elevated"
+          description: "Possible login outage or credential abuse"
