@@ -17,12 +17,24 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Enable CORS for frontend
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-session-token'],
-  });
+app.enableCors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: process.env.NODE_ENV === 'production' 
+    ? [
+        'Content-Type',
+        'Authorization',
+        'x-session-token',
+        'cache-control',
+        'x-requested-with',
+        'accept',
+        'origin',
+      ]
+    : '*', // Allow all headers in development
+  exposedHeaders: ['set-cookie'],
+  maxAge: 3600, // Cache preflight for 1 hour
+});
 
   // Global validation pipe - validates all incoming DTOs
   app.useGlobalPipes(

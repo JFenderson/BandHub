@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Req,
   Post,
   Put,
   Patch,
@@ -26,7 +27,7 @@ import { CurrentUser, CurrentUserData } from '../../common/decorators/current-us
 import { diskStorage } from 'multer';
 import { processUploadedImage } from '../../common/utils/image-processing.util';
 import { unlink } from 'fs/promises';
-import { UpdateFeaturedOrderDto } from './dto';
+import { CreateBandDto, UpdateBandDto, BandQueryDto, UpdateFeaturedOrderDto } from './dto';
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@prisma/client';
@@ -43,20 +44,13 @@ export class BandsController {
   // PUBLIC ROUTES
   // ========================================
 
-  @Get()
-  @ApiOperation({ summary: 'Get all bands with pagination' })
-  @ApiResponse({ status: 200, description: 'Bands retrieved successfully' })
-  async findAll(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-    @Query('search') search?: string,
-  ) {
-    return this.bandsService.findAll({
-      page: Number(page),
-      limit: Number(limit),
-      search,
-    });
-  }
+@Get()
+@ApiOperation({ summary: 'Get all bands with pagination' })
+@ApiResponse({ status: 200, description: 'Bands retrieved successfully' })
+async findAll(@Query() query: BandQueryDto) {
+  return this.bandsService.findAll(query);
+}
+
 
   @Get('featured')
   @ApiOperation({ summary: 'Get featured bands for homepage carousel' })

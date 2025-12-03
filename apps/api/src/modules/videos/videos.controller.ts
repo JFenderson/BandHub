@@ -36,7 +36,7 @@ export class VideosController {
 @ApiOperation({ summary: 'Get all videos with filtering and pagination' })
 @ApiResponse({ status: 200, description: 'Videos retrieved successfully' })
 async findAll(@Req() req, @Query() query: VideoQueryDto) {
-  const result = await this. videosService. findAll(query);
+  const result = await this. videosService.findAll(query);
   return result;
 }
 
