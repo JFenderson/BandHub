@@ -1,17 +1,21 @@
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import { PrismaClient } from '@prisma/client';
+
+config({ path: resolve(__dirname, '../../.env') });
 
 const prisma = new PrismaClient();
 
 async function promoteVideos() {
   console.log('Starting video promotion...');
-  
+  console.log('Database URL:', process.env.DATABASE_URL ?  'Found' : 'Not found');
   // Get YouTubeVideos that haven't been promoted yet
-  const youtubeVideos = await prisma. youTubeVideo.findMany({
+  const youtubeVideos = await prisma.youTubeVideo.findMany({
     where: {
       isPromoted: false,
       bandId: { not: null }, // Only promote videos with a band assigned
     },
-    take: 1000, // Promote in batches
+    take: 50000, // Promote in batches
     include: {
       band: true,
       creator: true,

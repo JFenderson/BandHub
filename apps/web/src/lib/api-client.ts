@@ -14,8 +14,16 @@ import type {
 } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/types/auth';
+const getApiUrl = () => {
+  // Server-side (Node.js environment)
+  if (typeof window === 'undefined') {
+    return process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  }
+  // Client-side (browser)
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+};
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = getApiUrl();
 
 class ApiClient {
   private baseUrl: string;
@@ -57,6 +65,8 @@ class ApiClient {
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      Pragma: 'no-cache',
       ...options?.headers,
     };
 
@@ -73,6 +83,13 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
 
+      // Clone the response so we can read it twice for logging
+      const responseClone = response.clone();
+      const responseText = await responseClone.text();
+
+      const jsonData = JSON.parse(responseText);
+
+
       // Handle 401 Unauthorized
       if (response.status === 401 && !skipAuth) {
         // Try to refresh token
@@ -86,7 +103,7 @@ class ApiClient {
             if (this.onUnauthorized) {
               this.onUnauthorized();
             }
-            throw new Error('Session expired. Please login again.');
+            throw new Error('Session expired.  Please login again.');
           }
         } else {
           // No refresh token available or refresh endpoint failed
@@ -98,13 +115,11 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({
-          message: 'An error occurred',
-        }));
+        const error = jsonData || { message: 'An error occurred' };
         throw new Error(error.message || `HTTP ${response.status}`);
       }
 
-      return response.json();
+      return jsonData;
     } catch (error) {
       console.error('API request failed:', error);
       throw error;
@@ -301,7 +316,12 @@ class ApiClient {
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const query = params.toString();
-    return this.request<PaginatedResponse<Video>>(`/api/videos${query ? `?${query}` : ''}`);
+
+    const result = await this.request<PaginatedResponse<Video>>(
+      `/api/videos${query ? `?${query}` : ''}`,
+    );
+
+    return result;
   }
 
   async getVideo(id: string): Promise<Video> {

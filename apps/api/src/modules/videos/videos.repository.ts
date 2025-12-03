@@ -126,14 +126,14 @@ export class VideosRepository {
 
     // Pagination
     const skip = (page - 1) * limit;
-
+const takeValue = Math.max(1, Number(limit) || 20);
     // Execute the query with relationships
     const [videos, total] = await Promise.all([
       this.db.video.findMany({
         where,
         orderBy,
        ...(skip > 0 && { skip }),
-        take: limit,
+        take: takeValue,
         include: {
           band: {
             select: {

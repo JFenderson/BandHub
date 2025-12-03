@@ -1,5 +1,6 @@
 import {
   Controller,
+  Req,
   Get,
   Post,
   Put,
@@ -17,6 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
+import { VideoQueryDto } from './dto/video-query.dto';
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@prisma/client';
@@ -30,30 +32,13 @@ export class VideosController {
   // PUBLIC ROUTES (No authentication required)
   // ========================================
 
-  @Get()
-  @ApiOperation({ summary: 'Get all videos with filtering and pagination' })
-  @ApiResponse({ status: 200, description: 'Videos retrieved successfully' })
-  async findAll(
-    @Query('bandId') bandId?: string,
-    @Query('categoryId') categoryId?: string,
-    @Query('year') year?: number,
-    @Query('search') search?: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-    @Query('sortBy') sortBy?: 'publishedAt' | 'viewCount' | 'title' | 'createdAt',
-    @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'desc',
-  ) {
-    return this.videosService.findAll({
-      bandId,
-      categoryId,
-      eventYear: year ? Number(year) : undefined,
-      search,
-      page: Number(page),
-      limit: Number(limit),
-      sortBy: sortBy || 'publishedAt',
-      sortOrder,
-    });
-  }
+@Get()
+@ApiOperation({ summary: 'Get all videos with filtering and pagination' })
+@ApiResponse({ status: 200, description: 'Videos retrieved successfully' })
+async findAll(@Req() req, @Query() query: VideoQueryDto) {
+  const result = await this. videosService. findAll(query);
+  return result;
+}
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a video by ID' })
@@ -95,10 +80,7 @@ export class VideosController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Video not found' })
-  async unhideVideo(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async unhideVideo(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     return this.videosService.unhideVideo(id);
   }
 
@@ -154,10 +136,7 @@ export class VideosController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Video not found' })
-  async remove(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async remove(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     await this.videosService.delete(id);
   }
 }

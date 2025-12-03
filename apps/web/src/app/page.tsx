@@ -12,11 +12,13 @@ export default async function HomePage() {
     apiClient.getCategories(),
   ]);
 
+
   const bands = bandsResult.status === 'fulfilled' ? bandsResult.value.data : [];
   const videos = videosResult.status === 'fulfilled' ? videosResult.value.data : [];
   const categories = categoriesResult.status === 'fulfilled' 
     ? categoriesResult.value.slice(0, 6)  // Limit to 6 for display
     : [];
+
 
   return (
     <div className="bg-white">
