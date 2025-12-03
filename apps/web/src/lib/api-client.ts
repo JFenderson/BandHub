@@ -333,10 +333,6 @@ class ApiClient {
     return this.request<Video[]>(`/api/videos/search?${params}`);
   }
 
-  async getCategories(): Promise<any[]> {
-    return this.request<any[]>(`/api/categories`);
-  }
-
   // Creator methods
   async getCreators(filters?: CreatorFilters): Promise<PaginatedResponse<Creator>> {
     const params = new URLSearchParams();
@@ -497,8 +493,8 @@ class ApiClient {
     return this.request<any>(`/api/bands/featured-analytics`);
   }
 
-  async getCategories(): Promise<VideoCategory[]> {
-    return this.request<VideoCategory[]>(`/api/categories`);
+  async getCategories(): Promise<{ id: string; name: string; slug: string; description?: string }[]> {
+    return this.request<{ id: string; name: string; slug: string; description?: string }[]>(`/api/categories`);
   }
 }
 
