@@ -67,13 +67,17 @@ export class DopplerSecretsProvider implements SecretsProvider {
       const data = await response.json();
       
       // Store all secrets in memory
+      let skippedCount = 0;
       for (const [key, value] of Object.entries(data)) {
         if (typeof value === 'string') {
           this.secrets.set(key, value);
+        } else {
+          skippedCount++;
+          this.logger.debug(`Skipping non-string secret: ${key} (type: ${typeof value})`);
         }
       }
 
-      this.logger.log(`Loaded ${this.secrets.size} secrets from Doppler`);
+      this.logger.log(`Loaded ${this.secrets.size} secrets from Doppler${skippedCount > 0 ? ` (${skippedCount} non-string values skipped)` : ''}`);
     } catch (error) {
       this.logger.error('Failed to fetch secrets from Doppler', error);
       throw error;

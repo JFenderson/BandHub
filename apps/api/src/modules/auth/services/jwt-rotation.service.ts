@@ -370,10 +370,10 @@ export class JwtRotationService implements OnModuleInit {
   }
 
   /**
-   * Generate a unique key ID
+   * Generate a unique key ID with sufficient entropy
    */
   private generateKeyId(): string {
-    return `key_${crypto.randomBytes(8).toString('hex')}`;
+    return `key_${crypto.randomBytes(16).toString('hex')}`; // 128 bits of entropy
   }
 
   /**

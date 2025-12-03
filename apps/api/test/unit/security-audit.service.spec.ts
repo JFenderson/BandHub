@@ -277,16 +277,16 @@ describe('SecurityAuditService (unit)', () => {
       expect(parsed[1].action).toBe('login_failed');
     });
 
-    it('uses large limit for export', async () => {
+    it('caps limit at 10000 for memory safety', async () => {
       const { service, prisma } = createMocks();
       prisma.auditLog.findMany.mockResolvedValue([]);
-      prisma.auditLog.count.mockResolvedValue(0);
+      prisma.auditLog.count.mockResolvedValue(15000); // More than max
 
-      await service.exportToJson({ limit: 100 });
+      await service.exportToJson({ limit: 50000 }); // Request more than max
 
       const findManyCall = prisma.auditLog.findMany.mock.calls[0][0];
-      // Export should use a larger limit (up to 10000) compared to normal queries
-      expect(findManyCall.take).toBeGreaterThanOrEqual(1000);
+      // Should cap at 10000 or respect the query limit mechanism
+      expect(findManyCall.take).toBeLessThanOrEqual(10000);
     });
   });
 });

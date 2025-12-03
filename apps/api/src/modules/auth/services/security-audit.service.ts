@@ -319,10 +319,23 @@ export class SecurityAuditService {
 
   /**
    * Export audit logs to JSON format
+   * Note: For large exports, consider implementing streaming or batch processing
    */
   async exportToJson(options: AuditLogQueryOptions): Promise<string> {
-    // Override limit for export
-    const result = await this.query({ ...options, limit: 10000 });
+    // Cap at 10000 to prevent memory issues; for larger exports, use pagination
+    const maxExportLimit = 10000;
+    const result = await this.query({ 
+      ...options, 
+      limit: Math.min(options.limit || maxExportLimit, maxExportLimit) 
+    });
+    
+    if (result.total > maxExportLimit) {
+      this.logger.warn(
+        `Export limited to ${maxExportLimit} records. Total matching records: ${result.total}. ` +
+        'Consider using pagination for larger exports.'
+      );
+    }
+    
     return JSON.stringify(result.data, null, 2);
   }
 

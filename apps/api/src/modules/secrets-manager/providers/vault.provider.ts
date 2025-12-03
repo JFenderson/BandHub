@@ -109,11 +109,26 @@ export class VaultSecretsProvider implements SecretsProvider {
         return null;
       }
 
-      // If the secret has a 'value' key, return that
-      // Otherwise, return the first value found
-      const value = secrets.value || Object.values(secrets)[0];
+      // Try to get the value by key name first, then 'value' key, then first value as fallback
+      let value: string | undefined;
+      let fallbackStrategy: string | undefined;
       
-      if (typeof value === 'string') {
+      if (secrets[key] && typeof secrets[key] === 'string') {
+        value = secrets[key];
+        fallbackStrategy = 'exact-key-match';
+      } else if (secrets.value && typeof secrets.value === 'string') {
+        value = secrets.value;
+        fallbackStrategy = 'value-key';
+      } else {
+        const firstValue = Object.values(secrets)[0];
+        if (typeof firstValue === 'string') {
+          value = firstValue;
+          fallbackStrategy = 'first-value';
+          this.logger.debug(`Using first value fallback for secret ${key} (actual key: ${Object.keys(secrets)[0]})`);
+        }
+      }
+      
+      if (value) {
         this.secretsCache.set(key, { value, expiry: Date.now() + this.cacheTtlMs });
         return value;
       }
