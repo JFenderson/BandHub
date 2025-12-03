@@ -43,7 +43,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({
     status: 200,
-    description: 'Successfully authenticated',
+    description: 'Successfully authenticated or MFA required',
     type: LoginResponseDto,
   })
   @ApiResponse({
@@ -58,14 +58,17 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
-  ): Promise<LoginResponseDto> {
-    return this.authService.login(loginDto, ipAddress, userAgent);
+  ): Promise<LoginResponseDto & { requiresMfa?: boolean }> {
+    return this.authService.login(loginDto, ipAddress, userAgent, {
+      mfaToken: loginDto.mfaToken,
+      deviceFingerprint: loginDto.deviceFingerprint,
+    });
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 attempts per minute
-  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiOperation({ summary: 'Refresh access token (rotates refresh token)' })
   @ApiResponse({
     status: 200,
     description: 'Tokens successfully refreshed',

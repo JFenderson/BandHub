@@ -1,5 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, Length } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({
@@ -19,6 +19,23 @@ export class LoginDto {
   @IsNotEmpty()
   @MinLength(8)
   password: string;
+
+  @ApiPropertyOptional({
+    description: 'TOTP code for MFA verification (required if MFA is enabled)',
+    example: '123456',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(6, 8)
+  mfaToken?: string;
+
+  @ApiPropertyOptional({
+    description: 'Device fingerprint for security tracking',
+    example: 'abc123...',
+  })
+  @IsOptional()
+  @IsString()
+  deviceFingerprint?: string;
 }
 
 export class LoginResponseDto {
@@ -38,4 +55,7 @@ export class LoginResponseDto {
     name: string;
     role: string;
   };
+
+  @ApiPropertyOptional({ description: 'Whether MFA verification is required' })
+  requiresMfa?: boolean;
 }

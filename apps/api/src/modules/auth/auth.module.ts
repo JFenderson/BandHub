@@ -10,6 +10,17 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { DatabaseModule } from '../../database/database.module';
 import { ApiKeyService } from './services/api-key.service';
 import { ApiKeysController } from './controllers/api-keys.controller';
+import { SessionService } from './services/session.service';
+import { MfaService } from './services/mfa.service';
+import { SecurityService } from './services/security.service';
+import { PasswordPolicyService } from './services/password-policy.service';
+import { MagicLinkService } from './services/magic-link.service';
+import { OAuthService } from './services/oauth.service';
+import { DeviceFingerprintService } from './services/device-fingerprint.service';
+import { SessionController } from './controllers/session.controller';
+import { MfaController } from './controllers/mfa.controller';
+import { PasswordController } from './controllers/password.controller';
+import { MagicLinkController } from './controllers/magic-link.controller';
 
 @Module({
   imports: [
@@ -27,7 +38,7 @@ import { ApiKeysController } from './controllers/api-keys.controller';
         return{
         secret,
         signOptions: {
-          expiresIn: '7d',
+          expiresIn: '15m', // Reduced from 7d for better security
         },
       };
     },
@@ -40,8 +51,39 @@ import { ApiKeysController } from './controllers/api-keys.controller';
       },
     ]),
   ],
-  controllers: [AuthController, ApiKeysController],
-  providers: [AuthService, JwtStrategy, ApiKeyService],
-  exports: [AuthService, JwtStrategy, PassportModule, JwtModule, ApiKeyService],
+  controllers: [
+    AuthController,
+    ApiKeysController,
+    SessionController,
+    MfaController,
+    PasswordController,
+    MagicLinkController,
+  ],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    ApiKeyService,
+    SessionService,
+    MfaService,
+    SecurityService,
+    PasswordPolicyService,
+    MagicLinkService,
+    OAuthService,
+    DeviceFingerprintService,
+  ],
+  exports: [
+    AuthService,
+    JwtStrategy,
+    PassportModule,
+    JwtModule,
+    ApiKeyService,
+    SessionService,
+    MfaService,
+    SecurityService,
+    PasswordPolicyService,
+    MagicLinkService,
+    OAuthService,
+    DeviceFingerprintService,
+  ],
 })
 export class AuthModule {}
