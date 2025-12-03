@@ -14,6 +14,7 @@ import { EmailModule } from './modules/email/email.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HealthModule } from './health/health.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { YoutubeModule } from './youtube/youtube.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -56,12 +57,14 @@ import { CreatorsModule } from './modules/creators/creators.module';
     CreatorsModule,
     // Utilities
     HealthModule,
+    MetricsModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard, // Apply rate limiting globally
     },
+    // Metrics interceptor provided by MetricsModule (registered globally there)
     // ... other providers
   ],
 })

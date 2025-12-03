@@ -76,6 +76,24 @@ export class QueueService {
       }
     );
   }
+
+  /**
+   * Pause all managed queues (useful during shutdown)
+   */
+  async pauseAllQueues(): Promise<void> {
+    const queues = [this.youtubeSyncQueue, this.videoProcessingQueue, this.maintenanceQueue];
+    await Promise.all(queues.map((q) => q.pause()));
+    this.logger.log('Paused all queues');
+  }
+
+  /**
+   * Resume all managed queues
+   */
+  async resumeAllQueues(): Promise<void> {
+    const queues = [this.youtubeSyncQueue, this.videoProcessingQueue, this.maintenanceQueue];
+    await Promise.all(queues.map((q) => q.resume()));
+    this.logger.log('Resumed all queues');
+  }
   
   /**
    * Trigger sync for all bands

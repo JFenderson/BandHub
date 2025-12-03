@@ -29,6 +29,16 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     await this.client.quit();
   }
 
+  // Expose Redis INFO for health/metrics purposes
+  async info(section?: string): Promise<string> {
+    return this.client.info(section);
+  }
+
+  // Expose the underlying client if needed (use cautiously)
+  getClient() {
+    return this.client;
+  }
+
   async get<T>(key: string): Promise<T | null> {
     const value = await this.client.get(key);
     if (!value) return null;

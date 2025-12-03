@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { CacheService } from './cache/cache.service';
+import { QueueService } from './queue/queue.service';
 
 async function bootstrap() {
    const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -85,6 +86,31 @@ app.enableCors({
 
   console.log(`🚀 API running on http://localhost:${port}`);
   console.log(`📚 Swagger docs at http://localhost:${port}/api/docs`);
+  // Enable NestJS shutdown hooks so providers can react to shutdown
+  app.enableShutdownHooks();
+
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`Received ${signal}, starting graceful shutdown...`);
+    try {
+      const queueService = app.get(QueueService, { strict: false });
+      if (queueService) {
+        await queueService.pauseAllQueues();
+      }
+
+      // Give some time for in-flight requests to finish
+      await new Promise((res) => setTimeout(res, 1000));
+
+      await app.close();
+      console.log('Graceful shutdown complete');
+      process.exit(0);
+    } catch (err) {
+      console.error('Error during graceful shutdown', err);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
 bootstrap();

@@ -1,0 +1,14 @@
+{
+  "title": "BandHub System Health (Draft)",
+  "panels": [
+    { "title": "HTTP Request Duration (histogram)", "target": "http_request_duration_seconds" },
+    { "title": "Request Rate by Endpoint", "target": "http_requests_total" },
+    { "title": "Active HTTP Connections", "target": "active_http_connections" },
+    { "title": "Postgres Active Connections", "target": "postgres_active_connections" },
+    { "title": "Redis Used Memory", "target": "redis_used_memory_bytes" },
+    { "title": "BullMQ Waiting Jobs", "target": "bullmq_queue_waiting_total" },
+    { "title": "YouTube API Response Time", "target": "youtube_api_response_time_ms" },
+    { "title": "Business: Videos Synced", "target": "business_videos_synced_total" },
+    { "title": "Business: User Registrations", "target": "business_user_registrations_total" }
+  ]
+}

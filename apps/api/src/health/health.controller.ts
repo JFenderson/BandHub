@@ -1,87 +1,59 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { DatabaseService } from '../database/database.service';
-import { CacheService } from '../cache/cache.service';
+import { HealthService } from './health.service';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
   constructor(
-    private readonly db: DatabaseService,
-    private readonly cacheService: CacheService,
+    private readonly healthService: HealthService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Check API health status' })
+  @ApiOperation({ summary: 'Check API health status (summary)' })
   @ApiResponse({ status: 200, description: 'Health check successful' })
   async checkHealth() {
-    const timestamp = new Date().toISOString();
-    
-    try {
-      // Test database connection
-      await this.db.$queryRaw`SELECT 1 as test`;
-      
-      // Test cache connection
-      await this.cacheService.set('health-check', timestamp, 10);
-      const cacheTest = await this.cacheService.get('health-check');
-      
-      return {
-        api: 'ok',
-        database: 'ok',
-        cache: cacheTest === timestamp ? 'ok' : 'error',
-        timestamp,
-      };
-    } catch (error) {
-      return {
-        api: 'ok',
-        database: 'error',
-        cache: 'unknown',
-        timestamp,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
+    // Keep a simple summary for backward compatibility
+    const ready = await this.healthService.readiness();
+    return { api: 'ok', readiness: ready };
   }
 
   @Get('database')
-  @ApiOperation({ summary: 'Check database connection' })
-  @ApiResponse({ status: 200, description: 'Database check' })
-  async checkDatabase() {
-    try {
-      await this.db.$queryRaw`SELECT 1 as test`;
-      return {
-        database: 'ok',
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      return {
-        database: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      };
-    }
+  @ApiOperation({ summary: 'Detailed database status' })
+  async database() {
+    return this.healthService.checkDatabaseDetailed();
   }
 
   @Get('cache')
-  @ApiOperation({ summary: 'Check cache connection' })
-  @ApiResponse({ status: 200, description: 'Cache check' })
-  async checkCache() {
-    try {
-      const testKey = 'cache-health-test';
-      const testValue = new Date().toISOString();
-      
-      await this.cacheService.set(testKey, testValue, 5);
-      const retrieved = await this.cacheService.get(testKey);
-      
-      return {
-        cache: retrieved === testValue ? 'ok' : 'error',
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      return {
-        cache: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      };
-    }
+  @ApiOperation({ summary: 'Detailed cache/redis status' })
+  async cache() {
+    return this.healthService.checkRedisDetailed();
+  }
+
+  @Get('queues')
+  @ApiOperation({ summary: 'Detailed BullMQ queue status' })
+  async queues() {
+    return this.healthService.checkQueuesDetailed();
+  }
+
+  @Get('external/youtube')
+  @ApiOperation({ summary: 'YouTube API quick check' })
+  async youtube() {
+    const key = this.configService.get<string>('YOUTUBE_API_KEY');
+    return this.healthService.checkYouTubeApi(key);
+  }
+
+  @Get('ready')
+  @ApiOperation({ summary: 'Readiness probe' })
+  async ready() {
+    return this.healthService.readiness();
+  }
+
+  @Get('live')
+  @ApiOperation({ summary: 'Liveness probe' })
+  async live() {
+    return this.healthService.liveness();
   }
 }
