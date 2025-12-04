@@ -11,6 +11,9 @@ import type {
   VideoDetail,
   BulkVideoUpdateRequest,
   BulkVideoUpdateResponse,
+  DashboardStats,
+  RecentActivity,
+  SyncStatus,
 } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/types/auth';
@@ -495,6 +498,19 @@ class ApiClient {
 
   async getCategories(): Promise<{ id: string; name: string; slug: string; description?: string }[]> {
     return this.request<{ id: string; name: string; slug: string; description?: string }[]>(`/api/categories`);
+  }
+
+  // Admin Dashboard methods
+  async getDashboardStats(): Promise<DashboardStats> {
+    return this.request<DashboardStats>('/api/admin/dashboard/stats');
+  }
+
+  async getRecentActivity(): Promise<RecentActivity> {
+    return this.request<RecentActivity>('/api/admin/dashboard/recent-activity');
+  }
+
+  async getSyncStatusDashboard(): Promise<SyncStatus> {
+    return this.request<SyncStatus>('/api/admin/dashboard/sync-status');
   }
 }
 

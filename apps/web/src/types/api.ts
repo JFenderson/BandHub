@@ -176,3 +176,46 @@ export interface CreatorFilters {
   page?: number;
   limit?: number;
 }
+
+// Admin Dashboard Types
+export type SyncJobStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+
+export interface DashboardStats {
+  totalVideos: number;
+  totalBands: number;
+  videosThisWeek: number;
+  pendingModeration: number;
+  lastSyncStatus?: SyncJobStatus;
+  lastSyncTime?: string;
+}
+
+export interface RecentVideo {
+  id: string;
+  title: string;
+  bandName: string;
+  thumbnailUrl: string;
+  createdAt: string;
+  isHidden: boolean;
+}
+
+export interface SyncJob {
+  id: string;
+  status: SyncJobStatus;
+  videosFound: number;
+  videosAdded: number;
+  videosUpdated: number;
+  createdAt: string;
+  completedAt?: string;
+  bandName?: string;
+}
+
+export interface RecentActivity {
+  recentVideos: RecentVideo[];
+  recentSyncJobs: SyncJob[];
+}
+
+export interface SyncStatus {
+  isRunning: boolean;
+  currentJob?: SyncJob;
+  failedJobs: SyncJob[];
+}
