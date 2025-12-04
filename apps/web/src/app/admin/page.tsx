@@ -264,44 +264,47 @@ export default function AdminDashboardPage() {
   const [syncStatusError, setSyncStatusError] = useState<string | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
-    // Fetch stats
+    // Set all loading states
     setIsLoadingStats(true);
-    try {
-      const statsData = await apiClient.getDashboardStats();
-      setStats(statsData);
-      setStatsError(null);
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-      setStatsError(error instanceof Error ? error.message : 'Failed to load statistics');
-    } finally {
-      setIsLoadingStats(false);
-    }
-
-    // Fetch activity
     setIsLoadingActivity(true);
-    try {
-      const activityData = await apiClient.getRecentActivity();
-      setActivity(activityData);
-      setActivityError(null);
-    } catch (error) {
-      console.error('Error fetching recent activity:', error);
-      setActivityError(error instanceof Error ? error.message : 'Failed to load recent activity');
-    } finally {
-      setIsLoadingActivity(false);
-    }
-
-    // Fetch sync status
     setIsLoadingSyncStatus(true);
-    try {
-      const syncData = await apiClient.getSyncStatusDashboard();
-      setSyncStatus(syncData);
-      setSyncStatusError(null);
-    } catch (error) {
-      console.error('Error fetching sync status:', error);
-      setSyncStatusError(error instanceof Error ? error.message : 'Failed to load sync status');
-    } finally {
-      setIsLoadingSyncStatus(false);
+
+    // Fetch all data concurrently using Promise.allSettled for independent error handling
+    const [statsResult, activityResult, syncStatusResult] = await Promise.allSettled([
+      apiClient.getDashboardStats(),
+      apiClient.getRecentActivity(),
+      apiClient.getSyncStatusDashboard(),
+    ]);
+
+    // Handle stats result
+    if (statsResult.status === 'fulfilled') {
+      setStats(statsResult.value);
+      setStatsError(null);
+    } else {
+      console.error('Error fetching dashboard stats:', statsResult.reason);
+      setStatsError(statsResult.reason instanceof Error ? statsResult.reason.message : 'Failed to load statistics');
     }
+    setIsLoadingStats(false);
+
+    // Handle activity result
+    if (activityResult.status === 'fulfilled') {
+      setActivity(activityResult.value);
+      setActivityError(null);
+    } else {
+      console.error('Error fetching recent activity:', activityResult.reason);
+      setActivityError(activityResult.reason instanceof Error ? activityResult.reason.message : 'Failed to load recent activity');
+    }
+    setIsLoadingActivity(false);
+
+    // Handle sync status result
+    if (syncStatusResult.status === 'fulfilled') {
+      setSyncStatus(syncStatusResult.value);
+      setSyncStatusError(null);
+    } else {
+      console.error('Error fetching sync status:', syncStatusResult.reason);
+      setSyncStatusError(syncStatusResult.reason instanceof Error ? syncStatusResult.reason.message : 'Failed to load sync status');
+    }
+    setIsLoadingSyncStatus(false);
   }, []);
 
   useEffect(() => {
@@ -311,13 +314,21 @@ export default function AdminDashboardPage() {
   // Poll sync status when sync is running
   useEffect(() => {
     if (syncStatus?.isRunning) {
-      const interval = setInterval(() => {
-        apiClient.getSyncStatusDashboard().then(setSyncStatus).catch(console.error);
+      const interval = setInterval(async () => {
+        try {
+          const syncData = await apiClient.getSyncStatusDashboard();
+          setSyncStatus(syncData);
+          setSyncStatusError(null);
+        } catch (error) {
+          console.error('Error polling sync status:', error);
+          setSyncStatusError(error instanceof Error ? error.message : 'Failed to update sync status');
+        }
       }, 5000);
       return () => clearInterval(interval);
     }
   }, [syncStatus?.isRunning]);
 
+  // Show global error alert only when all API calls fail (likely connectivity issue)
   const allErrored = statsError && activityError && syncStatusError;
 
   return (
@@ -341,7 +352,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           label="Total Bands"
-          value={stats?.totalBands.toLocaleString() ?? 0}
+          value={(stats?.totalBands ?? 0).toLocaleString()}
           isLoading={isLoadingStats}
           hasError={!!statsError}
           icon={
@@ -355,7 +366,7 @@ export default function AdminDashboardPage() {
 
         <StatCard
           label="Total Videos"
-          value={stats?.totalVideos.toLocaleString() ?? 0}
+          value={(stats?.totalVideos ?? 0).toLocaleString()}
           isLoading={isLoadingStats}
           hasError={!!statsError}
           icon={
@@ -369,7 +380,7 @@ export default function AdminDashboardPage() {
 
         <StatCard
           label="Videos This Week"
-          value={stats?.videosThisWeek.toLocaleString() ?? 0}
+          value={(stats?.videosThisWeek ?? 0).toLocaleString()}
           isLoading={isLoadingStats}
           hasError={!!statsError}
           icon={
@@ -383,7 +394,7 @@ export default function AdminDashboardPage() {
 
         <StatCard
           label="Pending Moderation"
-          value={stats?.pendingModeration.toLocaleString() ?? 0}
+          value={(stats?.pendingModeration ?? 0).toLocaleString()}
           isLoading={isLoadingStats}
           hasError={!!statsError}
           icon={
