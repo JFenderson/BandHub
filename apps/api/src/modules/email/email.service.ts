@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { MailerService } from '../mailer/mailer.service';
 
 export interface EmailOptions {
   to: string;
@@ -14,7 +15,7 @@ export class EmailService {
   private readonly fromEmail: string;
   private readonly appUrl: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private configService: ConfigService, @Optional() private mailer?: MailerService) {
     this.fromEmail = configService.get<string>('EMAIL_FROM') || 'noreply@hbcubandhub.com';
     this.appUrl = configService.get<string>('APP_URL') || 'http://localhost:3000';
   }
@@ -26,7 +27,19 @@ export class EmailService {
    */
   async sendEmail(options: EmailOptions): Promise<void> {
     const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
-    
+
+    // Prefer AWS SES via MailerService if configured
+    if (this.mailer) {
+      try {
+        await this.mailer.sendMail({ to: options.to, subject: options.subject, html: options.html, text: options.text });
+        this.logger.log(`Email sent via SES to ${options.to}: ${options.subject}`);
+        return;
+      } catch (err) {
+        this.logger.error('SES send failed, falling back to Resend/logging', err as any);
+        // fallthrough to Resend/logging fallback
+      }
+    }
+
     if (resendApiKey) {
       // Use Resend in production
       try {
@@ -102,6 +115,20 @@ export class EmailService {
       subject: 'Reset your HBCU Band Hub password',
       html,
       text: `Hi ${name}, you requested a password reset. Click this link to reset your password: ${resetUrl}. If you didn't request this, you can ignore this email.`,
+    });
+  }
+
+  /**
+   * Send admin password reset link (uses /admin/reset-password path)
+   */
+  async sendAdminPasswordResetEmail(email: string, name: string, token: string): Promise<void> {
+    const resetUrl = `${this.appUrl}/admin/reset-password/${token}`;
+    const html = this.getPasswordResetTemplate(name, resetUrl);
+    await this.sendEmail({
+      to: email,
+      subject: 'Reset your HBCU Band Hub admin password',
+      html,
+      text: `Hi ${name}, you requested a password reset. Click this link to reset your admin password: ${resetUrl}. If you didn't request this, you can ignore this email.`,
     });
   }
 

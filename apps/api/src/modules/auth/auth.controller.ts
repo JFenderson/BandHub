@@ -15,6 +15,8 @@ import { AuthService } from './auth.service';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto, RefreshTokenResponseDto } from './dto/refresh-token.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('Authentication')
@@ -119,5 +121,23 @@ export class AuthController {
   async logoutAll(@Request() req): Promise<{ message: string }> {
     await this.authService.logoutAll(req.user.id);
     return { message: 'Successfully logged out from all devices' };
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Request admin password reset email' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
+    // Always return success to avoid account enumeration
+    await this.authService.sendAdminPasswordReset(dto.email);
+    return { message: 'If an account exists for this email, a reset link has been sent.' };
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset admin password using token' })
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+    await this.authService.resetAdminPassword(dto.token, dto.password);
+    return { message: 'Password reset successful. Please log in with your new password.' };
   }
 }

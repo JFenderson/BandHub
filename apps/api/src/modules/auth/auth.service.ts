@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../../database/database.service';
+import { EmailService } from '../email/email.service';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenResponseDto } from './dto/refresh-token.dto';
@@ -30,6 +31,7 @@ export class AuthService {
     private prisma: DatabaseService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   /**
@@ -367,6 +369,91 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * Send admin password reset email (do not disclose existence)
+   */
+  async sendAdminPasswordReset(email: string): Promise<void> {
+    const user = await this.prisma.adminUser.findUnique({ where: { email } });
+
+    // Always return success to prevent enumeration
+    if (!user) return;
+
+    // Delete existing tokens for this admin
+    await this.prisma.adminPasswordResetToken.deleteMany({
+      where: { adminUserId: user.id },
+    });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const hashedToken = this.hashToken(token);
+
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    await this.prisma.adminPasswordResetToken.create({
+      data: {
+        token: hashedToken,
+        adminUserId: user.id,
+        expiresAt,
+      },
+    });
+
+    // Send admin password reset email (uses /admin/reset-password path)
+    await this.emailService.sendAdminPasswordResetEmail(user.email, user.name, token);
+
+    // Log an audit event
+    await this.logAudit(user.id, 'password_reset_requested', { ip: 'unknown' });
+  }
+
+  /**
+   * Reset admin password using token
+   */
+  async resetAdminPassword(token: string, newPassword: string): Promise<void> {
+    const hashedToken = this.hashToken(token);
+
+    const resetRecord = await this.prisma.adminPasswordResetToken.findUnique({
+      where: { token: hashedToken },
+      include: { adminUser: true },
+    });
+
+    if (!resetRecord) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    if (resetRecord.used) {
+      throw new BadRequestException('Reset token has already been used');
+    }
+
+    if (resetRecord.expiresAt < new Date()) {
+      throw new BadRequestException('Reset token has expired');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+
+    // Update password, mark token used, and revoke admin sessions by deactivating them
+    await this.prisma.$transaction([
+      this.prisma.adminUser.update({
+        where: { id: resetRecord.adminUserId },
+        data: {
+          passwordHash,
+          sessionVersion: { increment: 1 },
+        },
+      }),
+      this.prisma.adminPasswordResetToken.update({
+        where: { id: resetRecord.id },
+        data: { used: true },
+      }),
+      this.prisma.adminSession.updateMany({
+        where: { userId: resetRecord.adminUserId, isActive: true },
+        data: { isActive: false, revokedAt: new Date(), revokedReason: 'password_reset' },
+      }),
+    ]);
+
+    // Send password changed email
+    await this.emailService.sendPasswordChangedEmail(resetRecord.adminUser.email, resetRecord.adminUser.name);
+
+    await this.logAudit(resetRecord.adminUserId, 'password_reset_completed', {});
+  }
+
   // ============ PRIVATE HELPER METHODS ============
 
   /**
@@ -378,6 +465,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
       sessionId: sessionId || undefined,
+      sessionVersion: user.sessionVersion ?? 0,
     };
 
     return this.jwtService.sign(payload, {

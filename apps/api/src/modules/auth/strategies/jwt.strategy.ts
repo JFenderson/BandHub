@@ -8,6 +8,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  sessionVersion?: number;
 }
 
 @Injectable()
@@ -37,11 +38,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         name: true,
         role: true,
         isActive: true,
+        sessionVersion: true,
       },
     });
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Invalid or inactive user');
+    }
+
+    // Validate session version to allow invalidation after password reset
+    if (typeof payload.sessionVersion === 'number') {
+      if ((user.sessionVersion ?? 0) !== payload.sessionVersion) {
+        throw new UnauthorizedException('Session invalidated');
+      }
     }
 
     return {

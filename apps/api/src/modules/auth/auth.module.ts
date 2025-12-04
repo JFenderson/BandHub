@@ -23,10 +23,12 @@ import { SessionController } from './controllers/session.controller';
 import { MfaController } from './controllers/mfa.controller';
 import { PasswordController } from './controllers/password.controller';
 import { MagicLinkController } from './controllers/magic-link.controller';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     DatabaseModule,
+    EmailModule,
     PassportModule,
     ScheduleModule.forRoot(),
     JwtModule.registerAsync({
@@ -37,21 +39,18 @@ import { MagicLinkController } from './controllers/magic-link.controller';
         if (!secret) {
           throw new Error('JWT_SECRET environment variable is required');
         }
-        return{
-        secret,
-        signOptions: {
-          expiresIn: '15m', // Reduced from 7d for better security
-        },
-      };
-    },
-  }),
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 60000, // 1 minute
-        limit: 10, // 10 requests per minute (general)
+        return {
+          secret,
+          signOptions: {
+            expiresIn: '15m', // Reduced from 7d for better security
+          },
+        } as JwtModuleOptions;
       },
-    ]),
+    }),
+    ThrottlerModule.forRoot({
+      ttl: 60,
+      limit: 20,
+    }),
   ],
   controllers: [
     AuthController,
@@ -61,7 +60,6 @@ import { MagicLinkController } from './controllers/magic-link.controller';
     PasswordController,
     MagicLinkController,
   ],
-  controllers: [AuthController, ApiKeysController],
   providers: [
     AuthService,
     JwtStrategy,
