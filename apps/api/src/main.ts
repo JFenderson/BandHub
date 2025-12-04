@@ -12,7 +12,6 @@ import {
   initSentry,
   startTracing,
 } from '@hbcu-band-hub/observability';
-import * as Sentry from '@sentry/node';
 
 async function bootstrap() {
   startTracing('api');
@@ -20,7 +19,6 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: false,
   });
-  app.use(Sentry.Handlers.requestHandler());
   app.use(correlationIdMiddleware as never);
   app.use(createHttpLogger());
 
