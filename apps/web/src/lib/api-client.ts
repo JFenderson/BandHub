@@ -14,6 +14,13 @@ import type {
   DashboardStats,
   RecentActivity,
   SyncStatus,
+  Event,
+  EventFilters,
+  CreateEventDto,
+  UpdateEventDto,
+  Category,
+  CreateCategoryDto,
+  UpdateCategoryDto,
 } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/types/auth';
@@ -496,8 +503,222 @@ class ApiClient {
     return this.request<any>(`/api/bands/featured-analytics`);
   }
 
-  async getCategories(): Promise<{ id: string; name: string; slug: string; description?: string }[]> {
-    return this.request<{ id: string; name: string; slug: string; description?: string }[]>(`/api/categories`);
+  // ============ CATEGORIES METHODS ============
+
+  async getCategories(): Promise<Category[]> {
+    return this.request<Category[]>(`/api/categories`);
+  }
+
+  async getCategoryById(id: string): Promise<Category> {
+    return this.request<Category>(`/api/categories/${id}`);
+  }
+
+  async createCategory(data: CreateCategoryDto): Promise<Category> {
+    return this.request<Category>(`/api/categories`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCategory(id: string, data: UpdateCategoryDto): Promise<Category> {
+    return this.request<Category>(`/api/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCategory(id: string): Promise<void> {
+    await this.request<void>(`/api/categories/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async reorderCategories(categoryIds: string[]): Promise<Category[]> {
+    return this.request<Category[]>(`/api/categories/reorder`, {
+      method: 'POST',
+      body: JSON.stringify({ categoryIds }),
+    });
+  }
+
+  async mergeCategories(sourceCategoryId: string, targetCategoryId: string): Promise<{
+    message: string;
+    videosMoved: number;
+    deletedCategory: string;
+    targetCategory: string;
+  }> {
+    return this.request(`/api/categories/merge`, {
+      method: 'POST',
+      body: JSON.stringify({ sourceCategoryId, targetCategoryId }),
+    });
+  }
+
+  // ============ EVENTS METHODS ============
+
+  async getEvents(filters?: EventFilters): Promise<PaginatedResponse<Event>> {
+    const params = new URLSearchParams();
+    if (filters?.eventType) params.append('eventType', filters.eventType);
+    if (filters?.year) params.append('year', filters.year.toString());
+    if (filters?.state) params.append('state', filters.state);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.isActive !== undefined) params.append('isActive', String(filters.isActive));
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
+
+    const query = params.toString();
+    return this.request<PaginatedResponse<Event>>(`/api/events${query ? `?${query}` : ''}`);
+  }
+
+  async getEventById(id: string): Promise<Event> {
+    return this.request<Event>(`/api/events/${id}`);
+  }
+
+  async getEventBySlug(slug: string): Promise<Event> {
+    return this.request<Event>(`/api/events/slug/${slug}`);
+  }
+
+  async getEventTypes(): Promise<string[]> {
+    return this.request<string[]>(`/api/events/types`);
+  }
+
+  async getUpcomingEvents(limit?: number): Promise<Event[]> {
+    const params = limit ? `?limit=${limit}` : '';
+    return this.request<Event[]>(`/api/events/upcoming${params}`);
+  }
+
+  async getEventsByYear(year: number): Promise<Event[]> {
+    return this.request<Event[]>(`/api/events/year/${year}`);
+  }
+
+  async createEvent(data: CreateEventDto): Promise<Event> {
+    return this.request<Event>(`/api/events`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateEvent(id: string, data: UpdateEventDto): Promise<Event> {
+    return this.request<Event>(`/api/events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    await this.request<void>(`/api/events/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async addVideoToEvent(eventId: string, videoId: string): Promise<void> {
+    await this.request<void>(`/api/events/${eventId}/videos`, {
+      method: 'POST',
+      body: JSON.stringify({ videoId }),
+    });
+  }
+
+  async removeVideoFromEvent(eventId: string, videoId: string): Promise<void> {
+    await this.request<void>(`/api/events/${eventId}/videos/${videoId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getEventVideos(eventId: string): Promise<Video[]> {
+    return this.request<Video[]>(`/api/events/${eventId}/videos`);
+  }
+
+  async addBandToEvent(eventId: string, bandId: string, role?: string): Promise<void> {
+    await this.request<void>(`/api/events/${eventId}/bands`, {
+      method: 'POST',
+      body: JSON.stringify({ bandId, role }),
+    });
+  }
+
+  async removeBandFromEvent(eventId: string, bandId: string): Promise<void> {
+    await this.request<void>(`/api/events/${eventId}/bands/${bandId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getEventBands(eventId: string): Promise<Band[]> {
+    return this.request<Band[]>(`/api/events/${eventId}/bands`);
+  }
+
+  // ============ SYNC METHODS ============
+
+  async getSyncJobs(filters?: {
+    status?: string;
+    jobType?: string;
+    bandId?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<{
+    data: any[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.jobType) params.append('jobType', filters.jobType);
+    if (filters?.bandId) params.append('bandId', filters.bandId);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
+
+    const query = params.toString();
+    return this.request(`/api/admin/sync-jobs${query ? `?${query}` : ''}`);
+  }
+
+  async getSyncJobById(id: string): Promise<any> {
+    return this.request(`/api/admin/sync-jobs/${id}`);
+  }
+
+  async retrySyncJob(id: string): Promise<void> {
+    await this.request(`/api/admin/sync-jobs/${id}/retry`, {
+      method: 'POST',
+    });
+  }
+
+  async triggerManualSync(options?: {
+    bandId?: string;
+    jobType?: string;
+    maxVideos?: number;
+  }): Promise<any> {
+    return this.request(`/api/admin/sync-jobs/trigger`, {
+      method: 'POST',
+      body: JSON.stringify(options || {}),
+    });
+  }
+
+  async getQueueStatus(): Promise<any[]> {
+    return this.request(`/api/admin/queue/status`);
+  }
+
+  async pauseQueue(): Promise<void> {
+    await this.request(`/api/admin/queue/pause`, {
+      method: 'POST',
+    });
+  }
+
+  async resumeQueue(): Promise<void> {
+    await this.request(`/api/admin/queue/resume`, {
+      method: 'POST',
+    });
+  }
+
+  async clearFailedJobs(): Promise<void> {
+    await this.request(`/api/admin/queue/clear-failed`, {
+      method: 'POST',
+    });
+  }
+
+  async getSyncErrors(): Promise<any> {
+    return this.request(`/api/admin/sync/errors`);
   }
 
   // Admin Dashboard methods

@@ -30,7 +30,7 @@ export class CategoriesController {
   // ========================================
 
   @Get()
-  @ApiOperation({ summary: 'Get all categories' })
+  @ApiOperation({ summary: 'Get all categories with video counts' })
   @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
   async findAll() {
     return this.categoriesService.getAllCategories();
@@ -58,7 +58,7 @@ export class CategoriesController {
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   async create(
-    @Body() createCategoryDto: any,
+    @Body() createCategoryDto: { name: string; slug?: string; description?: string; sortOrder?: number },
     @CurrentUser() user: CurrentUserData,
   ) {
     return this.categoriesService.createCategory(createCategoryDto);
@@ -76,7 +76,7 @@ export class CategoriesController {
   @ApiResponse({ status: 404, description: 'Category not found' })
   async update(
     @Param('id') id: string,
-    @Body() updateCategoryDto: any,
+    @Body() updateCategoryDto: { name?: string; slug?: string; description?: string; sortOrder?: number },
     @CurrentUser() user: CurrentUserData,
   ) {
     return this.categoriesService.updateCategory(id, updateCategoryDto);
@@ -97,5 +97,39 @@ export class CategoriesController {
     @CurrentUser() user: CurrentUserData,
   ) {
     await this.categoriesService.deleteCategory(id);
+  }
+
+  @Post('reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reorder categories (ADMIN or SUPER_ADMIN only)' })
+  @ApiResponse({ status: 200, description: 'Categories reordered successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  async reorder(
+    @Body() body: { categoryIds: string[] },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.categoriesService.reorderCategories(body.categoryIds);
+  }
+
+  @Post('merge')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Merge two categories (SUPER_ADMIN only)' })
+  @ApiResponse({ status: 200, description: 'Categories merged successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Category not found' })
+  @ApiResponse({ status: 400, description: 'Cannot merge a category with itself' })
+  async merge(
+    @Body() body: { sourceCategoryId: string; targetCategoryId: string },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.categoriesService.mergeCategories(body.sourceCategoryId, body.targetCategoryId);
   }
 }

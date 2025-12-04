@@ -210,6 +210,68 @@ model Category {
   @@map("categories")
 }
 
+// ============ EVENTS MODEL ============
+
+model Event {
+  id           String     @id @default(cuid())
+  name         String
+  slug         String     @unique
+  description  String?    @db.Text
+  eventType    EventType  @map("event_type")
+  eventDate    DateTime   @map("event_date")
+  endDate      DateTime?  @map("end_date")
+  location     String?
+  venue        String?
+  city         String?
+  state        String?
+  year         Int
+  isRecurring  Boolean    @default(false) @map("is_recurring")
+  isActive     Boolean    @default(true) @map("is_active")
+  imageUrl     String?    @map("image_url")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  eventVideos  EventVideo[]
+  eventBands   EventBand[]
+
+  @@index([slug])
+  @@index([eventType])
+  @@index([eventDate])
+  @@index([year])
+  @@index([isActive])
+  @@map("events")
+}
+
+model EventVideo {
+  id        String   @id @default(cuid())
+  eventId   String   @map("event_id")
+  videoId   String   @map("video_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, videoId])
+  @@index([eventId])
+  @@index([videoId])
+  @@map("event_videos")
+}
+
+model EventBand {
+  id           String   @id @default(cuid())
+  eventId      String   @map("event_id")
+  bandId       String   @map("band_id")
+  role         String?  // e.g., "home", "away", "participant"
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, bandId])
+  @@index([eventId])
+  @@index([bandId])
+  @@map("event_bands")
+}
+
 model AdminUser {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -648,6 +710,21 @@ enum SyncJobStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+// ============ EVENT ENUMS ============
+
+enum EventType {
+  BAYOU_CLASSIC
+  SWAC_CHAMPIONSHIP
+  HOMECOMING
+  BATTLE_OF_THE_BANDS
+  FOOTBALL_GAME
+  PARADE
+  CONCERT
+  COMPETITION
+  EXHIBITION
+  OTHER
 }
 
 // ============ SECURITY ENUMS ============

@@ -219,3 +219,115 @@ export interface SyncStatus {
   currentJob?: SyncJob;
   failedJobs: SyncJob[];
 }
+
+// ============ EVENT TYPES ============
+
+export type EventType =
+  | 'BAYOU_CLASSIC'
+  | 'SWAC_CHAMPIONSHIP'
+  | 'HOMECOMING'
+  | 'BATTLE_OF_THE_BANDS'
+  | 'FOOTBALL_GAME'
+  | 'PARADE'
+  | 'CONCERT'
+  | 'COMPETITION'
+  | 'EXHIBITION'
+  | 'OTHER';
+
+export interface Event {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  eventType: EventType;
+  eventDate: string;
+  endDate?: string | null;
+  location?: string | null;
+  venue?: string | null;
+  city?: string | null;
+  state?: string | null;
+  year: number;
+  isRecurring: boolean;
+  isActive: boolean;
+  imageUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    eventVideos?: number;
+    eventBands?: number;
+  };
+}
+
+export interface CreateEventDto {
+  name: string;
+  description?: string;
+  eventType: EventType;
+  eventDate: string;
+  endDate?: string;
+  location?: string;
+  venue?: string;
+  city?: string;
+  state?: string;
+  year: number;
+  isRecurring?: boolean;
+  imageUrl?: string;
+}
+
+export interface UpdateEventDto {
+  name?: string;
+  description?: string;
+  eventType?: EventType;
+  eventDate?: string;
+  endDate?: string;
+  location?: string;
+  venue?: string;
+  city?: string;
+  state?: string;
+  year?: number;
+  isRecurring?: boolean;
+  isActive?: boolean;
+  imageUrl?: string;
+}
+
+export interface EventFilters {
+  eventType?: EventType;
+  year?: number;
+  state?: string;
+  search?: string;
+  isActive?: boolean;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: 'eventDate' | 'name' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+}
+
+// ============ CATEGORY TYPES ============
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    videos?: number;
+  };
+}
+
+export interface CreateCategoryDto {
+  name: string;
+  slug?: string;
+  description?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateCategoryDto {
+  name?: string;
+  slug?: string;
+  description?: string;
+  sortOrder?: number;
+}

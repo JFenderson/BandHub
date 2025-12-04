@@ -6,6 +6,7 @@ import { QueueModule } from './queue/queue.module';
 import { BandsModule } from './modules/bands/bands.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { EventsModule } from './modules/events/events.module';
 import { SearchModule } from './modules/search/search.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -44,6 +45,7 @@ import { AppConfigModule } from './modules/config/config.module';
     BandsModule,
     VideosModule,
     CategoriesModule,
+    EventsModule,
     SearchModule,
     AdminModule,
     AuthModule,
