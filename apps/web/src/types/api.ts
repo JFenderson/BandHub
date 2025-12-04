@@ -2,8 +2,20 @@
 import type {
   Band as SharedBand,
   Video as SharedVideo,
-  VideoCategory
+  VideoCategory,
+  Event as SharedEvent,
+  EventType,
+  CreateEventDto,
+  UpdateEventDto,
+  EventFilterParams,
 } from '@hbcu-band-hub/shared-types';
+
+// Re-export from shared types
+export type { EventType, CreateEventDto, UpdateEventDto };
+export type EventFilters = EventFilterParams;
+
+// Extend Event with frontend-specific properties
+export type Event = SharedEvent;
 
 // Remove the duplicate import from @hbcu-band-hub/shared
 // Remove the conflicting re-export
@@ -218,89 +230,6 @@ export interface SyncStatus {
   isRunning: boolean;
   currentJob?: SyncJob;
   failedJobs: SyncJob[];
-}
-
-// ============ EVENT TYPES ============
-
-export type EventType =
-  | 'BAYOU_CLASSIC'
-  | 'SWAC_CHAMPIONSHIP'
-  | 'HOMECOMING'
-  | 'BATTLE_OF_THE_BANDS'
-  | 'FOOTBALL_GAME'
-  | 'PARADE'
-  | 'CONCERT'
-  | 'COMPETITION'
-  | 'EXHIBITION'
-  | 'OTHER';
-
-export interface Event {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string | null;
-  eventType: EventType;
-  eventDate: string;
-  endDate?: string | null;
-  location?: string | null;
-  venue?: string | null;
-  city?: string | null;
-  state?: string | null;
-  year: number;
-  isRecurring: boolean;
-  isActive: boolean;
-  imageUrl?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  _count?: {
-    eventVideos?: number;
-    eventBands?: number;
-  };
-}
-
-export interface CreateEventDto {
-  name: string;
-  description?: string;
-  eventType: EventType;
-  eventDate: string;
-  endDate?: string;
-  location?: string;
-  venue?: string;
-  city?: string;
-  state?: string;
-  year: number;
-  isRecurring?: boolean;
-  imageUrl?: string;
-}
-
-export interface UpdateEventDto {
-  name?: string;
-  description?: string;
-  eventType?: EventType;
-  eventDate?: string;
-  endDate?: string;
-  location?: string;
-  venue?: string;
-  city?: string;
-  state?: string;
-  year?: number;
-  isRecurring?: boolean;
-  isActive?: boolean;
-  imageUrl?: string;
-}
-
-export interface EventFilters {
-  eventType?: EventType;
-  year?: number;
-  state?: string;
-  search?: string;
-  isActive?: boolean;
-  startDate?: string;
-  endDate?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: 'eventDate' | 'name' | 'createdAt';
-  sortOrder?: 'asc' | 'desc';
 }
 
 // ============ CATEGORY TYPES ============
