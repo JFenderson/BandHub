@@ -48,8 +48,10 @@ import { EmailModule } from '../email/email.module';
       },
     }),
     ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 20,
+      throttlers: [{
+        ttl: 60000,
+        limit: 20,
+      }],
     }),
   ],
   controllers: [

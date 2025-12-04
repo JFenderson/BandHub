@@ -23,7 +23,7 @@ export const createHttpLogger = () =>
     customSuccessMessage() {
       return 'request completed';
     },
-    customErrorMessage(error, req) {
+    customErrorMessage(req, res, error) {
       return `request errored: ${req?.method} ${req?.url} :: ${error?.message}`;
     },
   });
