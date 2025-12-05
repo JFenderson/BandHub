@@ -21,6 +21,9 @@ import type {
   Category,
   CreateCategoryDto,
   UpdateCategoryDto,
+  VideoTrend,
+  CategoryDistribution,
+  TopBand,
 } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/types/auth';
@@ -734,16 +737,16 @@ class ApiClient {
     return this.request<SyncStatus>('/api/admin/dashboard/sync-status');
   }
 
-  async getVideoTrends(): Promise<any[]> {
-    return this.request<any[]>('/api/admin/dashboard/video-trends');
+  async getVideoTrends(): Promise<VideoTrend[]> {
+    return this.request<VideoTrend[]>('/api/admin/dashboard/video-trends');
   }
 
-  async getCategoryDistribution(): Promise<any[]> {
-    return this.request<any[]>('/api/admin/dashboard/category-distribution');
+  async getCategoryDistribution(): Promise<CategoryDistribution[]> {
+    return this.request<CategoryDistribution[]>('/api/admin/dashboard/category-distribution');
   }
 
-  async getTopBands(): Promise<any[]> {
-    return this.request<any[]>('/api/admin/dashboard/top-bands');
+  async getTopBands(): Promise<TopBand[]> {
+    return this.request<TopBand[]>('/api/admin/dashboard/top-bands');
   }
 }
 

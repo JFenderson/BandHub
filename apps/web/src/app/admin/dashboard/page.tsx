@@ -10,66 +10,16 @@ import { CategoryPieChart } from '@/components/admin/CategoryPieChart';
 import { BandBarChart } from '@/components/admin/BandBarChart';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
+import type {
+  DashboardStats,
+  RecentActivity,
+  SyncStatus,
+  VideoTrend,
+  CategoryDistribution,
+  TopBand,
+} from '@/types/api';
 
-// Types
-interface DashboardStats {
-  totalVideos: number;
-  totalBands: number;
-  videosThisWeek: number;
-  pendingModeration: number;
-  lastSyncStatus?: string;
-  lastSyncTime?: string;
-}
-
-interface RecentVideo {
-  id: string;
-  title: string;
-  bandName: string;
-  thumbnailUrl: string;
-  createdAt: string;
-  isHidden: boolean;
-}
-
-interface SyncJob {
-  id: string;
-  status: string;
-  videosFound: number;
-  videosAdded: number;
-  videosUpdated: number;
-  createdAt: string;
-  completedAt?: string;
-  bandName?: string;
-}
-
-interface RecentActivity {
-  recentVideos: RecentVideo[];
-  recentSyncJobs: SyncJob[];
-}
-
-interface SyncStatus {
-  isRunning: boolean;
-  currentJob?: SyncJob;
-  failedJobs: SyncJob[];
-}
-
-interface VideoTrend {
-  date: string;
-  count: number;
-}
-
-interface CategoryDistribution {
-  name: string;
-  count: number;
-  slug: string;
-}
-
-interface TopBand {
-  id: string;
-  name: string;
-  videoCount: number;
-  schoolName: string;
-}
-
+// Local types for activity feed
 interface ActivityItem {
   id: string;
   type: 'video' | 'sync' | 'error';

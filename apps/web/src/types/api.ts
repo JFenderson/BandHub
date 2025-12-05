@@ -260,3 +260,22 @@ export interface UpdateCategoryDto {
   description?: string;
   sortOrder?: number;
 }
+
+// Dashboard chart types
+export interface VideoTrend {
+  date: string;
+  count: number;
+}
+
+export interface CategoryDistribution {
+  name: string;
+  count: number;
+  slug: string;
+}
+
+export interface TopBand {
+  id: string;
+  name: string;
+  videoCount: number;
+  schoolName: string;
+}
