@@ -733,6 +733,18 @@ class ApiClient {
   async getSyncStatusDashboard(): Promise<SyncStatus> {
     return this.request<SyncStatus>('/api/admin/dashboard/sync-status');
   }
+
+  async getVideoTrends(): Promise<any[]> {
+    return this.request<any[]>('/api/admin/dashboard/video-trends');
+  }
+
+  async getCategoryDistribution(): Promise<any[]> {
+    return this.request<any[]>('/api/admin/dashboard/category-distribution');
+  }
+
+  async getTopBands(): Promise<any[]> {
+    return this.request<any[]>('/api/admin/dashboard/top-bands');
+  }
 }
 
 export const apiClient = new ApiClient(API_URL);
