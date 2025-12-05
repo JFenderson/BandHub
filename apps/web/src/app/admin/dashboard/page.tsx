@@ -8,66 +8,18 @@ import { ChartCard } from '@/components/admin/ChartCard';
 import { VideoChart } from '@/components/admin/VideoChart';
 import { CategoryPieChart } from '@/components/admin/CategoryPieChart';
 import { BandBarChart } from '@/components/admin/BandBarChart';
+import { apiClient } from '@/lib/api-client';
+import { useAuth } from '@/hooks/useAuth';
+import type {
+  DashboardStats,
+  RecentActivity,
+  SyncStatus,
+  VideoTrend,
+  CategoryDistribution,
+  TopBand,
+} from '@/types/api';
 
-// Types
-interface DashboardStats {
-  totalVideos: number;
-  totalBands: number;
-  videosThisWeek: number;
-  pendingModeration: number;
-  lastSyncStatus?: string;
-  lastSyncTime?: string;
-}
-
-interface RecentVideo {
-  id: string;
-  title: string;
-  bandName: string;
-  thumbnailUrl: string;
-  createdAt: string;
-  isHidden: boolean;
-}
-
-interface SyncJob {
-  id: string;
-  status: string;
-  videosFound: number;
-  videosAdded: number;
-  videosUpdated: number;
-  createdAt: string;
-  completedAt?: string;
-  bandName?: string;
-}
-
-interface RecentActivity {
-  recentVideos: RecentVideo[];
-  recentSyncJobs: SyncJob[];
-}
-
-interface SyncStatus {
-  isRunning: boolean;
-  currentJob?: SyncJob;
-  failedJobs: SyncJob[];
-}
-
-interface VideoTrend {
-  date: string;
-  count: number;
-}
-
-interface CategoryDistribution {
-  name: string;
-  count: number;
-  slug: string;
-}
-
-interface TopBand {
-  id: string;
-  name: string;
-  videoCount: number;
-  schoolName: string;
-}
-
+// Local types for activity feed
 interface ActivityItem {
   id: string;
   type: 'video' | 'sync' | 'error';
@@ -87,49 +39,27 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  // API base URL
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-  // Get auth token from localStorage
-  const getAuthToken = () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('adminToken');
-    }
-    return null;
-  };
+  
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   // Fetch dashboard data
   const fetchDashboardData = useCallback(async () => {
+    if (!isAuthenticated) {
+      setError('Not authenticated');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const token = getAuthToken();
-      if (!token) {
-        setError('Not authenticated');
-        return;
-      }
-
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      };
-
-      // Fetch all dashboard data in parallel
-      const responses = await Promise.all([
-        fetch(`${API_URL}/api/admin/dashboard/stats`, { headers }),
-        fetch(`${API_URL}/api/admin/dashboard/recent-activity`, { headers }),
-        fetch(`${API_URL}/api/admin/dashboard/sync-status`, { headers }),
-        fetch(`${API_URL}/api/admin/dashboard/video-trends`, { headers }),
-        fetch(`${API_URL}/api/admin/dashboard/category-distribution`, { headers }),
-        fetch(`${API_URL}/api/admin/dashboard/top-bands`, { headers }),
+      // Fetch all dashboard data in parallel using apiClient
+      const [statsData, activityData, syncData, trendsData, categoryData, bandsData] = await Promise.all([
+        apiClient.getDashboardStats(),
+        apiClient.getRecentActivity(),
+        apiClient.getSyncStatusDashboard(),
+        apiClient.getVideoTrends(),
+        apiClient.getCategoryDistribution(),
+        apiClient.getTopBands(),
       ]);
-
-      if (responses.some(res => !res.ok)) {
-        throw new Error('Failed to fetch dashboard data');
-      }
-
-      const [statsData, activityData, syncData, trendsData, categoryData, bandsData] = await Promise.all(
-        responses.map(res => res.json())
-      );
 
       setStats(statsData);
       setActivity(activityData);
@@ -145,29 +75,17 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [API_URL]);
+  }, [isAuthenticated]);
 
   // Trigger sync
   const handleTriggerSync = async () => {
+    if (!isAuthenticated) {
+      alert('Not authenticated');
+      return;
+    }
+
     try {
-      const token = getAuthToken();
-      if (!token) {
-        alert('Not authenticated');
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/api/sync/trigger`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to trigger sync');
-      }
-
+      await apiClient.triggerFullSync();
       alert('Sync job triggered successfully!');
       // Refresh sync status
       setTimeout(() => fetchDashboardData(), 1000);
@@ -190,8 +108,10 @@ export default function DashboardPage() {
 
   // Initial data fetch
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    if (!authLoading) {
+      fetchDashboardData();
+    }
+  }, [fetchDashboardData, authLoading]);
 
   // Convert activity data to ActivityItem format
   const getActivityItems = (): ActivityItem[] => {
