@@ -24,11 +24,13 @@ import { ObservabilityModule } from './observability/observability.module';
 import { CreatorsModule } from './modules/creators/creators.module';
 import { SecretsModule } from './modules/secrets-manager/secrets.module';
 import { AppConfigModule } from './modules/config/config.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     // Configuration with validation (replaces basic ConfigModule.forRoot)
     AppConfigModule,
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'default',

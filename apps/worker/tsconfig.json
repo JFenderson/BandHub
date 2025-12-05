@@ -11,7 +11,7 @@
     "paths": {
       "@hbcu-band-hub/shared-types": ["../../libs/shared/types/dist"],
       "@hbcu-band-hub/prisma": ["../../libs/prisma/src"],
-      "@hbcu-band-hub/observability": ["../../libs/observability/src"]
+      "@hbcu-band-hub/observability": ["../../libs/observability/dist"]
     }
   },
   "include": ["src/**/*"],

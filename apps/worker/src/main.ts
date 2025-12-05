@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { WorkerModule } from './worker.module';
 import {
-  createLogger,
+  NestPinoLogger,
   initSentry,
   startTracing,
 } from '@hbcu-band-hub/observability';
@@ -16,9 +16,9 @@ async function bootstrap() {
   // Create the application without HTTP server
   // Workers don't need to listen for HTTP requests
   const app = await NestFactory.createApplicationContext(WorkerModule, {
-    logger: createLogger('worker'),
+    logger: new NestPinoLogger('worker'),
   });
-  app.useLogger(createLogger('worker'));
+  // app.useLogger(createLogger('worker'));
   
   // Handle graceful shutdown
   const signals = ['SIGTERM', 'SIGINT'];

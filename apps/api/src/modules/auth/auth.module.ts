@@ -47,10 +47,12 @@ import { EmailModule } from '../email/email.module';
         } as JwtModuleOptions;
       },
     }),
-    ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 20,
-    }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 20,
+      },
+    ]),
   ],
   controllers: [
     AuthController,

@@ -8,6 +8,9 @@
       ],
       "@hbcu-band-hub/shared-types": [
         "../../libs/shared/types/src/index.ts"
+      ],
+      "@hbcu-band-hub/observability": [
+        "../../libs/observability/src/index.ts"
       ]
     },
     "plugins": [

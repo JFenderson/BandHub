@@ -20,7 +20,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: false,
   });
-  app.use(Sentry.Handlers.requestHandler());
+
   app.use(correlationIdMiddleware as never);
   app.use(createHttpLogger());
 
@@ -93,7 +93,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-
+Sentry.setupExpressErrorHandler(app.getHttpAdapter().getInstance());
   
   const port = process.env.API_PORT || 3001;
   await app.listen(port);
