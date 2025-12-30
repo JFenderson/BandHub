@@ -21,24 +21,33 @@ export class BandsService {
     private readonly prismaService: DatabaseService,
   ) {}
 
-  async findAll(query: BandQueryDto) {
-    // Create a cache key from the query parameters
-    const cacheKey = `bands:${JSON.stringify(query)}`;
-    
-    // Try to get from cache first
+  
+async findAll(query: BandQueryDto) {
+  const cacheKey = `bands:${JSON.stringify(query)}`;
+  
+  // ✅ Wrap in try-catch to handle cache failures
+  try {
     const cached = await this.cacheService.get(cacheKey);
     if (cached) {
       return cached;
     }
-
-    // Fetch from database
-    const result = await this.bandsRepository.findMany(query);
-
-    // Cache for 10 minutes
-    await this.cacheService.set(cacheKey, result, 600);
-
-    return result;
+  } catch (error) {
+    // Log but don't fail - cache is optional
+    this.logger.warn('Cache get failed, continuing without cache', error);
   }
+
+  const result = await this.bandsRepository.findMany(query);
+
+  // ✅ Wrap in try-catch
+  try {
+    await this.cacheService.set(cacheKey, result, 600);
+  } catch (error) {
+    // Log but don't fail - cache is optional
+    this.logger.warn('Cache set failed, continuing without cache', error);
+  }
+
+  return result;
+}
 
   async findById(id: string) {
     const cacheKey = `band:${id}`;

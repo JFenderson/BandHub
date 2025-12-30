@@ -3,9 +3,12 @@ import { SyncService } from '../../src/modules/sync/sync.service';
 const createMocks = () => {
   const queueService = { addJob: jest.fn(), getQueueStatus: jest.fn() } as any;
   const database = {
+   contentCreator: { 
+    findUnique: jest.fn(),
+    update: jest.fn().mockResolvedValue({ id: 'creator-1' }),
+  },
     video: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
     band: { findUnique: jest.fn() },
-    contentCreator: { findUnique: jest.fn() },
   } as any;
   const youtubeService = { getChannelVideos: jest.fn() } as any;
 

@@ -15,7 +15,13 @@ const createMocks = () => {
   const jwtService = { signAsync: jest.fn().mockResolvedValue('token') } as any;
   const configService = { get: jest.fn().mockReturnValue('secret') } as any;
 
-  const service = new AuthService(prisma, jwtService, configService);
+  const emailService = {
+  sendPasswordResetEmail: jest.fn(),
+  sendVerificationEmail: jest.fn(),
+  sendWelcomeEmail: jest.fn(),
+} as any;
+
+const service = new AuthService(prisma, jwtService, configService, emailService);
   return { service, prisma, jwtService, configService };
 };
 

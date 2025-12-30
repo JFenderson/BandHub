@@ -53,7 +53,7 @@ describe('BandsController (integration)', () => {
   it('responds with paginated data on GET /bands', async () => {
     mockBandsService.findAll.mockResolvedValue({ data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } });
 
-    const response = await controller.findAll(1 as any, 20 as any) as PaginatedResponse<unknown>;
+const response = await controller.findAll({ page: 1, limit: 20 }) as PaginatedResponse<unknown>;
 
     expect(response.meta.page).toBe(1);
     expect(mockBandsService.findAll).toHaveBeenCalledWith({ page: 1, limit: 20, search: undefined });

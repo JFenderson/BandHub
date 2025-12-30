@@ -53,6 +53,10 @@ describe('VideosService (unit)', () => {
 
   it('hides and unhides videos through update helper', async () => {
     const { service, videosRepository } = createMocks();
+
+const existingVideo = buildVideo({ id: 'v1' });
+  videosRepository.findById.mockResolvedValue(existingVideo);
+
     videosRepository.update.mockResolvedValue({ id: 'v1', isHidden: true });
 
     const hidden = await service.hideVideo('v1', 'inappropriate');
@@ -61,7 +65,10 @@ describe('VideosService (unit)', () => {
       hideReason: 'inappropriate',
     });
 
-    videosRepository.update.mockResolvedValue({ id: 'v1', isHidden: false });
+     videosRepository.findById.mockResolvedValue({ ...existingVideo, isHidden: true });
+  videosRepository.update.mockResolvedValue({ id: 'v1', isHidden: false });
+
+
     const visible = await service.unhideVideo('v1');
     expect(videosRepository.update).toHaveBeenCalledWith('v1', {
       isHidden: false,
