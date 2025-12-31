@@ -6,6 +6,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { CacheService } from './cache/cache.service';
 import { QueueService } from './queue/queue.service';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import {
   correlationIdMiddleware,
   createHttpLogger,
@@ -27,6 +28,30 @@ async function bootstrap() {
   // const cacheService = app.get(CacheService);
   // await cacheService.delPattern('bands:*');
   // await cacheService.delPattern('videos:*');
+
+  // ========================================
+  // GLOBAL EXCEPTION FILTER
+  // ========================================
+  // Register the global exception filter to handle all errors consistently
+  // This must be registered AFTER correlation middleware to ensure correlation IDs are available
+  app.useGlobalFilters(new GlobalExceptionFilter());
+
+  // ========================================
+  // GLOBAL VALIDATION PIPE
+  // ========================================
+  // Enable class-validator for all DTOs with automatic transformation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Strip properties that don't have decorators
+      forbidNonWhitelisted: true, // Throw errors if non-whitelisted properties are present
+      transform: true, // Automatically transform payloads to DTO instances
+      transformOptions: {
+        enableImplicitConversion: true, // Convert primitive types automatically
+      },
+      // Error messages will be caught by GlobalExceptionFilter
+    })
+  );
+
 
   // Global prefix for all routes
   app.setGlobalPrefix('api');
