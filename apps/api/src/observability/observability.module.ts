@@ -6,10 +6,6 @@ import { RequestObserverInterceptor } from '@hbcu-band-hub/observability';
 @Module({
   controllers: [MetricsController],
   providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: RequestObserverInterceptor,
-    },
   ],
 })
 export class ObservabilityModule {}

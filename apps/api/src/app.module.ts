@@ -25,6 +25,8 @@ import { CreatorsModule } from './modules/creators/creators.module';
 import { SecretsModule } from './modules/secrets-manager/secrets.module';
 import { AppConfigModule } from './modules/config/config.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 @Module({
   imports: [
@@ -64,12 +66,14 @@ import { ScheduleModule } from '@nestjs/schedule';
     ObservabilityModule,
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard, // Apply rate limiting globally
-    },
-    // Metrics interceptor provided by MetricsModule (registered globally there)
-    // ... other providers
+  {
+    provide: APP_GUARD,
+    useClass: ThrottlerGuard, // Apply rate limiting globally
+  },
+  {
+    provide: APP_INTERCEPTOR,
+    useClass: LoggingInterceptor, // Apply comprehensive logging globally
+  },
   ],
 })
 export class AppModule {}

@@ -112,7 +112,7 @@ async findAll(@Query() query: BandQueryDto) {
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   async create(
-    @Body() createBandDto: any,
+    @Body() createBandDto: CreateBandDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     return this.bandsService.create(createBandDto);
@@ -130,7 +130,7 @@ async findAll(@Query() query: BandQueryDto) {
   @ApiResponse({ status: 404, description: 'Band not found' })
   async update(
     @Param('id') id: string,
-    @Body() updateBandDto: any,
+    @Body() updateBandDto: UpdateBandDto,
     @CurrentUser() user: CurrentUserData,
   ) {
     return this.bandsService.update(id, updateBandDto);
