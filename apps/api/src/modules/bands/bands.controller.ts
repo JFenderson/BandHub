@@ -337,7 +337,7 @@ async findAll(@Query() query: BandQueryDto) {
     @Body() data: UpdateFeaturedOrderDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return this.bandsService.updateFeaturedOrder(data);
+   return this.bandsService.updateFeaturedOrder({ bandIds: data.bands.map(b => b.id) });
   }
 
 

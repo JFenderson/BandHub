@@ -27,6 +27,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   constructor(private configService: ConfigService) {}
 
   async onModuleInit() {
+      console.log('🔍 CacheService.onModuleInit() called'); // ADD THIS
+  console.log('🔍 REDIS_HOST:', this.configService.get('REDIS_HOST', 'localhost')); // ADD THIS
+  console.log('🔍 REDIS_PORT:', this.configService.get('REDIS_PORT', 6379)); // ADD THIS
+  
     this.client = new Redis({
       host: this.configService.get('REDIS_HOST', 'localhost'),
       port: this.configService.get('REDIS_PORT', 6379),
@@ -40,22 +44,43 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       lazyConnect: false,
     });
 
-    this.client.on('error', (error) => {
-      this.logger.error('Redis connection error:', error);
-      this.stats.errors++;
-    });
+    console.log('🔍 Redis client created');
 
-    this.client.on('connect', () => {
-      this.logger.log('✅ Connected to Redis');
-    });
+   this.client.on('error', (error) => {
+    console.log('🔍 Redis ERROR event fired:', error); // ADD THIS
+    this.logger.error('Redis connection error:', error);
+    this.stats.errors++;
+  });
 
-    this.client.on('ready', () => {
-      this.logger.log('✅ Redis client ready');
-    });
+  this.client.on('connect', () => {
+    console.log('🔍 Redis CONNECT event fired'); // ADD THIS
+    this.logger.log('✅ Connected to Redis');
+  });
 
-    this.client.on('reconnecting', () => {
-      this.logger.warn('⚠️ Reconnecting to Redis...');
+  this.client.on('ready', () => {
+    console.log('🔍 Redis READY event fired'); // ADD THIS
+    this.logger.log('✅ Redis client ready');
+  });
+
+  this.client.on('reconnecting', () => {
+    console.log('🔍 Redis RECONNECTING event fired'); // ADD THIS
+    this.logger.warn('⚠️ Reconnecting to Redis...');
+  });
+
+  console.log('🔍 Event handlers registered'); // ADD THIS
+
+await new Promise<void>((resolve) => {
+  if (this.client.status === 'ready') {
+    this.logger.log('✅ Redis ping successful');
+    resolve();
+  } else {
+    this.client.once('ready', () => {
+      this.logger.log('✅ Redis ping successful');
+      resolve();
     });
+  }
+});
+
   }
 
   async onModuleDestroy() {
