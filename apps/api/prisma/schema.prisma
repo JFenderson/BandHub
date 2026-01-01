@@ -51,6 +51,9 @@ model Band {
   @@index([isActive, isFeatured])
   @@index([featuredOrder])
   @@index([youtubeChannelId])
+  @@index([state, conference])
+@@index([isActive, state])
+@@index([isFeatured, featuredOrder])
   @@map("bands")
 }
 
@@ -77,6 +80,7 @@ model ContentCreator {
   youtubeVideos    YouTubeVideo[]
 
   @@index([youtubeChannelId])
+  @@index([isFeatured, qualityScore(sort: Desc)])
   @@index([isFeatured])
   @@index([isVerified])
   @@index([qualityScore])
@@ -119,6 +123,9 @@ model YouTubeVideo {
   @@index([channelId])
   @@index([syncStatus])
   @@index([isPromoted])
+  @@index([channelId, syncStatus])
+@@index([channelId, lastSyncedAt])
+@@index([syncStatus, createdAt])
   @@index([qualityScore(sort: Desc)])
   @@map("youtube_videos")
 }
@@ -163,6 +170,15 @@ model Video {
   @@index([bandId, eventYear])
   @@index([title])
   @@index([creatorId])
+  @@index([isHidden, publishedAt(sort: Desc)])
+@@index([bandId, isHidden, publishedAt(sort: Desc)])
+@@index([categoryId, isHidden, publishedAt(sort: Desc)])
+@@index([bandId, categoryId, isHidden])
+@@index([eventYear, isHidden])
+@@index([opponentBandId, isHidden])
+@@index([duration])
+@@index([qualityScore(sort: Desc)])
+@@index([bandId, viewCount(sort: Desc)])
   @@map("videos")
 }
 
@@ -205,6 +221,7 @@ model Event {
   @@index([slug])
   @@index([eventType])
   @@index([eventDate])
+  @@index([isActive, year])
   @@index([year])
   @@index([isActive])
   @@map("events")
@@ -281,6 +298,7 @@ model AdminPasswordResetToken {
 
   @@index([token])
   @@index([adminUserId])
+  @@index([expiresAt])
   @@map("admin_password_reset_tokens")
 }
 
@@ -453,6 +471,7 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
   @@index([action])
   @@index([severity])
   @@map("audit_logs")
@@ -495,6 +514,7 @@ model SyncJob {
   @@index([bandId])
   @@index([status])
   @@index([createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
   @@index([bandId, status])
   @@map("sync_jobs")
 }

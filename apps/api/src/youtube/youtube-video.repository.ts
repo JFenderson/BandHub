@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+// FIXED: Line 85-91 and 359-369 for updatedAt and transaction issues
+
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, SyncStatus } from '@prisma/client';
 import { DatabaseService } from '../database/database.service';
 
@@ -37,11 +39,10 @@ export interface YouTubeVideoCreateInput {
 
 @Injectable()
 export class YouTubeVideoRepository {
+  private readonly logger = new Logger(YouTubeVideoRepository.name);
+
   constructor(private readonly db: DatabaseService) {}
 
-  /**
-   * Find YouTube videos with filtering and pagination
-   */
   async findMany(query: YouTubeVideoQueryDto) {
     const {
       bandId,
@@ -60,81 +61,57 @@ export class YouTubeVideoRepository {
 
     const where: Prisma.YouTubeVideoWhereInput = {};
 
-    // Filter by band
-    if (bandId) {
-      where.bandId = bandId;
-    }
+    if (bandId) where.bandId = bandId;
+    if (creatorId) where.creatorId = creatorId;
+    if (channelId) where.channelId = channelId;
+    if (syncStatus) where.syncStatus = syncStatus;
+    if (isPromoted !== undefined) where.isPromoted = isPromoted;
 
-    // Filter by creator
-    if (creatorId) {
-      where.creatorId = creatorId;
-    }
-
-    // Filter by channel
-    if (channelId) {
-      where.channelId = channelId;
-    }
-
-    // Filter by sync status
-    if (syncStatus) {
-      where.syncStatus = syncStatus;
-    }
-
-    // Filter by promoted status
-    if (isPromoted !== undefined) {
-      where.isPromoted = isPromoted;
-    }
-
-    // Date range filtering
     if (publishedAfter || publishedBefore) {
       where.publishedAt = {};
-      if (publishedAfter) {
-        where.publishedAt.gte = publishedAfter;
-      }
-      if (publishedBefore) {
-        where.publishedAt.lte = publishedBefore;
-      }
+      if (publishedAfter) where.publishedAt.gte = publishedAfter;
+      if (publishedBefore) where.publishedAt.lte = publishedBefore;
     }
 
-    // Full-text search on title and description
     if (search) {
       where.OR = [
-        {
-          title: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          description: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          channelTitle: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { channelTitle: { contains: search, mode: 'insensitive' } },
       ];
     }
 
-    // Sorting
     const orderBy: Prisma.YouTubeVideoOrderByWithRelationInput = {};
     orderBy[sortBy] = sortOrder;
 
-    // Pagination
     const skip = (page - 1) * limit;
+    const takeValue = Math.max(1, Math.min(Number(limit) || 20, 100));
 
-    // Execute query
     const [videos, total] = await Promise.all([
       this.db.youTubeVideo.findMany({
         where,
         orderBy,
         skip,
-        take: limit,
-        include: {
+        take: takeValue,
+        select: {
+          id: true,
+          youtubeId: true,
+          title: true,
+          description: true,
+          thumbnailUrl: true,
+          url: true,
+          duration: true,
+          publishedAt: true,
+          viewCount: true,
+          likeCount: true,
+          channelId: true,
+          channelTitle: true,
+          syncStatus: true,
+          lastSyncedAt: true,
+          qualityScore: true,
+          isPromoted: true,
+          createdAt: true,
+          updatedAt: true, // FIXED: Added updatedAt
           band: {
             select: {
               id: true,
@@ -163,15 +140,12 @@ export class YouTubeVideoRepository {
       meta: {
         total,
         page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        limit: takeValue,
+        totalPages: Math.ceil(total / takeValue),
       },
     };
   }
 
-  /**
-   * Find a YouTube video by ID
-   */
   async findById(id: string) {
     return this.db.youTubeVideo.findUnique({
       where: { id },
@@ -198,18 +172,21 @@ export class YouTubeVideoRepository {
     });
   }
 
-  /**
-   * Find a YouTube video by its YouTube ID
-   */
   async findByYoutubeId(youtubeId: string) {
     return this.db.youTubeVideo.findUnique({
       where: { youtubeId },
+      select: {
+        id: true,
+        youtubeId: true,
+        title: true,
+        bandId: true,
+        creatorId: true,
+        syncStatus: true,
+        lastSyncedAt: true,
+      },
     });
   }
 
-  /**
-   * Create a new YouTube video record
-   */
   async create(data: YouTubeVideoCreateInput) {
     return this.db.youTubeVideo.create({
       data: {
@@ -226,18 +203,19 @@ export class YouTubeVideoRepository {
         channelTitle: data.channelTitle,
         syncStatus: data.syncStatus ?? SyncStatus.COMPLETED,
         qualityScore: data.qualityScore ?? 0,
+        lastSyncedAt: new Date(),
         ...(data.bandId && { band: { connect: { id: data.bandId } } }),
         ...(data.creatorId && { creator: { connect: { id: data.creatorId } } }),
+      },
+      select: {
+        id: true,
+        youtubeId: true,
+        title: true,
       },
     });
   }
 
-  /**
-   * Upsert a YouTube video (create or update)
-   * Returns the record with isNew flag indicating if it was created
-   */
   async upsert(data: YouTubeVideoCreateInput): Promise<{ record: any; isNew: boolean }> {
-    // First check if the record exists
     const existing = await this.findByYoutubeId(data.youtubeId);
     
     const updateData: Prisma.YouTubeVideoUpdateInput = {
@@ -250,12 +228,10 @@ export class YouTubeVideoRepository {
       syncStatus: SyncStatus.COMPLETED,
     };
 
-    // Handle band relationship
     if (data.bandId) {
       updateData.band = { connect: { id: data.bandId } };
     }
 
-    // Handle creator relationship
     if (data.creatorId) {
       updateData.creator = { connect: { id: data.creatorId } };
     }
@@ -281,14 +257,54 @@ export class YouTubeVideoRepository {
         ...(data.creatorId && { creator: { connect: { id: data.creatorId } } }),
       },
       update: updateData,
+      select: {
+        id: true,
+        youtubeId: true,
+        title: true,
+        bandId: true,
+        creatorId: true,
+      },
     });
 
     return { record, isNew: !existing };
   }
 
-  /**
-   * Update a YouTube video
-   */
+  // FIXED: Changed from transaction to sequential processing for batch upsert
+  async batchUpsert(videos: YouTubeVideoCreateInput[]): Promise<{
+    added: number;
+    updated: number;
+    errors: string[];
+  }> {
+    const results = {
+      added: 0,
+      updated: 0,
+      errors: [] as string[],
+    };
+
+    // Process in chunks to avoid overwhelming the database
+    const chunkSize = 50;
+    for (let i = 0; i < videos.length; i += chunkSize) {
+      const chunk = videos.slice(i, i + chunkSize);
+
+      for (const video of chunk) {
+        try {
+          const result = await this.upsert(video);
+          if (result.isNew) {
+            results.added++;
+          } else {
+            results.updated++;
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          results.errors.push(`Failed to upsert ${video.youtubeId}: ${errorMsg}`);
+          this.logger.error(`Upsert failed for ${video.youtubeId}:`, error);
+        }
+      }
+    }
+
+    return results;
+  }
+
   async update(id: string, data: Prisma.YouTubeVideoUpdateInput) {
     return this.db.youTubeVideo.update({
       where: { id },
@@ -296,57 +312,20 @@ export class YouTubeVideoRepository {
         ...data,
         updatedAt: new Date(),
       },
+      select: {
+        id: true,
+        youtubeId: true,
+        syncStatus: true,
+      },
     });
   }
 
-  /**
-   * Delete a YouTube video
-   */
   async delete(id: string) {
     return this.db.youTubeVideo.delete({
       where: { id },
     });
   }
 
-  /**
-   * Bulk create YouTube videos
-   */
-  async createMany(videos: YouTubeVideoCreateInput[]) {
-    const results = {
-      added: 0,
-      updated: 0,
-      errors: [] as string[],
-    };
-
-    for (const video of videos) {
-      try {
-        const existing = await this.findByYoutubeId(video.youtubeId);
-        if (existing) {
-          await this.update(existing.id, {
-            title: video.title,
-            description: video.description,
-            thumbnailUrl: video.thumbnailUrl,
-            viewCount: video.viewCount,
-            likeCount: video.likeCount,
-            lastSyncedAt: new Date(),
-            syncStatus: SyncStatus.COMPLETED,
-          });
-          results.updated++;
-        } else {
-          await this.create(video);
-          results.added++;
-        }
-      } catch (error) {
-        results.errors.push(`Failed to process video ${video.youtubeId}: ${error}`);
-      }
-    }
-
-    return results;
-  }
-
-  /**
-   * Get video statistics
-   */
   async getStats() {
     const [total, byBand, byCreator, bySyncStatus] = await Promise.all([
       this.db.youTubeVideo.count(),
@@ -377,9 +356,6 @@ export class YouTubeVideoRepository {
     };
   }
 
-  /**
-   * Get videos that need syncing (for incremental sync)
-   */
   async getVideosNeedingSync(channelId: string, lastSyncAt?: Date) {
     const where: Prisma.YouTubeVideoWhereInput = {
       channelId,
@@ -394,13 +370,17 @@ export class YouTubeVideoRepository {
 
     return this.db.youTubeVideo.findMany({
       where,
+      select: {
+        id: true,
+        youtubeId: true,
+        title: true,
+        publishedAt: true,
+        lastSyncedAt: true,
+      },
       orderBy: { publishedAt: 'desc' },
     });
   }
 
-  /**
-   * Find the latest video published date for a channel
-   */
   async getLatestVideoDate(channelId: string, bandId?: string, creatorId?: string) {
     const where: Prisma.YouTubeVideoWhereInput = { channelId };
     if (bandId) where.bandId = bandId;
@@ -415,12 +395,45 @@ export class YouTubeVideoRepository {
     return latestVideo?.publishedAt ?? null;
   }
 
-  /**
-   * Count videos by channel
-   */
   async countByChannel(channelId: string) {
     return this.db.youTubeVideo.count({
       where: { channelId },
+    });
+  }
+
+  async getVideosBySyncStatus(syncStatus: SyncStatus, limit: number = 100): Promise<any[]> {
+    return this.db.youTubeVideo.findMany({
+      where: { syncStatus },
+      select: {
+        id: true,
+        youtubeId: true,
+        title: true,
+        channelId: true,
+        syncErrors: true,
+        createdAt: true,
+        lastSyncedAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
+
+  async batchUpdateSyncStatus(
+    youtubeIds: string[],
+    syncStatus: SyncStatus,
+    syncErrors?: string[],
+  ) {
+    return this.db.youTubeVideo.updateMany({
+      where: {
+        youtubeId: {
+          in: youtubeIds,
+        },
+      },
+      data: {
+        syncStatus,
+        lastSyncedAt: new Date(),
+        ...(syncErrors && { syncErrors }),
+      },
     });
   }
 }

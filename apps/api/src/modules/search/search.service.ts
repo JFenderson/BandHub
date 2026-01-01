@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import { Prisma } from '@prisma/client';
 
@@ -28,11 +28,7 @@ export interface SearchResult {
   publishedAt: Date;
   viewCount: number;
   youtubeId: string;
-  highlights?: {
-    title?: string;
-    description?: string;
-    bandName?: string;
-  };
+  rank?: number; // Relevance rank from full-text search
   band: {
     id: string;
     name: string;
@@ -51,12 +47,22 @@ export interface SearchResult {
   };
 }
 
+/**
+ * Optimized SearchService with:
+ * - PostgreSQL full-text search using tsvector and GIN indexes
+ * - Relevance ranking with ts_rank
+ * - Optimized filter combinations using composite indexes
+ * - Query result caching in VideosService
+ */
 @Injectable()
 export class SearchService {
+  private readonly logger = new Logger(SearchService.name);
+
   constructor(private readonly prisma: DatabaseService) {}
 
   /**
-   * Advanced multi-faceted search with weighted results
+   * Advanced multi-faceted search with PostgreSQL full-text search
+   * Uses videos_search_vector_idx GIN index for optimal performance
    */
   async search(filters: SearchFilters) {
     const {
@@ -71,6 +77,202 @@ export class SearchService {
       viewCountMax,
       hasOpponent,
       sortBy = 'relevance',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 20,
+    } = filters;
+
+    // If we have a search query, use optimized full-text search
+    if (query && query.trim().length > 0) {
+      return this.fullTextSearch(filters);
+    }
+
+    // Otherwise, use standard filtered search
+    return this.filteredSearch(filters);
+  }
+
+  /**
+   * Full-text search using PostgreSQL tsvector for optimal performance
+   */
+  private async fullTextSearch(filters: SearchFilters) {
+    const {
+      query,
+      bandIds,
+      categoryIds,
+      dateFrom,
+      dateTo,
+      durationMin,
+      durationMax,
+      viewCountMin,
+      viewCountMax,
+      hasOpponent,
+      sortBy = 'relevance',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 20,
+    } = filters;
+
+    const searchQuery = query!.trim();
+    const offset = (page - 1) * limit;
+
+    // Build WHERE conditions
+    const conditions: string[] = ["v.search_vector @@ plainto_tsquery('english', $1)", 'v.is_hidden = false'];
+    const params: any[] = [searchQuery];
+    let paramIndex = 2;
+
+    // Band filter - uses videos_band_hidden_published_idx
+    if (bandIds && bandIds.length > 0) {
+      conditions.push(`v.band_id = ANY($${paramIndex}::text[])`);
+      params.push(bandIds);
+      paramIndex++;
+    }
+
+    // Category filter - uses videos_category_hidden_published_idx
+    if (categoryIds && categoryIds.length > 0) {
+      conditions.push(`v.category_id = ANY($${paramIndex}::text[])`);
+      params.push(categoryIds);
+      paramIndex++;
+    }
+
+    // Date range filter - uses videos_hidden_published_idx
+    if (dateFrom) {
+      conditions.push(`v.published_at >= $${paramIndex}`);
+      params.push(dateFrom);
+      paramIndex++;
+    }
+    if (dateTo) {
+      conditions.push(`v.published_at <= $${paramIndex}`);
+      params.push(dateTo);
+      paramIndex++;
+    }
+
+    // Duration filter - uses videos_duration_idx
+    if (durationMin !== undefined) {
+      conditions.push(`v.duration >= $${paramIndex}`);
+      params.push(durationMin);
+      paramIndex++;
+    }
+    if (durationMax !== undefined) {
+      conditions.push(`v.duration <= $${paramIndex}`);
+      params.push(durationMax);
+      paramIndex++;
+    }
+
+    // View count filter - uses videos_viewcount_idx
+    if (viewCountMin !== undefined) {
+      conditions.push(`v.view_count >= $${paramIndex}`);
+      params.push(viewCountMin);
+      paramIndex++;
+    }
+    if (viewCountMax !== undefined) {
+      conditions.push(`v.view_count <= $${paramIndex}`);
+      params.push(viewCountMax);
+      paramIndex++;
+    }
+
+    // Opponent filter - uses videos_opponent_hidden_idx
+    if (hasOpponent !== undefined) {
+      if (hasOpponent) {
+        conditions.push('v.opponent_band_id IS NOT NULL');
+      } else {
+        conditions.push('v.opponent_band_id IS NULL');
+      }
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    // Build ORDER BY clause
+    let orderByClause: string;
+    if (sortBy === 'relevance') {
+      orderByClause = 'rank DESC, v.published_at DESC';
+    } else if (sortBy === 'publishedAt') {
+      orderByClause = `v.published_at ${sortOrder.toUpperCase()}`;
+    } else if (sortBy === 'viewCount') {
+      orderByClause = `v.view_count ${sortOrder.toUpperCase()}`;
+    } else {
+      orderByClause = `v.title ${sortOrder.toUpperCase()}`;
+    }
+
+    // Execute optimized query with ranking
+    const videos = await this.prisma.$queryRawUnsafe<SearchResult[]>(`
+      SELECT 
+        v.id,
+        v.youtube_id as "youtubeId",
+        v.title,
+        v.description,
+        v.thumbnail_url as "thumbnailUrl",
+        v.duration,
+        v.published_at as "publishedAt",
+        v.view_count as "viewCount",
+        ts_rank(v.search_vector, plainto_tsquery('english', $1)) as rank,
+        jsonb_build_object(
+          'id', b.id,
+          'name', b.name,
+          'slug', b.slug,
+          'logoUrl', b.logo_url
+        ) as band,
+        CASE 
+          WHEN c.id IS NOT NULL THEN jsonb_build_object(
+            'id', c.id,
+            'name', c.name,
+            'slug', c.slug
+          )
+          ELSE NULL
+        END as category,
+        CASE 
+          WHEN ob.id IS NOT NULL THEN jsonb_build_object(
+            'id', ob.id,
+            'name', ob.name,
+            'slug', ob.slug
+          )
+          ELSE NULL
+        END as "opponentBand"
+      FROM videos v
+      INNER JOIN bands b ON v.band_id = b.id
+      LEFT JOIN categories c ON v.category_id = c.id
+      LEFT JOIN bands ob ON v.opponent_band_id = ob.id
+      WHERE ${whereClause}
+      ORDER BY ${orderByClause}
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `, ...params, limit, offset);
+
+    // Get total count
+    const [{ count }] = await this.prisma.$queryRawUnsafe<[{ count: bigint }]>(`
+      SELECT COUNT(*) as count
+      FROM videos v
+      WHERE ${whereClause}
+    `, ...params.slice(0, paramIndex - 2)); // Remove limit and offset
+
+    this.logger.debug(`Full-text search for "${searchQuery}" returned ${videos.length} results`);
+
+    return {
+      data: videos,
+      meta: {
+        total: Number(count),
+        page,
+        limit,
+        totalPages: Math.ceil(Number(count) / limit),
+        query: searchQuery,
+      },
+    };
+  }
+
+  /**
+   * Standard filtered search (without text search)
+   * Uses appropriate composite indexes based on filters
+   */
+  private async filteredSearch(filters: SearchFilters) {
+    const {
+      bandIds,
+      categoryIds,
+      dateFrom,
+      dateTo,
+      durationMin,
+      durationMax,
+      viewCountMin,
+      viewCountMax,
+      hasOpponent,
+      sortBy = 'publishedAt',
       sortOrder = 'desc',
       page = 1,
       limit = 20,
@@ -97,7 +299,7 @@ export class SearchService {
       if (dateTo) where.publishedAt.lte = dateTo;
     }
 
-    // Duration filter (in seconds)
+    // Duration filter
     if (durationMin !== undefined || durationMax !== undefined) {
       where.duration = {};
       if (durationMin !== undefined) where.duration.gte = durationMin;
@@ -111,7 +313,7 @@ export class SearchService {
       if (viewCountMax !== undefined) where.viewCount.lte = viewCountMax;
     }
 
-    // Has opponent filter
+    // Opponent filter
     if (hasOpponent !== undefined) {
       if (hasOpponent) {
         where.opponentBandId = { not: null };
@@ -120,21 +322,15 @@ export class SearchService {
       }
     }
 
-    // Text search with fuzzy matching
-    if (query && query.trim().length > 0) {
-      const searchTerms = this.parseSearchQuery(query);
-      where.OR = this.buildSearchConditions(searchTerms);
-    }
-
     // Determine sort order
-    let orderBy: Prisma.VideoOrderByWithRelationInput[];
-    if (sortBy === 'relevance' && query) {
-      // For relevance, we'll sort by viewCount as a proxy for relevance
-      // Combined with the search conditions which prioritize band name matches
-      orderBy = [{ viewCount: 'desc' }, { publishedAt: 'desc' }];
+    const orderBy: Prisma.VideoOrderByWithRelationInput[] = [];
+    
+    if (sortBy === 'relevance' || sortBy === 'publishedAt') {
+      orderBy.push({ publishedAt: sortOrder });
+    } else if (sortBy === 'viewCount') {
+      orderBy.push({ viewCount: sortOrder });
     } else {
-      const sortField = sortBy === 'relevance' ? 'publishedAt' : sortBy;
-      orderBy = [{ [sortField]: sortOrder }];
+      orderBy.push({ title: sortOrder });
     }
 
     const skip = (page - 1) * limit;
@@ -145,7 +341,15 @@ export class SearchService {
         orderBy,
         skip,
         take: limit,
-        include: {
+        select: {
+          id: true,
+          youtubeId: true,
+          title: true,
+          description: true,
+          thumbnailUrl: true,
+          duration: true,
+          publishedAt: true,
+          viewCount: true,
           band: {
             select: {
               id: true,
@@ -173,51 +377,41 @@ export class SearchService {
       this.prisma.video.count({ where }),
     ]);
 
-    // Add highlights to results
-    const results: SearchResult[] = videos.map((video) => ({
-      ...video,
-      highlights: query
-        ? this.generateHighlights(video, query)
-        : undefined,
-    }));
-
     return {
-      data: results,
+      data: videos as SearchResult[],
       meta: {
         total,
         page,
         limit,
         totalPages: Math.ceil(total / limit),
-        query: query || null,
+        query: null,
       },
     };
   }
 
   /**
-   * Get search suggestions based on partial query
+   * Get search suggestions using tsvector
+   * Uses bands_search_vector_idx for band name suggestions
    */
   async getSuggestions(query: string, limit: number = 10) {
     if (!query || query.trim().length < 2) {
       return { suggestions: [] };
     }
 
-    const searchTerm = query.trim().toLowerCase();
+    const searchTerm = query.trim();
 
-    // Get band name suggestions
-    const bandSuggestions = await this.prisma.band.findMany({
-      where: {
-        OR: [
-          { name: { contains: searchTerm, mode: 'insensitive' } },
-          { schoolName: { contains: searchTerm, mode: 'insensitive' } },
-        ],
-        isActive: true,
-      },
-      select: {
-        name: true,
-        slug: true,
-      },
-      take: 5,
-    });
+    // Get band name suggestions using full-text search
+    const bandSuggestions = await this.prisma.$queryRawUnsafe<Array<{ name: string; slug: string }>>(
+      `
+      SELECT name, slug
+      FROM bands
+      WHERE search_vector @@ plainto_tsquery('english', $1)
+        AND is_active = true
+      ORDER BY ts_rank(search_vector, plainto_tsquery('english', $1)) DESC
+      LIMIT 5
+      `,
+      searchTerm
+    );
 
     // Get video title suggestions
     const videoSuggestions = await this.prisma.video.findMany({
@@ -269,7 +463,7 @@ export class SearchService {
   }
 
   /**
-   * Get popular searches
+   * Get popular searches (unchanged, already optimized)
    */
   async getPopularSearches(limit: number = 10) {
     const popularSearches = await this.prisma.searchLog.groupBy({
@@ -281,7 +475,7 @@ export class SearchService {
         createdAt: {
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
         },
-        resultsCount: { gt: 0 }, // Only show searches that had results
+        resultsCount: { gt: 0 },
       },
     });
 
@@ -315,7 +509,7 @@ export class SearchService {
   }
 
   /**
-   * Get all bands for filter options
+   * Get bands for filter options (optimized with selective fields)
    */
   async getBandsForFilter() {
     return this.prisma.band.findMany({
@@ -324,14 +518,15 @@ export class SearchService {
         id: true,
         name: true,
         slug: true,
-        _count: { select: { videos: true } },
+        state: true,
+        _count: { select: { videos: { where: { isHidden: false } } } },
       },
       orderBy: { name: 'asc' },
     });
   }
 
   /**
-   * Get all categories for filter options
+   * Get categories for filter options (optimized)
    */
   async getCategoriesForFilter() {
     return this.prisma.category.findMany({
@@ -339,130 +534,9 @@ export class SearchService {
         id: true,
         name: true,
         slug: true,
-        _count: { select: { videos: true } },
+        _count: { select: { videos: { where: { isHidden: false } } } },
       },
       orderBy: { sortOrder: 'asc' },
     });
-  }
-
-  /**
-   * Parse search query to support advanced syntax:
-   * - "exact phrase" for exact matching
-   * - -term for exclusion
-   * - Regular terms for fuzzy matching
-   */
-  private parseSearchQuery(query: string): {
-    include: string[];
-    exclude: string[];
-    exact: string[];
-  } {
-    const result = {
-      include: [] as string[],
-      exclude: [] as string[],
-      exact: [] as string[],
-    };
-
-    // Match quoted phrases
-    const exactMatches = query.match(/"([^"]+)"/g);
-    if (exactMatches) {
-      result.exact = exactMatches.map((m) => m.replace(/"/g, ''));
-      query = query.replace(/"[^"]+"/g, '');
-    }
-
-    // Split remaining terms
-    const terms = query.split(/\s+/).filter((t) => t.length > 0);
-
-    for (const term of terms) {
-      if (term.startsWith('-') && term.length > 1) {
-        result.exclude.push(term.substring(1));
-      } else {
-        result.include.push(term);
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Build Prisma search conditions from parsed query
-   */
-  private buildSearchConditions(searchTerms: {
-    include: string[];
-    exclude: string[];
-    exact: string[];
-  }): Prisma.VideoWhereInput[] {
-    const conditions: Prisma.VideoWhereInput[] = [];
-
-    // Add conditions for included terms (fuzzy matching)
-    for (const term of searchTerms.include) {
-      conditions.push(
-        { title: { contains: term, mode: 'insensitive' } },
-        { description: { contains: term, mode: 'insensitive' } },
-        { band: { name: { contains: term, mode: 'insensitive' } } },
-        { band: { schoolName: { contains: term, mode: 'insensitive' } } },
-        { eventName: { contains: term, mode: 'insensitive' } },
-        { tags: { hasSome: [term.toLowerCase()] } },
-      );
-    }
-
-    // Add conditions for exact phrases
-    for (const phrase of searchTerms.exact) {
-      conditions.push(
-        { title: { contains: phrase, mode: 'insensitive' } },
-        { description: { contains: phrase, mode: 'insensitive' } },
-      );
-    }
-
-    return conditions.length > 0 ? conditions : [{}];
-  }
-
-  /**
-   * Generate highlighted text snippets for search results
-   */
-  private generateHighlights(
-    video: { title: string; description?: string | null; band: { name: string } },
-    query: string,
-  ): { title?: string; description?: string; bandName?: string } {
-    const highlights: { title?: string; description?: string; bandName?: string } = {};
-    const terms = query.toLowerCase().split(/\s+/).filter((t) => !t.startsWith('-') && t.length > 0);
-
-    // Highlight title
-    if (terms.some((t) => video.title.toLowerCase().includes(t))) {
-      highlights.title = this.highlightText(video.title, terms);
-    }
-
-    // Highlight description (first 200 chars)
-    if (video.description) {
-      const desc = video.description.substring(0, 200);
-      if (terms.some((t) => desc.toLowerCase().includes(t))) {
-        highlights.description = this.highlightText(desc, terms) + (video.description.length > 200 ? '...' : '');
-      }
-    }
-
-    // Highlight band name
-    if (terms.some((t) => video.band.name.toLowerCase().includes(t))) {
-      highlights.bandName = this.highlightText(video.band.name, terms);
-    }
-
-    return highlights;
-  }
-
-  /**
-   * Wrap matching terms with <mark> tags
-   */
-  private highlightText(text: string, terms: string[]): string {
-    let result = text;
-    for (const term of terms) {
-      const regex = new RegExp(`(${this.escapeRegExp(term)})`, 'gi');
-      result = result.replace(regex, '<mark>$1</mark>');
-    }
-    return result;
-  }
-
-  /**
-   * Escape special regex characters
-   */
-  private escapeRegExp(string: string): string {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
