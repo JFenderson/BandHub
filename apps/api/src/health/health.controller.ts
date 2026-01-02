@@ -2,9 +2,17 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { HealthService } from './health.service';
 import { ConfigService } from '@nestjs/config';
+import { SkipRateLimit } from '../common/decorators/rate-limit.decorator';
 
+/**
+ * Health Controller
+ * 
+ * All health check endpoints skip rate limiting to ensure
+ * monitoring systems can always check service health.
+ */
 @ApiTags('health')
 @Controller('health')
+@SkipRateLimit() // Skip rate limiting for all health endpoints
 export class HealthController {
   constructor(
     private readonly healthService: HealthService,
@@ -56,4 +64,25 @@ export class HealthController {
   async live() {
     return this.healthService.liveness();
   }
+
+  @Get('test-rate-limit')
+async testRateLimit() {
+  const { RedisRateLimiterService } = await import('../common/services/redis-rate-limiter.service');
+  const { CacheService } = await import('../cache/cache.service');
+  
+  try {
+    const cacheService = new CacheService(null); // might fail but let's see
+    const rateLimiter = new RedisRateLimiterService(cacheService);
+    
+    return {
+      status: 'Services can be instantiated',
+      redis: await cacheService.getClient().ping(),
+    };
+  } catch (error) {
+    return {
+      status: 'ERROR',
+      error: error.message,
+    };
+  }
+}
 }

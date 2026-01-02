@@ -28,12 +28,21 @@ import { diskStorage } from 'multer';
 import { processUploadedImage } from '../../common/utils/image-processing.util';
 import { unlink } from 'fs/promises';
 import { CreateBandDto, UpdateBandDto, BandQueryDto, UpdateFeaturedOrderDto } from './dto';
+import { RateLimit } from '../../common/decorators/rate-limit.decorator';
+import { RateLimitType } from '../../common/interfaces/rate-limit.interface';
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@prisma/client';
 
 @ApiTags('Bands')
 @Controller('bands')
+// Apply default public API rate limit to entire controller
+@RateLimit({
+  limit: 100,
+  windowMs: 60 * 60 * 1000, // 1 hour
+  type: RateLimitType.IP,
+  message: 'Too many band requests. Please try again later.',
+})
 export class BandsController {
   constructor(
     private readonly bandsService: BandsService,
@@ -44,13 +53,13 @@ export class BandsController {
   // PUBLIC ROUTES
   // ========================================
 
-@Get()
-@ApiOperation({ summary: 'Get all bands with pagination' })
-@ApiResponse({ status: 200, description: 'Bands retrieved successfully' })
-async findAll(@Query() query: BandQueryDto) {
-  return this.bandsService.findAll(query);
-}
-
+  @Get()
+  @ApiOperation({ summary: 'Get all bands with pagination' })
+  @ApiResponse({ status: 200, description: 'Bands retrieved successfully' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async findAll(@Query() query: BandQueryDto) {
+    return this.bandsService.findAll(query);
+  }
 
   @Get('featured')
   @ApiOperation({ summary: 'Get featured bands for homepage carousel' })
@@ -59,10 +68,16 @@ async findAll(@Query() query: BandQueryDto) {
     return this.bandsService.getFeaturedBands();
   }
 
-    @Get('featured-recommendations')
+  @Get('featured-recommendations')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
+  @RateLimit({
+    limit: 1000,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    type: RateLimitType.USER,
+    message: 'Admin rate limit exceeded.',
+  })
   @ApiOperation({ summary: 'Get smart recommendations for bands to feature' })
   @ApiResponse({ status: 200, description: 'Recommendations retrieved successfully' })
   async getFeaturedRecommendations() {
@@ -74,6 +89,12 @@ async findAll(@Query() query: BandQueryDto) {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
+  @RateLimit({
+    limit: 1000,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    type: RateLimitType.USER,
+    message: 'Admin rate limit exceeded.',
+  })
   @ApiOperation({ summary: 'Get featured bands analytics' })
   @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
   async getFeaturedAnalytics() {
@@ -96,8 +117,6 @@ async findAll(@Query() query: BandQueryDto) {
     return this.bandsService.findById(id);
   }
 
-
-
   // ========================================
   // MODERATOR ROUTES
   // ========================================
@@ -106,6 +125,12 @@ async findAll(@Query() query: BandQueryDto) {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
+  @RateLimit({
+    limit: 500,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    type: RateLimitType.USER,
+    message: 'Admin write rate limit exceeded.',
+  })
   @ApiOperation({ summary: 'Create a new band' })
   @ApiResponse({ status: 201, description: 'Band created successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -123,6 +148,12 @@ async findAll(@Query() query: BandQueryDto) {
   @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
+  @RateLimit({
+    limit: 500,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    type: RateLimitType.USER,
+    message: 'Admin write rate limit exceeded.',
+  })
   @ApiOperation({ summary: 'Update a band' })
   @ApiResponse({ status: 200, description: 'Band updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -145,6 +176,12 @@ async findAll(@Query() query: BandQueryDto) {
   @Roles(AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RateLimit({
+    limit: 1000,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    type: RateLimitType.USER,
+    message: 'Admin rate limit exceeded.',
+  })
   @ApiOperation({ summary: 'Delete a band (SUPER_ADMIN only)' })
   @ApiResponse({ status: 204, description: 'Band deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -185,12 +222,19 @@ async findAll(@Query() query: BandQueryDto) {
       },
     }),
   )
+  @RateLimit({
+    limit: 5,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    type: RateLimitType.USER,
+    message: 'Too many logo uploads. Please try again later.',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload band logo' })
   @ApiResponse({ status: 200, description: 'Logo uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid file' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Band not found' })
+  @ApiResponse({ status: 429, description: 'Too many uploads' })
   async uploadLogo(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
@@ -252,12 +296,19 @@ async findAll(@Query() query: BandQueryDto) {
       },
     }),
   )
+  @RateLimit({
+    limit: 5,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    type: RateLimitType.USER,
+    message: 'Too many banner uploads. Please try again later.',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload band banner' })
   @ApiResponse({ status: 200, description: 'Banner uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid file' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Band not found' })
+  @ApiResponse({ status: 429, description: 'Too many uploads' })
   async uploadBanner(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
@@ -295,8 +346,6 @@ async findAll(@Query() query: BandQueryDto) {
     }
   }
 
-
-
   @Post(':id/track-featured-click')
   @ApiOperation({ summary: 'Track click on featured band' })
   @ApiResponse({ status: 201, description: 'Click tracked successfully' })
@@ -313,8 +362,14 @@ async findAll(@Query() query: BandQueryDto) {
 
   @Patch(':id/featured')
   @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(AdminRole.ADMIN, AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
-    @ApiBearerAuth('JWT-auth')
+  @Roles(AdminRole.ADMIN, AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @RateLimit({
+    limit: 500,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    type: RateLimitType.USER,
+    message: 'Admin write rate limit exceeded.',
+  })
   @ApiOperation({ summary: 'Toggle featured status for a band' })
   @ApiResponse({ status: 200, description: 'Featured status toggled successfully' })
   @ApiResponse({ status: 400, description: 'Max featured bands limit reached' })
@@ -328,8 +383,14 @@ async findAll(@Query() query: BandQueryDto) {
 
   @Patch('featured-order')
   @UseGuards(JwtAuthGuard, RolesGuard)
- @Roles(AdminRole.ADMIN, AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
+  @Roles(AdminRole.ADMIN, AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
+  @RateLimit({
+    limit: 500,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    type: RateLimitType.USER,
+    message: 'Admin write rate limit exceeded.',
+  })
   @ApiOperation({ summary: 'Update featured bands order' })
   @ApiResponse({ status: 200, description: 'Featured order updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid order data' })
@@ -337,8 +398,6 @@ async findAll(@Query() query: BandQueryDto) {
     @Body() data: UpdateFeaturedOrderDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-   return this.bandsService.updateFeaturedOrder({ bandIds: data.bands.map(b => b.id) });
+    return this.bandsService.updateFeaturedOrder({ bandIds: data.bands.map(b => b.id) });
   }
-
-
 }

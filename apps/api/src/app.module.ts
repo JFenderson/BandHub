@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { CacheModule } from './cache/cache.module';
 import { QueueModule } from './queue/queue.module';
@@ -18,33 +18,58 @@ import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { YoutubeModule } from './youtube/youtube.module';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ObservabilityModule } from './observability/observability.module';
 import { CreatorsModule } from './modules/creators/creators.module';
 import { SecretsModule } from './modules/secrets-manager/secrets.module';
 import { AppConfigModule } from './modules/config/config.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { RateLimitingGuard } from './common/guards/rate-limiting.guard';
+import { RedisRateLimiterService } from './common/services/redis-rate-limiter.service';
+import { RateLimitExceptionFilter } from './common/filters/rate-limit-exception.filter';
+import { IpExtractorMiddleware } from './common/middleware/ip-extractor.middleware';
+import Redis from 'ioredis';
+import { Reflector } from '@nestjs/core/services/reflector.service';
 
 @Module({
   imports: [
     // Configuration with validation (replaces basic ConfigModule.forRoot)
     AppConfigModule,
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 60000,
-        limit: 100, // Global limit: 100 requests per minute
-      },
-    ]),
+    
+    // Configure ThrottlerModule with Redis storage for distributed rate limiting
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        throttlers: [
+          {
+            name: 'default',
+            ttl: 60000, // 1 minute window
+            limit: 100, // 100 requests per minute (fallback if custom limits not set)
+          },
+        ],
+        // Use Redis for distributed rate limiting across multiple API instances
+        storage: new ThrottlerStorageRedisService(
+          new Redis({
+            host: configService.get('REDIS_HOST', 'localhost'),
+            port: configService.get('REDIS_PORT', 6379),
+            password: configService.get('REDIS_PASSWORD'),
+            db: 1, // Use separate database for rate limiting
+            maxRetriesPerRequest: null,
+          }),
+        ),
+      }),
+    }),
+    
     // Core infrastructure
     DatabaseModule,
     CacheModule,
     QueueModule,
     SecretsModule, // Centralized secrets management
+    
     // Feature modules
     BandsModule,
     VideosModule,
@@ -60,20 +85,45 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     SyncModule,
     YoutubeModule,
     CreatorsModule,
+    
     // Utilities
     HealthModule,
     MetricsModule,
     ObservabilityModule,
   ],
   providers: [
-  {
-    provide: APP_GUARD,
-    useClass: ThrottlerGuard, // Apply rate limiting globally
+    // Rate limiting service (used by guard)
+    RedisRateLimiterService,
+    
+    // Global guards
+{
+  provide: APP_GUARD,
+  useFactory: (reflector: Reflector, rateLimiter: RedisRateLimiterService) => {
+    return new RateLimitingGuard(reflector, rateLimiter);
   },
-  {
-    provide: APP_INTERCEPTOR,
-    useClass: LoggingInterceptor, // Apply comprehensive logging globally
-  },
+  inject: [Reflector, RedisRateLimiterService],
+},
+    // Global filters
+    {
+      provide: APP_FILTER,
+      useClass: RateLimitExceptionFilter, // Handle rate limit exceptions
+    },
+    
+    // Global interceptors
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor, // Apply comprehensive logging globally
+    },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  /**
+   * Configure middleware
+   * IP extractor must run before rate limiting to get real IP addresses
+   */
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(IpExtractorMiddleware)
+      .forRoutes('*'); // Apply to all routes
+  }
+}
