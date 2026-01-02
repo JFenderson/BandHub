@@ -14,6 +14,7 @@ import {
   startTracing,
 } from '@hbcu-band-hub/observability';
 import * as Sentry from '@sentry/node';
+import { SanitizationPipe } from './common';
 
 async function bootstrap() {
   startTracing('api');
@@ -75,6 +76,13 @@ async function bootstrap() {
     exposedHeaders: ['set-cookie'],
     maxAge: 3600, // Cache preflight for 1 hour
   });
+
+app.useGlobalPipes(
+  new SanitizationPipe({
+    enableLogging: process.env.NODE_ENV === 'development',
+    recursive: true,
+  }),
+);
 
   // Global validation pipe - validates all incoming DTOs
   app.useGlobalPipes(

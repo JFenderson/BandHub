@@ -1,6 +1,7 @@
 import { IsOptional, IsString, IsBoolean, IsInt, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
+import { SanitizeSearch } from 'src/common';
 
 export class BandQueryDto {
   @ApiPropertyOptional({ example: 'SWAC' })
@@ -26,9 +27,10 @@ export class BandQueryDto {
   isFeatured?: boolean;
 
   @ApiPropertyOptional({ example: 'jackson' })
-  @IsOptional()
-  @IsString()
-  search?: string;
+@SanitizeSearch()
+@IsString()
+@IsOptional()
+search?: string;
 
   @ApiPropertyOptional({ example: 1, default: 1 })
   @IsOptional()

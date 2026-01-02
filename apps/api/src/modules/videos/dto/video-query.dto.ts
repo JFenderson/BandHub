@@ -1,19 +1,23 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, Min, Max } from 'class-validator';
+import { SanitizeSearch, SanitizeText } from 'src/common';
 
 export class VideoQueryDto {
   @ApiPropertyOptional({ description: 'Filter by band ID' })
+  @SanitizeText()
   @IsOptional()
   @IsString()
   bandId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by band slug' })
+  @SanitizeText()
   @IsOptional()
   @IsString()
   bandSlug?: string;
 
   @ApiPropertyOptional({ description: 'Filter by category ID' })
+  @SanitizeText()
   @IsOptional()
   @IsString()
   categoryId?: string;
@@ -24,6 +28,7 @@ export class VideoQueryDto {
   categorySlug?: string;
 
   @ApiPropertyOptional({ description: 'Filter by content creator ID' })
+  @SanitizeText()
   @IsOptional()
   @IsString()
   creatorId?: string;
@@ -42,11 +47,13 @@ export class VideoQueryDto {
   eventYear?: number;
 
   @ApiPropertyOptional({ description: 'Filter by event name' })
+  @SanitizeText()
   @IsOptional()
   @IsString()
   eventName?: string;
 
   @ApiPropertyOptional({ description: 'Search query for titles and descriptions' })
+  @SanitizeSearch()
   @IsOptional()
   @IsString()
   search?: string;

@@ -1,14 +1,20 @@
-import { IsString, IsOptional, IsInt, IsArray, IsUrl, Min, Max, IsBoolean, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsArray, IsUrl, Min, Max, IsBoolean, IsNumber, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SanitizeText, SanitizeDescription, SanitizeUrl } from '../../../common';
+
 
 export class CreateBandDto {
-  @ApiProperty({ example: 'Sonic Boom of the South' })
+    @ApiProperty({ description: 'Band name' })
+  @SanitizeText()  // ← Add this
   @IsString()
+  @MaxLength(255)
   name!: string;
 
-  @ApiPropertyOptional({ example: 'Jackson State University' })
+  @ApiPropertyOptional({ description: 'School name' })
+  @SanitizeText()  // ← Add this
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   schoolName?: string;
 
   @ApiPropertyOptional({ example: 'Jackson State University', description: 'School name (alias for schoolName)' })
@@ -16,32 +22,42 @@ export class CreateBandDto {
   @IsString()
   school?: string;
 
-  @ApiProperty({ example: 'Jackson' })
+  @ApiPropertyOptional({ description: 'City' })
+  @SanitizeText()  // ← Add this
+  @IsOptional()
   @IsString()
+  @MaxLength(255)
   city!: string;
 
-  @ApiProperty({ example: 'MS' })
+  @ApiPropertyOptional({ description: 'State' })
+  @SanitizeText()  // ← Add this
+  @IsOptional()
   @IsString()
   state!: string;
 
-  @ApiPropertyOptional({ example: 'SWAC' })
+  @ApiPropertyOptional({ description: 'Conference' })
+  @SanitizeText()  // ← Add this
   @IsOptional()
   @IsString()
   conference?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/logo.png' })
+  @ApiPropertyOptional({ description: 'Logo URL' })
+  @SanitizeUrl()  // ← Add this
   @IsOptional()
   @IsUrl()
   logoUrl?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/banner.png' })
+  @ApiPropertyOptional({ description: 'Banner URL' })
+  @SanitizeUrl()  // ← Add this 
   @IsOptional()
   @IsUrl()
   bannerUrl?: string;
 
-  @ApiPropertyOptional({ example: 'The Sonic Boom is known for...' })
+  @ApiPropertyOptional({ description: 'Description' })
+  @SanitizeDescription()  // ← Add this (allows more content than Text)
   @IsOptional()
   @IsString()
+  @MaxLength(5000)
   description?: string;
 
   @ApiPropertyOptional({ example: 1946 })
@@ -75,7 +91,8 @@ export class CreateBandDto {
   // Fields that may be sent from frontend but are not in the Prisma schema
   // Marked as optional to accept them without validation errors
 
-  @ApiPropertyOptional({ description: 'Band nickname (not persisted)' })
+  @ApiPropertyOptional({ description: 'Band nickname' })
+  @SanitizeText()  // ← Add this
   @IsOptional()
   @IsString()
   nickname?: string;
@@ -97,6 +114,7 @@ export class CreateBandDto {
 
   @ApiPropertyOptional({ description: 'Website URL (not persisted)' })
   @IsOptional()
-  @IsString()
+  @SanitizeUrl()
+  @IsUrl()
   website?: string;
 }

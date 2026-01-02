@@ -11,6 +11,7 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { SyncStatus } from '@prisma/client';
+import { SanitizeSearch } from 'src/common';
 
 export class YouTubeVideoQueryDto {
   @ApiPropertyOptional({ description: 'Filter by band ID' })
@@ -29,6 +30,7 @@ export class YouTubeVideoQueryDto {
   channelId?: string;
 
   @ApiPropertyOptional({ description: 'Search in title and description' })
+  @SanitizeSearch()
   @IsOptional()
   @IsString()
   search?: string;

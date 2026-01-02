@@ -1,5 +1,6 @@
 import { IsBoolean, IsOptional, IsInt, Min, Max, IsEnum, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SanitizeSearch } from 'src/common';
 
 export class UpdateFavoriteBandDto {
   @ApiPropertyOptional({ description: 'Enable notifications for this band' })
@@ -38,6 +39,7 @@ export class GetFavoriteBandsQueryDto {
   sortBy?: FavoriteBandSortBy = FavoriteBandSortBy.RECENTLY_FOLLOWED;
 
   @ApiPropertyOptional({ description: 'Search by band name' })
+  @SanitizeSearch()
   @IsString()
   @IsOptional()
   search?: string;

@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsEnum, IsDateString, IsInt, IsBoolean, IsArray, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EventType } from '@prisma/client';
+import { SanitizeSearch } from 'src/common';
 
 export class CreateEventDto {
   @ApiProperty({ description: 'Event name' })
@@ -148,6 +149,7 @@ export class EventFilterDto {
   state?: string;
 
   @ApiPropertyOptional({ description: 'Search query' })
+  @SanitizeSearch()
   @IsOptional()
   @IsString()
   search?: string;
