@@ -17,7 +17,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { BandsService } from './bands.service';
 import { FeaturedRecommendationsService } from './featured-recommendations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -33,6 +40,7 @@ import { RateLimitType } from '../../common/interfaces/rate-limit.interface';
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@prisma/client';
+import { ApiErrorDto } from 'src/common/dto/api-error.dto';
 
 @ApiTags('Bands')
 @Controller('bands')
@@ -136,10 +144,7 @@ export class BandsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  async create(
-    @Body() createBandDto: CreateBandDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async create(@Body() createBandDto: CreateBandDto, @CurrentUser() user: CurrentUserData) {
     return this.bandsService.create(createBandDto);
   }
 
@@ -187,10 +192,7 @@ export class BandsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Band not found' })
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async delete(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     await this.bandsService.delete(id);
   }
 
@@ -213,7 +215,10 @@ export class BandsController {
       }),
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-          return cb(new BadRequestException('Only image files (jpg, png, webp) are allowed'), false);
+          return cb(
+            new BadRequestException('Only image files (jpg, png, webp) are allowed'),
+            false,
+          );
         }
         cb(null, true);
       },
@@ -229,10 +234,38 @@ export class BandsController {
     message: 'Too many logo uploads. Please try again later.',
   })
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload band logo' })
-  @ApiResponse({ status: 200, description: 'Logo uploaded successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid file' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({
+    summary: 'Upload band logo',
+    description:
+      'Uploads a band logo image. Image will be resized to 300x300px and converted to WebP format.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['logo'],
+      properties: {
+        logo: {
+          type: 'string',
+          format: 'binary',
+          description: 'Image file (JPG, PNG, WebP). Max 5MB.',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Logo uploaded successfully',
+    schema: {
+      example: {
+        message: 'Logo uploaded successfully',
+        logoUrl: '/uploads/logos/logo-123456.webp',
+        band: { id: '123', name: 'Jackson State' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid file type or size', type: ApiErrorDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto })
+  @ApiResponse({ status: 413, description: 'File too large', type: ApiErrorDto })
   @ApiResponse({ status: 404, description: 'Band not found' })
   @ApiResponse({ status: 429, description: 'Too many uploads' })
   async uploadLogo(
@@ -287,7 +320,10 @@ export class BandsController {
       }),
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-          return cb(new BadRequestException('Only image files (jpg, png, webp) are allowed'), false);
+          return cb(
+            new BadRequestException('Only image files (jpg, png, webp) are allowed'),
+            false,
+          );
         }
         cb(null, true);
       },
@@ -349,10 +385,7 @@ export class BandsController {
   @Post(':id/track-featured-click')
   @ApiOperation({ summary: 'Track click on featured band' })
   @ApiResponse({ status: 201, description: 'Click tracked successfully' })
-  async trackFeaturedClick(
-    @Param('id') id: string,
-    @Body('sessionId') sessionId?: string,
-  ) {
+  async trackFeaturedClick(@Param('id') id: string, @Body('sessionId') sessionId?: string) {
     return this.bandsService.trackFeaturedClick(id, sessionId);
   }
 
@@ -374,10 +407,7 @@ export class BandsController {
   @ApiResponse({ status: 200, description: 'Featured status toggled successfully' })
   @ApiResponse({ status: 400, description: 'Max featured bands limit reached' })
   @ApiResponse({ status: 404, description: 'Band not found' })
-  async toggleFeatured(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async toggleFeatured(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     return this.bandsService.toggleFeatured(id);
   }
 
@@ -398,6 +428,6 @@ export class BandsController {
     @Body() data: UpdateFeaturedOrderDto,
     @CurrentUser() user: CurrentUserData,
   ) {
-    return this.bandsService.updateFeaturedOrder({ bandIds: data.bands.map(b => b.id) });
+    return this.bandsService.updateFeaturedOrder({ bandIds: data.bands.map((b) => b.id) });
   }
 }

@@ -3,7 +3,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNumber, IsArray, IsOptional, IsUrl, Min, Max } from 'class-validator';
 
 export class CreateVideoDto {
-  @ApiProperty({ description: 'YouTube video ID' })
+@ApiProperty({ 
+    description: 'The unique YouTube Video ID',
+    example: 'dQw4w9WgXcQ',
+    minLength: 11,
+    maxLength: 11
+  })
   @IsString()
   youtubeId!: string;
 

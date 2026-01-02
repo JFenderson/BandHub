@@ -15,44 +15,26 @@ import {
 } from '@hbcu-band-hub/observability';
 import * as Sentry from '@sentry/node';
 import { SanitizationPipe } from './common';
+import { VersioningType } from '@nestjs/common';
 
 async function bootstrap() {
   startTracing('api');
   initSentry('api');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: false,
+const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug'],
   });
 
   app.use(correlationIdMiddleware as never);
   app.use(createHttpLogger());
 
-  // const cacheService = app.get(CacheService);
-  // await cacheService.delPattern('bands:*');
-  // await cacheService.delPattern('videos:*');
 
-  // ========================================
-  // GLOBAL EXCEPTION FILTER
-  // ========================================
-  // Register the global exception filter to handle all errors consistently
-  // This must be registered AFTER correlation middleware to ensure correlation IDs are available
-  app.useGlobalFilters(new GlobalExceptionFilter());
+    app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // ========================================
-  // GLOBAL VALIDATION PIPE
-  // ========================================
-  // Enable class-validator for all DTOs with automatic transformation
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, // Strip properties that don't have decorators
-      forbidNonWhitelisted: true, // Throw errors if non-whitelisted properties are present
-      transform: true, // Automatically transform payloads to DTO instances
-      transformOptions: {
-        enableImplicitConversion: true, // Convert primitive types automatically
-      },
-      // Error messages will be caught by GlobalExceptionFilter
-    })
-  );
-
+  // Enable API Versioning (URI Versioning e.g., /api/v1/bands)
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
 
   // Global prefix for all routes
   app.setGlobalPrefix('api');
@@ -97,21 +79,58 @@ app.useGlobalPipes(
   );
 
   // Swagger API documentation
-  const config = new DocumentBuilder()
+const config = new DocumentBuilder()
     .setTitle('HBCU Band Hub API')
-    .setDescription('API for managing HBCU marching band videos and profiles')
+    .setDescription(
+      `
+# HBCU Band Hub API Documentation
+
+Welcome to the comprehensive API reference for the HBCU Band Hub platform.
+
+## 🔐 Authentication
+This API uses **JWT (JSON Web Token)** for authentication.
+1. Call \`/auth/login\` to retrieve an \`accessToken\`.
+2. Send the token in the \`Authorization\` header: \`Bearer <your_token>\`.
+
+## 🚀 Rate Limiting
+Rate limits are applied based on IP address or User ID:
+* **Public**: 100 requests / hour
+* **Auth**: 5 attempts / 15 mins
+* **Search**: 20 requests / min
+* **Admin**: 1000 requests / hour
+
+## 📦 Rate Limit Headers
+The API includes standard rate limit headers in responses:
+* \`X-RateLimit-Limit\`: The maximum number of requests allowed in the window.
+* \`X-RateLimit-Remaining\`: The number of requests remaining in the current window.
+* \`X-RateLimit-Reset\`: The time at which the current window resets.
+
+## 📁 File Uploads
+Endpoints accepting files use \`multipart/form-data\`. Ensure your client sets the correct Content-Type.
+      `
+    )
     .setVersion('1.0')
-    .addTag('bands', 'Band profiles and management')
-    .addTag('videos', 'Video library and filtering')
-    .addTag('categories', 'Video categories')
-    .addTag('search', 'Full-text search')
-    .addTag('admin', 'Administrative actions')
-    .addTag('auth', 'Authentication endpoints')
+    .setContact('API Support', 'https://hbcubandhub.com/support', 'support@hbcubandhub.com')
+    .setLicense('Proprietary', 'https://hbcubandhub.com/terms')
+    .addServer('http://localhost:3001', 'Local Development')
+    .addServer('https://api.staging.hbcubandhub.com', 'Staging Environment')
+    .addServer('https://api.hbcubandhub.com', 'Production Environment')
+    
+    // Tags for logical grouping
+    .addTag('Auth', 'User authentication, registration, and token management')
+    .addTag('Bands', 'Band profiles, media, and featured status')
+    .addTag('Videos', 'Video library, processing, and YouTube sync')
+    .addTag('Search', 'Advanced search and filtering capabilities')
+    .addTag('Admin', 'System administration and content moderation')
+    .addTag('Webhooks', 'Incoming webhook handlers (Future Integration)')
+    
+    // Security Definition
     .addBearerAuth(
       {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
+        name: 'JWT',
         description: 'Enter JWT token',
         in: 'header',
       },
@@ -124,7 +143,16 @@ app.useGlobalPipes(
   });
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+// Set up Swagger UI
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true, // Keep user logged in across reloads
+      displayRequestDuration: true,
+      filter: true, // Enable search bar for tags
+      syntaxHighlight: { theme: 'monokai' },
+    },
+    customSiteTitle: 'HBCU Band Hub API Docs',
+  });
 
 Sentry.setupExpressErrorHandler(app.getHttpAdapter().getInstance());
   
