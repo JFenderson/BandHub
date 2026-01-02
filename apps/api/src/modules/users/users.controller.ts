@@ -24,9 +24,10 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserAuthGuard } from './guards/user-auth.guard';
 import { CurrentUser, CurrentUserData } from './decorators/current-user.decorator';
+import { ApiErrorDto } from '../../common/dto/api-error.dto';
 
 @ApiTags('users')
-@Controller('users')
+@Controller({ path: 'users', version: '1' })
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -194,13 +195,13 @@ export class UsersController {
   /**
    * Resend verification email
    */
-  @Post('resend-verification')
+@Post('resend-verification')
   @HttpCode(HttpStatus.OK)
   @UseGuards(UserAuthGuard)
-  @Throttle({ default: { limit: 3, ttl: 900000 } }) // 3 requests per 15 minutes
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Resend email verification' })
+  @ApiOperation({ summary: 'Resend verification email', description: 'Resends the email verification link to the currently logged-in user.' })
   @ApiResponse({ status: 200, description: 'Verification email sent' })
+  @ApiResponse({ status: 429, description: 'Too many requests', type: ApiErrorDto })
   async resendVerification(@CurrentUser() user: CurrentUserData) {
     await this.usersService.resendVerification(user.userId);
     return { message: 'Verification email sent' };
@@ -209,11 +210,10 @@ export class UsersController {
   /**
    * Get all user sessions
    */
-  @Get('sessions')
+@Get('sessions')
   @UseGuards(UserAuthGuard)
-  @SkipThrottle()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all user sessions' })
+  @ApiOperation({ summary: 'Get active sessions', description: 'Retrieves a list of all active sessions for the user.' })
   @ApiResponse({ status: 200, description: 'List of sessions' })
   async getSessions(@CurrentUser() user: CurrentUserData) {
     return this.usersService.getSessions(user.userId);

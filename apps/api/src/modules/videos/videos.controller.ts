@@ -12,13 +12,14 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam } from '@nestjs/swagger';
 import { VideosService } from './videos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 import { VideoQueryDto } from './dto/video-query.dto';
+import { ApiErrorDto } from '../../common/dto/api-error.dto';
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@prisma/client';
@@ -33,17 +34,17 @@ export class VideosController {
   // ========================================
 
 @Get()
-@ApiOperation({ summary: 'Get all videos with filtering and pagination' })
-@ApiResponse({ status: 200, description: 'Videos retrieved successfully' })
-async findAll(@Req() req, @Query() query: VideoQueryDto) {
-  const result = await this. videosService.findAll(query);
-  return result;
-}
+  @ApiOperation({ summary: 'Get all videos', description: 'Retrieve a list of videos with optional filtering by band, category, or year.' })
+  @ApiResponse({ status: 200, description: 'Videos retrieved successfully' })
+  async findAll(@Req() req, @Query() query: VideoQueryDto) {
+    return this.videosService.findAll(query);
+  }
 
-  @Get(':id')
+@Get(':id')
   @ApiOperation({ summary: 'Get a video by ID' })
+  @ApiParam({ name: 'id', description: 'The unique identifier of the video' })
   @ApiResponse({ status: 200, description: 'Video retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'Video not found' })
+  @ApiResponse({ status: 404, description: 'Video not found', type: ApiErrorDto })
   async findOne(@Param('id') id: string) {
     return this.videosService.findById(id);
   }
@@ -52,16 +53,16 @@ async findAll(@Req() req, @Query() query: VideoQueryDto) {
   // MODERATOR ROUTES (Requires authentication + MODERATOR or SUPER_ADMIN role)
   // ========================================
 
-  @Put(':id/hide')
+@Put(':id/hide')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Hide a video from public view' })
+  @ApiOperation({ summary: 'Hide a video', description: 'Hides a video from public view. Requires Moderator privileges.' })
+  @ApiBody({ schema: { type: 'object', properties: { reason: { type: 'string', example: 'Copyright claim' } } } })
   @ApiResponse({ status: 200, description: 'Video hidden successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
-  @ApiResponse({ status: 404, description: 'Video not found' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions', type: ApiErrorDto })
+  @ApiResponse({ status: 404, description: 'Video not found', type: ApiErrorDto })
   async hideVideo(
     @Param('id') id: string,
     @Body('reason') reason: string = 'Hidden by moderator',
@@ -126,16 +127,14 @@ async findAll(@Req() req, @Query() query: VideoQueryDto) {
   // SUPER_ADMIN ONLY ROUTES
   // ========================================
 
-  @Delete(':id')
+@Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a video permanently (SUPER_ADMIN only)' })
+  @ApiOperation({ summary: 'Delete a video', description: 'Permanently deletes a video. This action cannot be undone. Super Admin only.' })
   @ApiResponse({ status: 204, description: 'Video deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
-  @ApiResponse({ status: 404, description: 'Video not found' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions', type: ApiErrorDto })
   async remove(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     await this.videosService.delete(id);
   }

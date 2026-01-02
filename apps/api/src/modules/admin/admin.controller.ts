@@ -17,21 +17,21 @@ import {
 import { AdminVideoQueryDto } from './dto/admin-video-query.dto';
 import { BulkVideoUpdateDto, BulkVideoUpdateResponseDto } from './dto/bulk-video-update.dto';
 import { VideoDetailDto } from './dto/video-detail.dto';
+import { ApiErrorDto } from '../../common/dto/api-error.dto';
 
-@ApiTags('admin')
-@Controller('admin')
+@ApiTags('Admin')
+@Controller({ path: 'admin', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  @Get('dashboard/stats')
+@Get('dashboard/stats')
   @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Get dashboard statistics' })
-  @ApiResponse({ status: 200, description: 'Dashboard stats retrieved', type: DashboardStatsDto })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
-  async getDashboardStats(): Promise<DashboardStatsDto> {
+  @ApiOperation({ summary: 'Get dashboard statistics', description: 'Retrieves high-level metrics for the admin dashboard.' })
+  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions', type: ApiErrorDto })
+  async getDashboardStats() {
     return this.adminService.getDashboardStats();
   }
 
@@ -103,17 +103,15 @@ export class AdminController {
     return this.adminService.getAdminVideos(query);
   }
 
-  @Patch('videos/bulk')
-  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Bulk update videos' })
-  @ApiResponse({ status: 200, description: 'Bulk update completed', type: BulkVideoUpdateResponseDto })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
+  @Post('videos/bulk-update')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Bulk update videos', description: 'Applies changes to multiple videos simultaneously.' })
+  @ApiResponse({ status: 200, description: 'Bulk update completed' })
+  @ApiResponse({ status: 400, description: 'Invalid update payload', type: ApiErrorDto })
   async bulkUpdateVideos(
     @Body() dto: BulkVideoUpdateDto,
     @CurrentUser() user: CurrentUserData,
-  ): Promise<BulkVideoUpdateResponseDto> {
+  ) {
     return this.adminService.bulkUpdateVideos(dto, user.userId);
   }
 

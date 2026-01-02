@@ -1,6 +1,7 @@
 import { Controller, Get, Query, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { SearchService, SearchFilters } from './search.service';
+import { ApiErrorDto } from '../../common/dto/api-error.dto';
 
 @ApiTags('search')
 @Controller('search')
@@ -8,8 +9,9 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Advanced search across videos' })
-  @ApiResponse({ status: 200, description: 'Search results retrieved successfully' })
+  @ApiOperation({ summary: 'Advanced search', description: 'Full-text search across videos with extensive filtering capabilities.' })
+ @ApiResponse({ status: 200, description: 'Search results retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid search parameters', type: ApiErrorDto })
   @ApiQuery({ name: 'q', required: false, description: 'Search query' })
   @ApiQuery({ name: 'bandIds', required: false, description: 'Comma-separated band IDs' })
   @ApiQuery({ name: 'categoryIds', required: false, description: 'Comma-separated category IDs' })
@@ -76,16 +78,12 @@ export class SearchController {
     return results;
   }
 
-  @Get('suggestions')
-  @ApiOperation({ summary: 'Get search suggestions based on partial query' })
-  @ApiResponse({ status: 200, description: 'Suggestions retrieved successfully' })
-  @ApiQuery({ name: 'q', required: true, description: 'Partial search query' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Maximum suggestions to return' })
-  async getSuggestions(
-    @Query('q') query: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.searchService.getSuggestions(query, limit ? parseInt(limit, 10) : 10);
+@Get('suggestions')
+  @ApiOperation({ summary: 'Get search suggestions', description: 'Returns auto-complete suggestions based on partial input.' })
+  @ApiQuery({ name: 'q', required: true, description: 'Partial search term' })
+  @ApiResponse({ status: 200, description: 'Suggestions retrieved' })
+  async getSuggestions(@Query('q') query: string) {
+    return this.searchService.getSuggestions(query);
   }
 
   @Get('popular')

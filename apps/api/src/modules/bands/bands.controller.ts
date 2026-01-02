@@ -61,10 +61,10 @@ export class BandsController {
   // PUBLIC ROUTES
   // ========================================
 
-  @Get()
-  @ApiOperation({ summary: 'Get all bands with pagination' })
+@Get()
+  @ApiOperation({ summary: 'Get all bands', description: 'Retrieve a paginated list of bands with optional filtering.' })
   @ApiResponse({ status: 200, description: 'Bands retrieved successfully' })
-  @ApiResponse({ status: 429, description: 'Too many requests' })
+  @ApiResponse({ status: 429, description: 'Too many requests', type: ApiErrorDto })
   async findAll(@Query() query: BandQueryDto) {
     return this.bandsService.findAll(query);
   }
@@ -129,21 +129,14 @@ export class BandsController {
   // MODERATOR ROUTES
   // ========================================
 
-  @Post()
+@Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
-  @RateLimit({
-    limit: 500,
-    windowMs: 60 * 60 * 1000, // 1 hour
-    type: RateLimitType.USER,
-    message: 'Admin write rate limit exceeded.',
-  })
-  @ApiOperation({ summary: 'Create a new band' })
-  @ApiResponse({ status: 201, description: 'Band created successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Insufficient permissions' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiOperation({ summary: 'Create a new band', description: 'Creates a new band profile. Restricted to Moderators and Super Admins.' })
+  @ApiResponse({ status: 201, description: 'Band created successfully', type: CreateBandDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions', type: ApiErrorDto })
   async create(@Body() createBandDto: CreateBandDto, @CurrentUser() user: CurrentUserData) {
     return this.bandsService.create(createBandDto);
   }

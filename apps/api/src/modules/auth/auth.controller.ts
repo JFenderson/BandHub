@@ -10,14 +10,15 @@ import {
   Delete,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { LoginDto, LoginResponseDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Request } from 'express';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import { RateLimitType } from '../../common/interfaces/rate-limit.interface';
+import { ApiErrorDto } from 'src/common/dto/api-error.dto';
 
 /**
  * AuthController
@@ -42,17 +43,20 @@ export class AuthController {
    * Register new admin user
    * Rate limit: 3 attempts per hour per IP
    */
-  @Post('register')
+@Post('register')
   @RateLimit({
     limit: 3,
-    windowMs: 60 * 60 * 1000, // 1 hour
+    windowMs: 60 * 60 * 1000,
     type: RateLimitType.IP,
     message: 'Too many registration attempts. Please try again later.',
   })
-  @ApiOperation({ summary: 'Register a new admin user' })
+  @ApiOperation({ 
+    summary: 'Register a new admin user',
+    description: 'Creates a new administrator account. Requires a unique email address.'
+  })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 400, description: 'User already exists' })
-  @ApiResponse({ status: 429, description: 'Too many registration attempts' })
+  @ApiResponse({ status: 400, description: 'Validation failed or User already exists', type: ApiErrorDto })
+  @ApiResponse({ status: 429, description: 'Too many registration attempts', type: ApiErrorDto })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
@@ -62,18 +66,21 @@ export class AuthController {
    * Returns access token, refresh token, and user info
    * Rate limit: 5 attempts per 15 minutes per IP
    */
-  @Post('login')
+@Post('login')
   @HttpCode(HttpStatus.OK)
   @RateLimit({
     limit: 5,
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
     type: RateLimitType.IP,
     message: 'Too many login attempts. Please try again in 15 minutes.',
   })
-  @ApiOperation({ summary: 'Login with email and password' })
-  @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({ status: 429, description: 'Too many login attempts' })
+  @ApiOperation({ 
+    summary: 'Login with email and password',
+    description: 'Authenticates a user and returns JWT access and refresh tokens.'
+  })
+  @ApiResponse({ status: 200, description: 'Login successful', type: LoginResponseDto })
+  @ApiResponse({ status: 401, description: 'Invalid credentials', type: ApiErrorDto })
+  @ApiResponse({ status: 429, description: 'Too many login attempts', type: ApiErrorDto })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
@@ -82,18 +89,20 @@ export class AuthController {
    * Refresh access token using refresh token
    * Rate limit: 10 attempts per 15 minutes per IP
    */
-  @Post('refresh')
+@Post('refresh')
   @HttpCode(HttpStatus.OK)
   @RateLimit({
     limit: 10,
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
     type: RateLimitType.IP,
     message: 'Too many token refresh requests. Please try again later.',
   })
-  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiOperation({ 
+    summary: 'Refresh access token',
+    description: 'Generates a new access token using a valid refresh token.'
+  })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
-  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  @ApiResponse({ status: 429, description: 'Too many refresh requests' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token', type: ApiErrorDto })
   async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
@@ -102,18 +111,16 @@ export class AuthController {
    * Logout (invalidate refresh token)
    * No specific rate limit - protected by JWT auth
    */
-  @Post('logout')
+@Post('logout')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Logout and invalidate refresh token' })
+  @ApiOperation({ summary: 'Logout', description: 'Invalidates the user\'s current refresh token.' })
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(
-    @Req() req: Request,
-  ) {
+  @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto })
+  async logout(@Req() req: Request) {
     const userId = (req.user as any).id;
     await this.authService.logout(userId);
-    
     return { message: 'Logged out successfully' };
   }
 
@@ -126,7 +133,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout from all devices' })
   @ApiResponse({ status: 200, description: 'Logged out from all devices' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto  })
   async logoutAll(@Req() req: Request) {
     const userId = (req.user as any).id;
     await this.authService.logoutAll(userId);
@@ -138,11 +145,12 @@ export class AuthController {
    * Get current user profile
    * No specific rate limit - protected by JWT auth
    */
-  @Get('me')
+@Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get current profile', description: 'Retrieves the profile information of the currently logged-in user.' })
   @ApiResponse({ status: 200, description: 'User profile retrieved' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto })
   async getProfile(@Req() req: Request) {
     const userId = (req.user as any).id;
     return this.authService.getUserById(userId);
@@ -152,17 +160,17 @@ export class AuthController {
    * Request password reset
    * Rate limit: 3 attempts per hour per IP
    */
-  @Post('forgot-password')
+@Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @RateLimit({
     limit: 3,
-    windowMs: 60 * 60 * 1000, // 1 hour
+    windowMs: 60 * 60 * 1000,
     type: RateLimitType.IP,
-    message: 'Too many password reset requests. Please try again later.',
   })
-  @ApiOperation({ summary: 'Request password reset' })
+  @ApiOperation({ summary: 'Request password reset', description: 'Sends a password reset link to the registered email address.' })
+  @ApiBody({ schema: { type: 'object', properties: { email: { type: 'string', format: 'email' } } } })
   @ApiResponse({ status: 200, description: 'Reset email sent if user exists' })
-  @ApiResponse({ status: 429, description: 'Too many reset requests' })
+  @ApiResponse({ status: 429, description: 'Too many requests', type: ApiErrorDto })
   async forgotPassword(@Body() dto: { email: string }) {
     await this.authService.sendAdminPasswordReset(dto.email);
     return { message: 'If the email exists, a reset link has been sent' };
