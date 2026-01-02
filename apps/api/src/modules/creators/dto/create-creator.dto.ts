@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsNumber, IsOptional, IsString, IsUrl, Max, Min } from 'class-validator';
+import { IsYouTubeChannelId } from 'src/common';
 
 export class CreateCreatorDto {
   @ApiProperty({ description: 'Creator or channel name' })
@@ -8,6 +9,7 @@ export class CreateCreatorDto {
 
   @ApiProperty({ description: 'YouTube channel ID' })
   @IsString()
+  @IsYouTubeChannelId()
   youtubeChannelId!: string;
 
   @ApiProperty({ description: 'Full YouTube channel URL' })

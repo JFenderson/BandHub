@@ -1,11 +1,12 @@
 import { IsString, IsOptional, IsInt, IsArray, IsUrl, Min, Max, IsBoolean, IsNumber, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SanitizeText, SanitizeDescription, SanitizeUrl } from '../../../common';
+import { SanitizeText, SanitizeDescription, SanitizeUrl, IsUSState, IsValidBandName, IsValidConference, IsYouTubeChannelId } from '../../../common';
 
 
 export class CreateBandDto {
     @ApiProperty({ description: 'Band name' })
   @SanitizeText()  // ← Add this
+  @IsValidBandName()
   @IsString()
   @MaxLength(255)
   name!: string;
@@ -31,12 +32,14 @@ export class CreateBandDto {
 
   @ApiPropertyOptional({ description: 'State' })
   @SanitizeText()  // ← Add this
+  @IsUSState()
   @IsOptional()
   @IsString()
   state!: string;
 
   @ApiPropertyOptional({ description: 'Conference' })
   @SanitizeText()  // ← Add this
+  @IsValidConference()
   @IsOptional()
   @IsString()
   conference?: string;
@@ -69,6 +72,7 @@ export class CreateBandDto {
 
   @ApiPropertyOptional({ example: 'UC1234567890' })
   @IsOptional()
+  @IsYouTubeChannelId()
   @IsString()
   youtubeChannelId?: string;
 
