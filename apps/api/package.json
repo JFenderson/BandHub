@@ -28,7 +28,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.699.0",
+    "@aws-sdk/client-ses": "^3.958.0",
     "@hbcu-band-hub/observability": "*",
     "@hbcu-band-hub/shared-types": "*",
     "@logtail/pino": "^0.5.7",
@@ -36,7 +36,7 @@
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.3.0",
-    "@nestjs/jwt": "^11.0.1",
+    "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.4.20",
     "@nestjs/schedule": "^4.0.2",

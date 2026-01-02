@@ -43,6 +43,7 @@ model Band {
   videos             Video[]             @relation("BandVideos")
   opponentVideos     Video[]             @relation("OpponentBandVideos")
   youtubeVideos      YouTubeVideo[]
+  quotaUsageLogs QuotaUsageLog[]
 
   @@index([slug])
   @@index([schoolName])
@@ -298,7 +299,7 @@ model AdminPasswordResetToken {
 
   @@index([token])
   @@index([adminUserId])
-  @@index([expiresAt])
+  @@index([expiresAt]) 
   @@map("admin_password_reset_tokens")
 }
 
@@ -501,6 +502,12 @@ model SyncJob {
   videosAdded     Int           @default(0) @map("videos_added")
   videosUpdated   Int           @default(0) @map("videos_updated")
   errors          String[]      @default([])
+    priority              SyncPriority  @default(MEDIUM)
+  estimatedQuotaCost    Int?          @map("estimated_quota_cost")
+  actualQuotaCost       Int?          @map("actual_quota_cost")
+  quotaApproved         Boolean       @default(false) @map("quota_approved")
+  quotaApprovalReason   String?       @map("quota_approval_reason")
+  
   startedAt       DateTime?     @map("started_at")
   completedAt     DateTime?     @map("completed_at")
   createdAt       DateTime      @default(now()) @map("created_at")
@@ -511,12 +518,81 @@ model SyncJob {
   quotaUsed       Int           @default(0) @map("quota_used")
   band            Band?         @relation(fields: [bandId], references: [id])
 
+  quotaUsageLogs        QuotaUsageLog[]
+
   @@index([bandId])
   @@index([status])
+    @@index([priority])
+  @@index([priority, status])
+  @@index([quotaApproved])
   @@index([createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
   @@index([bandId, status])
   @@map("sync_jobs")
+}
+
+
+model QuotaUsageLog {
+  id           String    @id @default(cuid())
+  operation    String
+  cost         Int
+  timestamp    DateTime  @default(now())
+  bandId       String?   @map("band_id")
+  bandName     String?   @map("band_name")
+  syncJobId    String?   @map("sync_job_id")
+  success      Boolean   @default(true)
+  cacheHit     Boolean   @default(false) @map("cache_hit")
+  errorMessage String?   @map("error_message")
+  metadata     Json?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  
+  band    Band?    @relation(fields: [bandId], references: [id], onDelete: SetNull)
+  syncJob SyncJob? @relation(fields: [syncJobId], references: [id], onDelete: SetNull)
+
+  @@index([timestamp(sort: Desc)])
+  @@index([operation])
+  @@index([bandId])
+  @@index([syncJobId])
+  @@index([success])
+  @@index([cacheHit])
+  @@index([timestamp(sort: Desc), operation])
+  @@index([timestamp(sort: Desc), bandId])
+  @@map("quota_usage_log")
+}
+
+model QuotaDailySummary {
+  id                String   @id @default(cuid())
+  date              DateTime @unique @db.Date
+  totalUsage        Int      @map("total_usage")
+  quotaLimit        Int      @map("quota_limit")
+  percentageUsed    Float    @map("percentage_used")
+  operationBreakdown Json?   @map("operation_breakdown")
+  topConsumers      Json?    @map("top_consumers")
+  cacheHitRate      Float?   @map("cache_hit_rate")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([date(sort: Desc)])
+  @@index([percentageUsed(sort: Desc)])
+  @@map("quota_daily_summary")
+}
+
+model QuotaAlert {
+  id              String           @id @default(cuid())
+  level           QuotaAlertLevel
+  message         String
+  currentUsage    Int              @map("current_usage")
+  timestamp       DateTime         @default(now())
+  acknowledged    Boolean          @default(false)
+  acknowledgedAt  DateTime?        @map("acknowledged_at")
+  acknowledgedBy  String?          @map("acknowledged_by")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  @@index([timestamp(sort: Desc)])
+  @@index([level])
+  @@index([acknowledged])
+  @@index([level, acknowledged])
+  @@map("quota_alerts")
 }
 
 model ApiKey {
@@ -779,4 +855,18 @@ enum SecurityEventType {
 enum OAuthProvider {
   GOOGLE
   MICROSOFT
+}
+
+enum QuotaAlertLevel {
+  INFO
+  WARNING
+  CRITICAL
+  DEPLETED
+}
+
+enum SyncPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
 }

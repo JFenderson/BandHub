@@ -96,7 +96,7 @@ export class SyncAdminController {
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Band not found' })
   async getBandSyncStatus(@Param('id') bandId: string) {
-    return this.youtubeSyncService.getBandSyncStatus(bandId);
+return this.youtubeSyncService.getSyncStats();
   }
 
   /**
