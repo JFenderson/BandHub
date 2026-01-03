@@ -39,11 +39,11 @@ model Band {
   totalVideoCount    Int                 @default(0) @map("total_video_count")
   followers          FavoriteBand[]
   featuredClicks     FeaturedBandClick[]
+  quotaUsageLogs     QuotaUsageLog[]
   syncJobs           SyncJob[]
   videos             Video[]             @relation("BandVideos")
   opponentVideos     Video[]             @relation("OpponentBandVideos")
   youtubeVideos      YouTubeVideo[]
-  quotaUsageLogs QuotaUsageLog[]
 
   @@index([slug])
   @@index([schoolName])
@@ -53,8 +53,8 @@ model Band {
   @@index([featuredOrder])
   @@index([youtubeChannelId])
   @@index([state, conference])
-@@index([isActive, state])
-@@index([isFeatured, featuredOrder])
+  @@index([isActive, state])
+  @@index([isFeatured, featuredOrder])
   @@map("bands")
 }
 
@@ -125,8 +125,8 @@ model YouTubeVideo {
   @@index([syncStatus])
   @@index([isPromoted])
   @@index([channelId, syncStatus])
-@@index([channelId, lastSyncedAt])
-@@index([syncStatus, createdAt])
+  @@index([channelId, lastSyncedAt])
+  @@index([syncStatus, createdAt])
   @@index([qualityScore(sort: Desc)])
   @@map("youtube_videos")
 }
@@ -172,14 +172,14 @@ model Video {
   @@index([title])
   @@index([creatorId])
   @@index([isHidden, publishedAt(sort: Desc)])
-@@index([bandId, isHidden, publishedAt(sort: Desc)])
-@@index([categoryId, isHidden, publishedAt(sort: Desc)])
-@@index([bandId, categoryId, isHidden])
-@@index([eventYear, isHidden])
-@@index([opponentBandId, isHidden])
-@@index([duration])
-@@index([qualityScore(sort: Desc)])
-@@index([bandId, viewCount(sort: Desc)])
+  @@index([bandId, isHidden, publishedAt(sort: Desc)])
+  @@index([categoryId, isHidden, publishedAt(sort: Desc)])
+  @@index([bandId, categoryId, isHidden])
+  @@index([eventYear, isHidden])
+  @@index([opponentBandId, isHidden])
+  @@index([duration])
+  @@index([qualityScore(sort: Desc)])
+  @@index([bandId, viewCount(sort: Desc)])
   @@map("videos")
 }
 
@@ -299,7 +299,7 @@ model AdminPasswordResetToken {
 
   @@index([token])
   @@index([adminUserId])
-  @@index([expiresAt]) 
+  @@index([expiresAt])
   @@map("admin_password_reset_tokens")
 }
 
@@ -494,35 +494,33 @@ model JwtKey {
 }
 
 model SyncJob {
-  id              String        @id @default(cuid())
-  bandId          String?       @map("band_id")
-  jobType         SyncJobType   @map("job_type")
-  status          SyncJobStatus @default(QUEUED)
-  videosFound     Int           @default(0) @map("videos_found")
-  videosAdded     Int           @default(0) @map("videos_added")
-  videosUpdated   Int           @default(0) @map("videos_updated")
-  errors          String[]      @default([])
-    priority              SyncPriority  @default(MEDIUM)
-  estimatedQuotaCost    Int?          @map("estimated_quota_cost")
-  actualQuotaCost       Int?          @map("actual_quota_cost")
-  quotaApproved         Boolean       @default(false) @map("quota_approved")
-  quotaApprovalReason   String?       @map("quota_approval_reason")
-  
-  startedAt       DateTime?     @map("started_at")
-  completedAt     DateTime?     @map("completed_at")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  errorMessage    String?       @map("error_message")
-  maxVideos       Int?          @map("max_videos")
-  publishedAfter  DateTime?     @map("published_after")
-  publishedBefore DateTime?     @map("published_before")
-  quotaUsed       Int           @default(0) @map("quota_used")
-  band            Band?         @relation(fields: [bandId], references: [id])
-
-  quotaUsageLogs        QuotaUsageLog[]
+  id                  String          @id @default(cuid())
+  bandId              String?         @map("band_id")
+  jobType             SyncJobType     @map("job_type")
+  status              SyncJobStatus   @default(QUEUED)
+  videosFound         Int             @default(0) @map("videos_found")
+  videosAdded         Int             @default(0) @map("videos_added")
+  videosUpdated       Int             @default(0) @map("videos_updated")
+  errors              String[]        @default([])
+  priority            SyncPriority    @default(MEDIUM)
+  estimatedQuotaCost  Int?            @map("estimated_quota_cost")
+  actualQuotaCost     Int?            @map("actual_quota_cost")
+  quotaApproved       Boolean         @default(false) @map("quota_approved")
+  quotaApprovalReason String?         @map("quota_approval_reason")
+  startedAt           DateTime?       @map("started_at")
+  completedAt         DateTime?       @map("completed_at")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  errorMessage        String?         @map("error_message")
+  maxVideos           Int?            @map("max_videos")
+  publishedAfter      DateTime?       @map("published_after")
+  publishedBefore     DateTime?       @map("published_before")
+  quotaUsed           Int             @default(0) @map("quota_used")
+  quotaUsageLogs      QuotaUsageLog[]
+  band                Band?           @relation(fields: [bandId], references: [id])
 
   @@index([bandId])
   @@index([status])
-    @@index([priority])
+  @@index([priority])
   @@index([priority, status])
   @@index([quotaApproved])
   @@index([createdAt(sort: Desc)])
@@ -531,23 +529,21 @@ model SyncJob {
   @@map("sync_jobs")
 }
 
-
 model QuotaUsageLog {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   operation    String
   cost         Int
-  timestamp    DateTime  @default(now())
-  bandId       String?   @map("band_id")
-  bandName     String?   @map("band_name")
-  syncJobId    String?   @map("sync_job_id")
-  success      Boolean   @default(true)
-  cacheHit     Boolean   @default(false) @map("cache_hit")
-  errorMessage String?   @map("error_message")
+  timestamp    DateTime @default(now())
+  bandId       String?  @map("band_id")
+  bandName     String?  @map("band_name")
+  syncJobId    String?  @map("sync_job_id")
+  success      Boolean  @default(true)
+  cacheHit     Boolean  @default(false) @map("cache_hit")
+  errorMessage String?  @map("error_message")
   metadata     Json?
-  createdAt    DateTime  @default(now()) @map("created_at")
-  
-  band    Band?    @relation(fields: [bandId], references: [id], onDelete: SetNull)
-  syncJob SyncJob? @relation(fields: [syncJobId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now()) @map("created_at")
+  band         Band?    @relation(fields: [bandId], references: [id])
+  syncJob      SyncJob? @relation(fields: [syncJobId], references: [id])
 
   @@index([timestamp(sort: Desc)])
   @@index([operation])
@@ -561,16 +557,16 @@ model QuotaUsageLog {
 }
 
 model QuotaDailySummary {
-  id                String   @id @default(cuid())
-  date              DateTime @unique @db.Date
-  totalUsage        Int      @map("total_usage")
-  quotaLimit        Int      @map("quota_limit")
-  percentageUsed    Float    @map("percentage_used")
-  operationBreakdown Json?   @map("operation_breakdown")
-  topConsumers      Json?    @map("top_consumers")
-  cacheHitRate      Float?   @map("cache_hit_rate")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                 String   @id @default(cuid())
+  date               DateTime @unique @db.Date
+  totalUsage         Int      @map("total_usage")
+  quotaLimit         Int      @map("quota_limit")
+  percentageUsed     Float    @map("percentage_used")
+  operationBreakdown Json?    @map("operation_breakdown")
+  topConsumers       Json?    @map("top_consumers")
+  cacheHitRate       Float?   @map("cache_hit_rate")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@index([date(sort: Desc)])
   @@index([percentageUsed(sort: Desc)])
@@ -578,21 +574,33 @@ model QuotaDailySummary {
 }
 
 model QuotaAlert {
-  id              String           @id @default(cuid())
-  level           QuotaAlertLevel
-  message         String
-  currentUsage    Int              @map("current_usage")
-  timestamp       DateTime         @default(now())
-  acknowledged    Boolean          @default(false)
-  acknowledgedAt  DateTime?        @map("acknowledged_at")
-  acknowledgedBy  String?          @map("acknowledged_by")
-  createdAt       DateTime         @default(now()) @map("created_at")
+  id             String          @id @default(cuid())
+  level          QuotaAlertLevel
+  message        String
+  currentUsage   Int             @map("current_usage")
+  timestamp      DateTime        @default(now())
+  acknowledged   Boolean         @default(false)
+  acknowledgedAt DateTime?       @map("acknowledged_at")
+  acknowledgedBy String?         @map("acknowledged_by")
+  createdAt      DateTime        @default(now()) @map("created_at")
 
   @@index([timestamp(sort: Desc)])
   @@index([level])
   @@index([acknowledged])
   @@index([level, acknowledged])
   @@map("quota_alerts")
+}
+
+model PopularSearch {
+  id           String   @id @default(cuid())
+  query        String   @unique
+  searchCount  Int      @default(1)
+  lastSearched DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([searchCount])
+  @@index([lastSearched])
+  @@map("popular_searches")
 }
 
 model ApiKey {

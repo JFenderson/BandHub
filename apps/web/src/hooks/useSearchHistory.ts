@@ -1,14 +1,12 @@
 'use client';
 
+import { VideoSearchQuery } from '@/types/search';
 import { useState, useEffect, useCallback } from 'react';
+import { SearchHistoryItem } from '@/types/search';
 
-const STORAGE_KEY = 'hbcu-search-history';
-const MAX_HISTORY_ITEMS = 5;
+const STORAGE_KEY = 'hbcu_search_history';
+const MAX_HISTORY_ITEMS = 10;
 
-export interface SearchHistoryItem {
-  query: string;
-  timestamp: number;
-}
 
 export function useSearchHistory() {
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
@@ -19,15 +17,14 @@ export function useSearchHistory() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setHistory(parsed);
-        }
+        const parsed = JSON.parse(stored) as SearchHistoryItem[];
+        setHistory(parsed);
       }
     } catch (error) {
       console.error('Failed to load search history:', error);
+    } finally {
+      setIsLoaded(true);
     }
-    setIsLoaded(true);
   }, []);
 
   // Save history to localStorage whenever it changes
@@ -41,24 +38,31 @@ export function useSearchHistory() {
     }
   }, [history, isLoaded]);
 
-  const addSearch = useCallback((query: string) => {
-    if (!query || query.trim().length === 0) return;
+  const addSearch = useCallback((
+    query: string,
+    filters: VideoSearchQuery,
+    resultCount: number
+  ) => {
+    const newItem: SearchHistoryItem = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      query,
+      filters,
+      timestamp: Date.now(),
+      resultCount,
+    };
 
-    const trimmedQuery = query.trim();
-
-    setHistory((prev) => {
-      // Remove any existing entry with the same query
-      const filtered = prev.filter(
-        (item) => item.query.toLowerCase() !== trimmedQuery.toLowerCase()
+    setHistory(prev => {
+      // Remove duplicate searches (same query and filters)
+      const filtered = prev.filter(item => 
+        item.query !== query || 
+        JSON.stringify(item.filters) !== JSON.stringify(filters)
       );
 
-      // Add new entry at the beginning
-      const newHistory = [
-        { query: trimmedQuery, timestamp: Date.now() },
-        ...filtered,
-      ].slice(0, MAX_HISTORY_ITEMS);
+      // Add new item at the beginning
+      const updated = [newItem, ...filtered];
 
-      return newHistory;
+      // Keep only the most recent items
+      return updated.slice(0, MAX_HISTORY_ITEMS);
     });
   }, []);
 
@@ -72,11 +76,19 @@ export function useSearchHistory() {
     setHistory([]);
   }, []);
 
+    /**
+   * Get a specific search by ID
+   */
+  const getSearch = useCallback((id: string): SearchHistoryItem | undefined => {
+    return history.find(item => item.id === id);
+  }, [history]);
+
   return {
     history,
+    isLoaded,
     addSearch,
     removeSearch,
     clearHistory,
-    isLoaded,
+    getSearch,
   };
 }

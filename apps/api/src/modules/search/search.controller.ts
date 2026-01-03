@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Query, Headers, Post, HttpStatus, HttpCode, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { SearchService, SearchFilters } from './search.service';
 import { ApiErrorDto } from '../../common/dto/api-error.dto';
@@ -23,6 +23,11 @@ export class SearchController {
   @ApiQuery({ name: 'viewCountMax', required: false, description: 'Maximum view count' })
   @ApiQuery({ name: 'hasOpponent', required: false, description: 'Filter by has opponent band' })
   @ApiQuery({ name: 'sortBy', required: false, enum: ['relevance', 'publishedAt', 'viewCount', 'title'] })
+  @ApiQuery({ name: 'years', required: false, description: 'Comma-separated years' })
+  @ApiQuery({ name: 'conferences', required: false, description: 'Comma-separated conference names' })
+  @ApiQuery({ name: 'states', required: false, description: 'Comma-separated state codes' })
+  @ApiQuery({ name: 'regions', required: false, description: 'Comma-separated regions' })
+  @ApiQuery({ name: 'eventName', required: false, description: 'Event name filter' })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
@@ -37,6 +42,11 @@ export class SearchController {
     @Query('viewCountMin') viewCountMin?: string,
     @Query('viewCountMax') viewCountMax?: string,
     @Query('hasOpponent') hasOpponent?: string,
+    @Query('years') years?: string,  // ADD THIS
+   @Query('conferences') conferences?: string,
+    @Query('states') states?: string,  // ADD THIS
+    @Query('regions') regions?: string,  // ADD THIS
+    @Query('eventName') eventName?: string,  // ADD THIS
     @Query('sortBy') sortBy?: 'relevance' | 'publishedAt' | 'viewCount' | 'title',
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     @Query('page') page?: string,
@@ -51,6 +61,10 @@ export class SearchController {
       dateTo: dateTo ? new Date(dateTo) : undefined,
       durationMin: durationMin ? parseInt(durationMin, 10) : undefined,
       durationMax: durationMax ? parseInt(durationMax, 10) : undefined,
+            years: years ? years.split(',').map(Number) : undefined,  // ADD THIS
+     conferences: conferences ? conferences.split(',') : undefined,
+      states: states ? states.split(',') : undefined,  // ADD THIS
+      regions: regions ? regions.split(',') : undefined,  // ADD THIS
       viewCountMin: viewCountMin ? parseInt(viewCountMin, 10) : undefined,
       viewCountMax: viewCountMax ? parseInt(viewCountMax, 10) : undefined,
       hasOpponent: hasOpponent === 'true' ? true : hasOpponent === 'false' ? false : undefined,
@@ -86,13 +100,7 @@ export class SearchController {
     return this.searchService.getSuggestions(query);
   }
 
-  @Get('popular')
-  @ApiOperation({ summary: 'Get popular searches from the last 7 days' })
-  @ApiResponse({ status: 200, description: 'Popular searches retrieved successfully' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Maximum searches to return' })
-  async getPopularSearches(@Query('limit') limit?: string) {
-    return this.searchService.getPopularSearches(limit ? parseInt(limit, 10) : 10);
-  }
+
 
   @Get('filters')
   @ApiOperation({ summary: 'Get available filter options for search' })
@@ -105,4 +113,117 @@ export class SearchController {
 
     return { bands, categories };
   }
+
+    /**
+   * Autocomplete endpoint
+   * GET /api/search/autocomplete?q=...&type=band|event|category|all
+   */
+  @Get('autocomplete')
+  @ApiOperation({ summary: 'Get autocomplete suggestions' })
+  @ApiQuery({ name: 'q', required: true, description: 'Partial search term' })
+  @ApiQuery({ name: 'type', required: false, enum: ['band', 'event', 'category', 'all'] })
+  @ApiResponse({ status: 200, description: 'Autocomplete suggestions retrieved' })
+  async autocomplete(
+    @Query('q') q: string,
+    @Query('type') type?: 'band' | 'event' | 'category' | 'all',
+  ) {
+    const startTime = Date.now();
+
+    if (!q || q.length < 2) {
+      return {
+        suggestions: [],
+        searchTime: 0,
+      };
+    }
+
+    const suggestions = await this.searchService.getAutocompleteSuggestions(
+      q,
+      type || 'all',
+    );
+
+    const searchTime = Date.now() - startTime;
+
+    return {
+      suggestions,
+      searchTime,
+    };
+  }
+
+  /**
+   * Filter metadata endpoint
+   * GET /api/search/filters/metadata
+   */
+  @Get('filters/metadata')
+  @ApiOperation({ summary: 'Get available filter options' })
+  @ApiResponse({ status: 200, description: 'Filter metadata retrieved successfully' })
+  async filterMetadata() {
+    return this.searchService.getFilterMetadata();
+  }
+
+  /**
+   * Popular searches with trends
+   * GET /api/search/popular?limit=10
+   */
+  @Get('popular')
+  @ApiOperation({ summary: 'Get popular searches with trend indicators' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Maximum searches to return' })
+  @ApiResponse({ status: 200, description: 'Popular searches retrieved successfully' })
+  async getPopularSearches(@Query('limit') limit?: string) {
+    return this.searchService.getPopularSearchesWithTrends(
+      limit ? parseInt(limit, 10) : 10,
+    );
+  }
+
+  /**
+   * Track search analytics
+   * POST /api/search/analytics
+   */
+  @Post('analytics')
+  @ApiOperation({ summary: 'Track search for analytics' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async trackSearch(
+    @Body() data: { query: string; filters: any; resultCount: number },
+    @Headers('authorization') auth?: string,
+  ) {
+    // Extract user ID from token if present (optional)
+    let userId: string | undefined;
+    
+    // You can add JWT extraction logic here if needed
+    // For now, we'll make it work without auth
+    
+    await this.searchService.trackSearch(
+      data.query,
+      data.filters,
+      data.resultCount,
+      userId,
+    );
+  }
+
+    /**
+   * Get user's saved search preferences (client-side only)
+   * GET /api/search/preferences
+   */
+  @Get('preferences')
+  @ApiOperation({ summary: 'Get user search preferences (handled client-side)' })
+  @HttpCode(HttpStatus.OK)
+  async getPreferences() {
+    return { 
+      message: 'Search preferences are stored client-side in localStorage' 
+    };
+  }
+
+  /**
+   * Save user's search preferences (client-side only)
+   * POST /api/search/preferences
+   */
+  @Post('preferences')
+  @ApiOperation({ summary: 'Save user search preferences (handled client-side)' })
+  @HttpCode(HttpStatus.OK)
+  async savePreferences(@Body() preferences: any) {
+    return { 
+      message: 'Search preferences are stored client-side in localStorage',
+      success: true 
+    };
+  }
+  
 }

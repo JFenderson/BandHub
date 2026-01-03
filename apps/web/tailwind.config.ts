@@ -36,6 +36,40 @@ const config: Config = {
           950: '#172554',
         },
       },
+      keyframes: {
+        'slide-down': {
+          '0%': { 
+            opacity: '0', 
+            transform: 'translateY(-10px)' 
+          },
+          '100%': { 
+            opacity: '1', 
+            transform: 'translateY(0)' 
+          },
+        },
+        'slide-in-right': {
+          '0%': { 
+            transform: 'translateX(100%)' 
+          },
+          '100%': { 
+            transform: 'translateX(0)' 
+          },
+        },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'pulse-subtle': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.8' },
+        },
+      },
+      animation: {
+        'slide-down': 'slide-down 0.2s ease-out',
+        'slide-in-right': 'slide-in-right 0.3s ease-out',
+        'fade-in': 'fade-in 0.3s ease-out',
+        'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',
+      },
     },
   },
   plugins: [],
