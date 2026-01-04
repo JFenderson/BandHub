@@ -25,6 +25,7 @@
     "promote:videos": "tsx scripts/promote-videos.ts"
   },
   "prisma": {
+    "schema": "./prisma/schema.prisma",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

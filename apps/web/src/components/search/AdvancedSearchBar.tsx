@@ -54,7 +54,7 @@ export function AdvancedSearchBar({
       setIsLoading(true);
       try {
         const response = await fetch(
-          `${API_URL}/api/search/suggestions?q=${encodeURIComponent(query)}&limit=8`
+          `${API_URL}/search/suggestions?q=${encodeURIComponent(query)}&limit=8`
         );
         if (response.ok) {
           const data = await response.json();

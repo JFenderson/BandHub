@@ -38,10 +38,11 @@ export function useSearchHistory() {
     }
   }, [history, isLoaded]);
 
+  // FIX: Added default values for filters and resultCount
   const addSearch = useCallback((
     query: string,
-    filters: VideoSearchQuery,
-    resultCount: number
+    filters: VideoSearchQuery = {}, 
+    resultCount: number = 0
   ) => {
     const newItem: SearchHistoryItem = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

@@ -72,7 +72,7 @@ function SearchPageContent() {
   useEffect(() => {
     const fetchPopularSearches = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/search/popular?limit=5`);
+        const response = await fetch(`${API_URL}/search/popular?limit=5`);
         if (response.ok) {
           const data = await response.json();
           setPopularSearches(data.popularSearches || []);
@@ -96,7 +96,7 @@ function SearchPageContent() {
       if (!params.has('sortBy')) params.set('sortBy', sortBy);
       if (!params.has('sortOrder')) params.set('sortOrder', sortOrder);
 
-      const response = await fetch(`${API_URL}/api/search?${params.toString()}`);
+      const response = await fetch(`${API_URL}/search?${params.toString()}`);
       
       if (response.ok) {
         const data = await response.json();

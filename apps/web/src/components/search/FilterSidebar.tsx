@@ -92,7 +92,7 @@ export function FilterSidebar({ onFiltersChange, className = '' }: FilterSidebar
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/search/filters`);
+        const response = await fetch(`${API_URL}/search/filters`);
         if (response.ok) {
           const data = await response.json();
           setBands(data.bands || []);
