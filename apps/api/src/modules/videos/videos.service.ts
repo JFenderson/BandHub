@@ -38,6 +38,18 @@ export class VideosService {
 
     this.logger.debug(`Cache miss for videos query: ${cacheKey}`);
 
+    // Convert category enum to categoryId if provided
+    let categoryId = query.categoryId;
+    if (query.category && !categoryId) {
+      categoryId = await this.getCategoryIdFromEnum(query.category);
+    }
+
+    // Build modified query with categoryId
+    const modifiedQuery = {
+      ...query,
+      categoryId,
+    };
+
     // Use full-text search for search queries with 3+ characters
     const useFullTextSearch = query.search && query.search.trim().length >= 3;
 
@@ -45,18 +57,42 @@ export class VideosService {
       ? await this.videosRepository.fullTextSearch(
           query.search!,
           {
-            bandId: query.bandId,
-            categoryId: query.categoryId,
-            includeHidden: query.includeHidden,
+            bandId: modifiedQuery.bandId,
+            categoryId: modifiedQuery.categoryId,
+            includeHidden: modifiedQuery.includeHidden,
           },
-          query.page,
-          query.limit,
+          modifiedQuery.page,
+          modifiedQuery.limit,
         )
-      : await this.videosRepository.findMany(query);
+      : await this.videosRepository.findMany(modifiedQuery);
 
     await this.cacheService.set(cacheKey, result, this.CACHE_TTL.VIDEO_LIST);
 
     return result;
+  }
+
+  /**
+   * Convert category enum (e.g., 'FIFTH_QUARTER') to category ID
+   */
+  private async getCategoryIdFromEnum(categoryEnum: string): Promise<string | undefined> {
+    if (!categoryEnum) return undefined;
+    
+    // Convert enum format to slug format
+    // FIFTH_QUARTER → fifth-quarter
+    // FIELD_SHOW → field-show
+    const slug = categoryEnum.toLowerCase().replace(/_/g, '-');
+    
+    const category = await this.prismaService.category.findFirst({
+      where: { slug },
+      select: { id: true }
+    });
+    
+    if (!category) {
+      this.logger.warn(`Category not found for enum: ${categoryEnum} (slug: ${slug})`);
+      return undefined;
+    }
+    
+    return category.id;
   }
 
   async findById(id: string) {
@@ -218,9 +254,9 @@ export class VideosService {
     
     if (query.bandId) parts.push(`band:${query.bandId}`);
     if (query.bandSlug) parts.push(`bandSlug:${query.bandSlug}`);
+    if (query.category) parts.push(`category:${query.category}`);  // ADD THIS
     if (query.categoryId) parts.push(`cat:${query.categoryId}`);
     if (query.categorySlug) parts.push(`catSlug:${query.categorySlug}`);
-    if (query.creatorId) parts.push(`creator:${query.creatorId}`);
     if (query.opponentBandId) parts.push(`opp:${query.opponentBandId}`);
     if (query.eventYear) parts.push(`year:${query.eventYear}`);
     if (query.eventName) parts.push(`event:${query.eventName}`);

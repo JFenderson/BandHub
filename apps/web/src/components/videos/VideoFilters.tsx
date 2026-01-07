@@ -4,41 +4,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTransition, useEffect, useState } from 'react';
 import type { Band } from '@/types/api';
 import { VideoCategory, VIDEO_CATEGORIES, VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
-
-// const CATEGORIES: VideoCategory[] = [
-//   'FIFTH_QUARTER',
-//   'ZERO_QUARTER',
-//   'FIELD_SHOW',
-//   'STAND_BATTLE',
-//   'PARADE',
-//   'PRACTICE',
-//   'CONCERT_BAND',
-//   'HALFTIME',
-//   'ENTRANCE',
-//   'PREGAME',
-//   'OTHER',
-// ];
-
-// const CATEGORY_LABELS: Record<VideoCategory, string> = {
-//   FIFTH_QUARTER: '5th Quarter',
-//   FIFTH_QUARTER: 'Zero Quarter',
-//   FIELD_SHOW: 'Field Show',
-//   STAND_BATTLE: 'Stand Battle',
-//   PARADE: 'Parade',
-//   PRACTICE: 'Practice',
-//   CONCERT_BAND: 'Concert Band',
-//   HALFTIME: 'Halftime Show',
-//   ENTRANCE: 'Entrance',
-//   PREGAME: 'Pregame',
-//   OTHER: 'Other',
-// };
+import { apiClient } from '@/lib/api-client';
 
 interface VideoFiltersProps {
   bands?: Band[];
   initialFilters?: {
     bandId?: string;
     category?: VideoCategory;
-    year?: number;
+    eventYear?: number;
     search?: string;
   };
 }
@@ -47,16 +20,15 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
- const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
  
   const currentSearch = searchParams.get('search') || '';
   const currentBandId = searchParams.get('bandId') || '';
   const currentCategory = searchParams.get('category') || '';
-  const currentYear = searchParams.get('year') || '';
+  const currentEventYear = searchParams.get('eventYear') || '';
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`)
-      .then(res => res.json())
+    apiClient.getCategories()
       .then(data => setCategories(data))
       .catch(err => console.error('Failed to fetch categories:', err));
   }, []);
@@ -85,11 +57,11 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
     });
   };
 
-  // Generate year options (current year back to 2010)
+  // Generate eventYear options (current eventYear back to 2010)
   const currentYearNum = new Date().getFullYear();
   const years = Array.from({ length: currentYearNum - 2009 }, (_, i) => currentYearNum - i);
 
-  const hasActiveFilters = currentSearch || currentBandId || currentCategory || currentYear;
+  const hasActiveFilters = currentSearch || currentBandId || currentCategory || currentEventYear;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -155,9 +127,9 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
             Year
           </label>
           <select
-            id="year"
-            value={currentYear}
-            onChange={(e) => updateFilter('year', e.target.value)}
+            id="eventYear"
+            value={currentEventYear}
+            onChange={(e) => updateFilter('eventYear', e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="">All Years</option>
@@ -198,10 +170,10 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
                 />
               )}
               
-              {currentYear && (
+              {currentEventYear && (
                 <FilterChip
-                  label={`Year: ${currentYear}`}
-                  onRemove={() => updateFilter('year', '')}
+                  label={`Year: ${currentEventYear}`}
+                  onRemove={() => updateFilter('eventYear', '')}
                 />
               )}
             </div>

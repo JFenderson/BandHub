@@ -16,22 +16,24 @@ export class VideoQueryDto {
   @IsString()
   bandSlug?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by category ID' })
-  @SanitizeText()
-  @IsOptional()
-  @IsString()
-  categoryId?: string;
+@ApiPropertyOptional({ description: 'Filter by category ID' })
+@SanitizeText()
+@IsOptional()
+@IsString()
+categoryId?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by category slug' })
-  @IsOptional()
-  @IsString()
-  categorySlug?: string;
+@ApiPropertyOptional({ description: 'Filter by category slug' })
+@IsOptional()
+@IsString()
+categorySlug?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by content creator ID' })
-  @SanitizeText()
-  @IsOptional()
-  @IsString()
-  creatorId?: string;
+@ApiPropertyOptional({ 
+  description: 'Filter by category enum',
+  enum: ['FIFTH_QUARTER', 'ZERO_QUARTER', 'FIELD_SHOW', 'STAND_BATTLE', 'PARADE', 'PRACTICE', 'CONCERT_BAND', 'HALFTIME', 'ENTRANCE', 'PREGAME', 'OTHER']
+})
+@IsOptional()
+@IsEnum(['FIFTH_QUARTER', 'ZERO_QUARTER', 'FIELD_SHOW', 'STAND_BATTLE', 'PARADE', 'PRACTICE', 'CONCERT_BAND', 'HALFTIME', 'ENTRANCE', 'PREGAME', 'OTHER'])
+category?: string;
 
   @ApiPropertyOptional({ description: 'Filter by opponent band ID' })
   @IsOptional()
@@ -69,7 +71,10 @@ export class VideoQueryDto {
   @IsString()
   tags?: string;
 
-  @ApiPropertyOptional({ description: 'Sort field', enum: ['publishedAt', 'viewCount', 'title', 'createdAt'] })
+  @ApiPropertyOptional({
+    description: 'Sort field',
+    enum: ['publishedAt', 'viewCount', 'title', 'createdAt'],
+  })
   @IsOptional()
   @IsEnum(['publishedAt', 'viewCount', 'title', 'createdAt'])
   sortBy?: 'publishedAt' | 'viewCount' | 'title' | 'createdAt' = 'publishedAt';

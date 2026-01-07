@@ -30,13 +30,15 @@ import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/ty
 const getApiUrl = () => {
   // Server-side (Node.js environment)
   if (typeof window === 'undefined') {
-    return process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    return process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
   }
   // Client-side (browser)
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 };
 
 const API_URL = getApiUrl();
+
+console.log('🔍 API_URL being used:', API_URL);
 
 class ApiClient {
   private baseUrl: string;
@@ -106,7 +108,7 @@ class ApiClient {
       // Handle 401 Unauthorized
       if (response.status === 401 && !skipAuth) {
         // Try to refresh token
-        if (this.refreshToken && endpoint !== '/api/auth/refresh') {
+        if (this.refreshToken && endpoint !== '/auth/refresh') {
           try {
             await this.refreshAccessToken();
             // Retry the original request with new token
@@ -147,7 +149,7 @@ class ApiClient {
    */
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     const response = await this.request<LoginResponse>(
-      '/api/auth/login',
+      '/auth/login',
       {
         method: 'POST',
         body: JSON.stringify({
@@ -175,7 +177,7 @@ class ApiClient {
     }
 
     const response = await this.request<RefreshTokenResponse>(
-      '/api/auth/refresh',
+      '/auth/refresh',
       {
         method: 'POST',
         body: JSON.stringify({ refreshToken: this.refreshToken }),
@@ -199,7 +201,7 @@ class ApiClient {
     }
 
     try {
-      await this.request<{ message: string }>('/api/auth/logout', {
+      await this.request<{ message: string }>('/auth/logout', {
         method: 'POST',
         body: JSON.stringify({ refreshToken: this.refreshToken }),
       });
@@ -219,29 +221,29 @@ class ApiClient {
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const query = params.toString();
-    return this.request<PaginatedResponse<Band>>(`/api/bands${query ? `?${query}` : ''}`);
+    return this.request<PaginatedResponse<Band>>(`/bands${query ? `?${query}` : ''}`);
   }
 
   async getBand(slug: string): Promise<Band> {
-    return this.request<Band>(`/api/bands/slug/${slug}`);
+    return this.request<Band>(`/bands/slug/${slug}`);
   }
 
   async createBand(data: CreateBandDto): Promise<Band> {
-    return this.request<Band>(`/api/bands`, {
+    return this.request<Band>(`/bands`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateBand(id: string, data: UpdateBandDto): Promise<Band> {
-    return this.request<Band>(`/api/bands/${id}`, {
+    return this.request<Band>(`/bands/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteBand(id: string): Promise<void> {
-    await this.request<void>(`/api/bands/${id}`, {
+    await this.request<void>(`/bands/${id}`, {
       method: 'DELETE',
     });
   }
@@ -250,7 +252,7 @@ class ApiClient {
     const formData = new FormData();
     formData.append('logo', file);
 
-    const url = `${this.baseUrl}/api/bands/${id}/upload-logo`;
+    const url = `${this.baseUrl}/bands/${id}/upload-logo`;
     const headers: HeadersInit = {};
 
     if (this.accessToken) {
@@ -282,7 +284,7 @@ class ApiClient {
     const formData = new FormData();
     formData.append('banner', file);
 
-    const url = `${this.baseUrl}/api/bands/${id}/upload-banner`;
+    const url = `${this.baseUrl}/bands/${id}/upload-banner`;
     const headers: HeadersInit = {};
 
     if (this.accessToken) {
@@ -311,7 +313,7 @@ class ApiClient {
   }
 
   async deleteBandLogo(id: string): Promise<ApiResponse<Band>> {
-    return this.request<ApiResponse<Band>>(`/api/bands/${id}/logo`, {
+    return this.request<ApiResponse<Band>>(`/bands/${id}/logo`, {
       method: 'DELETE',
     });
   }
@@ -321,7 +323,7 @@ class ApiClient {
     const params = new URLSearchParams();
     if (filters?.bandId) params.append('bandId', filters.bandId);
     if (filters?.category) params.append('category', filters.category); // Changed from categoryId
-    if (filters?.year) params.append('year', filters.year.toString());
+    if (filters?.year) params.append('eventYear', filters.year.toString());
     if (filters?.search) params.append('search', filters.search);
     if (filters?.sortBy) params.append('sortBy', filters.sortBy);
     if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
@@ -329,21 +331,22 @@ class ApiClient {
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const query = params.toString();
-
+console.log('🔍 getVideos query:', query);
     const result = await this.request<PaginatedResponse<Video>>(
-      `/api/videos${query ? `?${query}` : ''}`,
+      `/videos${query ? `?${query}` : ''}`,
     );
+    console.log('🔍 getVideos result:', result);
 
     return result;
   }
 
   async getVideo(id: string): Promise<Video> {
-    return this.request<Video>(`/api/videos/${id}`);
+    return this.request<Video>(`/videos/${id}`);
   }
 
   async searchVideos(query: string): Promise<Video[]> {
     const params = new URLSearchParams({ q: query });
-    return this.request<Video[]>(`/api/videos/search?${params}`);
+    return this.request<Video[]>(`/videos/search?${params}`);
   }
 
   // Creator methods
@@ -358,11 +361,11 @@ class ApiClient {
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const query = params.toString();
-    return this.request<PaginatedResponse<Creator>>(`/api/creators${query ? `?${query}` : ''}`);
+    return this.request<PaginatedResponse<Creator>>(`/creators${query ? `?${query}` : ''}`);
   }
 
   async getCreator(id: string): Promise<Creator> {
-    return this.request<Creator>(`/api/creators/${id}`);
+    return this.request<Creator>(`/creators/${id}`);
   }
 
   async getCreatorVideos(id: string, filters?: VideoFilters): Promise<PaginatedResponse<Video>> {
@@ -376,12 +379,12 @@ class ApiClient {
 
     const query = params.toString();
     return this.request<PaginatedResponse<Video>>(
-      `/api/creators/${id}/videos${query ? `?${query}` : ''}`,
+      `/creators/${id}/videos${query ? `?${query}` : ''}`,
     );
   }
 
   async getFeaturedCreators(): Promise<PaginatedResponse<Creator>> {
-    return this.request<PaginatedResponse<Creator>>(`/api/creators/featured`);
+    return this.request<PaginatedResponse<Creator>>(`/creators/featured`);
   }
 
   // Admin video moderation methods
@@ -417,7 +420,7 @@ class ApiClient {
       page: number;
       limit: number;
       totalPages: number;
-    }>(`/api/admin/videos${query ? `?${query}` : ''}`);
+    }>(`/admin/videos${query ? `?${query}` : ''}`);
   }
 
   async updateAdminVideo(
@@ -433,14 +436,14 @@ class ApiClient {
       hideReason?: string;
     },
   ): Promise<VideoDetail> {
-    return this.request<VideoDetail>(`/api/admin/videos/${videoId}`, {
+    return this.request<VideoDetail>(`/admin/videos/${videoId}`, {
       method: 'PUT',
       body: JSON.stringify(updateData),
     });
   }
 
   async bulkUpdateVideos(data: BulkVideoUpdateRequest): Promise<BulkVideoUpdateResponse> {
-    return this.request<BulkVideoUpdateResponse>(`/api/admin/videos/bulk`, {
+    return this.request<BulkVideoUpdateResponse>(`/admin/videos/bulk`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -448,7 +451,7 @@ class ApiClient {
 
   // Sync methods
   async triggerFullSync(): Promise<any> {
-    return this.request<any>(`/api/sync/trigger`, {
+    return this.request<any>(`/sync/trigger`, {
       method: 'POST',
     });
   }
@@ -457,34 +460,34 @@ class ApiClient {
     bandId: string,
     syncType: 'channel' | 'playlist' | 'search' = 'channel',
   ): Promise<any> {
-    return this.request<any>(`/api/sync/band/${bandId}`, {
+    return this.request<any>(`/sync/band/${bandId}`, {
       method: 'POST',
       body: JSON.stringify({ syncType }),
     });
   }
 
   async getSyncStatus(): Promise<any> {
-    return this.request<any>(`/api/sync/status`);
+    return this.request<any>(`/sync/status`);
   }
 
   async getSyncJobStatus(jobId: string): Promise<any> {
-    return this.request<any>(`/api/sync/job/${jobId}`);
+    return this.request<any>(`/sync/job/${jobId}`);
   }
 
   // Featured Bands methods
   async getFeaturedBands(): Promise<{ bands: any[] }> {
-    return this.request<{ bands: any[] }>(`/api/bands/featured`);
+    return this.request<{ bands: any[] }>(`/bands/featured`);
   }
 
   async trackFeaturedClick(bandId: string, sessionId?: string): Promise<{ message: string }> {
-    return this.request<{ message: string }>(`/api/bands/${bandId}/track-featured-click`, {
+    return this.request<{ message: string }>(`/bands/${bandId}/track-featured-click`, {
       method: 'POST',
       body: JSON.stringify({ sessionId }),
     });
   }
 
   async toggleBandFeatured(bandId: string): Promise<any> {
-    return this.request<any>(`/api/bands/${bandId}/featured`, {
+    return this.request<any>(`/bands/${bandId}/featured`, {
       method: 'PATCH',
     });
   }
@@ -492,52 +495,52 @@ class ApiClient {
   async updateFeaturedOrder(
     bands: Array<{ id: string; featuredOrder: number }>,
   ): Promise<{ message: string }> {
-    return this.request<{ message: string }>(`/api/bands/featured-order`, {
+    return this.request<{ message: string }>(`/bands/featured-order`, {
       method: 'PATCH',
       body: JSON.stringify({ bands }),
     });
   }
 
   async getFeaturedRecommendations(): Promise<{ recommendations: any[] }> {
-    return this.request<{ recommendations: any[] }>(`/api/bands/featured-recommendations`);
+    return this.request<{ recommendations: any[] }>(`/bands/featured-recommendations`);
   }
 
   async getFeaturedAnalytics(): Promise<any> {
-    return this.request<any>(`/api/bands/featured-analytics`);
+    return this.request<any>(`/bands/featured-analytics`);
   }
 
   // ============ CATEGORIES METHODS ============
 
   async getCategories(): Promise<Category[]> {
-    return this.request<Category[]>(`/api/categories`);
+    return this.request<Category[]>(`/categories`);
   }
 
   async getCategoryById(id: string): Promise<Category> {
-    return this.request<Category>(`/api/categories/${id}`);
+    return this.request<Category>(`/categories/${id}`);
   }
 
   async createCategory(data: CreateCategoryDto): Promise<Category> {
-    return this.request<Category>(`/api/categories`, {
+    return this.request<Category>(`/categories`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateCategory(id: string, data: UpdateCategoryDto): Promise<Category> {
-    return this.request<Category>(`/api/categories/${id}`, {
+    return this.request<Category>(`/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteCategory(id: string): Promise<void> {
-    await this.request<void>(`/api/categories/${id}`, {
+    await this.request<void>(`/categories/${id}`, {
       method: 'DELETE',
     });
   }
 
   async reorderCategories(categoryIds: string[]): Promise<Category[]> {
-    return this.request<Category[]>(`/api/categories/reorder`, {
+    return this.request<Category[]>(`/categories/reorder`, {
       method: 'POST',
       body: JSON.stringify({ categoryIds }),
     });
@@ -549,7 +552,7 @@ class ApiClient {
     deletedCategory: string;
     targetCategory: string;
   }> {
-    return this.request(`/api/categories/merge`, {
+    return this.request(`/categories/merge`, {
       method: 'POST',
       body: JSON.stringify({ sourceCategoryId, targetCategoryId }),
     });
@@ -572,82 +575,82 @@ class ApiClient {
     if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
 
     const query = params.toString();
-    return this.request<PaginatedResponse<Event>>(`/api/events${query ? `?${query}` : ''}`);
+    return this.request<PaginatedResponse<Event>>(`/events${query ? `?${query}` : ''}`);
   }
 
   async getEventById(id: string): Promise<Event> {
-    return this.request<Event>(`/api/events/${id}`);
+    return this.request<Event>(`/events/${id}`);
   }
 
   async getEventBySlug(slug: string): Promise<Event> {
-    return this.request<Event>(`/api/events/slug/${slug}`);
+    return this.request<Event>(`/events/slug/${slug}`);
   }
 
   async getEventTypes(): Promise<string[]> {
-    return this.request<string[]>(`/api/events/types`);
+    return this.request<string[]>(`/events/types`);
   }
 
   async getUpcomingEvents(limit?: number): Promise<Event[]> {
     const params = limit ? `?limit=${limit}` : '';
-    return this.request<Event[]>(`/api/events/upcoming${params}`);
+    return this.request<Event[]>(`/events/upcoming${params}`);
   }
 
   async getEventsByYear(year: number): Promise<Event[]> {
-    return this.request<Event[]>(`/api/events/year/${year}`);
+    return this.request<Event[]>(`/events/year/${year}`);
   }
 
   async createEvent(data: CreateEventDto): Promise<Event> {
-    return this.request<Event>(`/api/events`, {
+    return this.request<Event>(`/events`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateEvent(id: string, data: UpdateEventDto): Promise<Event> {
-    return this.request<Event>(`/api/events/${id}`, {
+    return this.request<Event>(`/events/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async deleteEvent(id: string): Promise<void> {
-    await this.request<void>(`/api/events/${id}`, {
+    await this.request<void>(`/events/${id}`, {
       method: 'DELETE',
     });
   }
 
   async addVideoToEvent(eventId: string, videoId: string): Promise<void> {
-    await this.request<void>(`/api/events/${eventId}/videos`, {
+    await this.request<void>(`/events/${eventId}/videos`, {
       method: 'POST',
       body: JSON.stringify({ videoId }),
     });
   }
 
   async removeVideoFromEvent(eventId: string, videoId: string): Promise<void> {
-    await this.request<void>(`/api/events/${eventId}/videos/${videoId}`, {
+    await this.request<void>(`/events/${eventId}/videos/${videoId}`, {
       method: 'DELETE',
     });
   }
 
   async getEventVideos(eventId: string): Promise<Video[]> {
-    return this.request<Video[]>(`/api/events/${eventId}/videos`);
+    return this.request<Video[]>(`/events/${eventId}/videos`);
   }
 
   async addBandToEvent(eventId: string, bandId: string, role?: string): Promise<void> {
-    await this.request<void>(`/api/events/${eventId}/bands`, {
+    await this.request<void>(`/events/${eventId}/bands`, {
       method: 'POST',
       body: JSON.stringify({ bandId, role }),
     });
   }
 
   async removeBandFromEvent(eventId: string, bandId: string): Promise<void> {
-    await this.request<void>(`/api/events/${eventId}/bands/${bandId}`, {
+    await this.request<void>(`/events/${eventId}/bands/${bandId}`, {
       method: 'DELETE',
     });
   }
 
   async getEventBands(eventId: string): Promise<Band[]> {
-    return this.request<Band[]>(`/api/events/${eventId}/bands`);
+    return this.request<Band[]>(`/events/${eventId}/bands`);
   }
 
   // ============ SYNC METHODS ============
@@ -674,15 +677,15 @@ class ApiClient {
     if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
 
     const query = params.toString();
-    return this.request(`/api/admin/sync-jobs${query ? `?${query}` : ''}`);
+    return this.request(`/admin/sync-jobs${query ? `?${query}` : ''}`);
   }
 
   async getSyncJobById(id: string): Promise<any> {
-    return this.request(`/api/admin/sync-jobs/${id}`);
+    return this.request(`/admin/sync-jobs/${id}`);
   }
 
   async retrySyncJob(id: string): Promise<void> {
-    await this.request(`/api/admin/sync-jobs/${id}/retry`, {
+    await this.request(`/admin/sync-jobs/${id}/retry`, {
       method: 'POST',
     });
   }
@@ -692,61 +695,61 @@ class ApiClient {
     jobType?: string;
     maxVideos?: number;
   }): Promise<any> {
-    return this.request(`/api/admin/sync-jobs/trigger`, {
+    return this.request(`/admin/sync-jobs/trigger`, {
       method: 'POST',
       body: JSON.stringify(options || {}),
     });
   }
 
   async getQueueStatus(): Promise<any[]> {
-    return this.request(`/api/admin/queue/status`);
+    return this.request(`/admin/queue/status`);
   }
 
   async pauseQueue(): Promise<void> {
-    await this.request(`/api/admin/queue/pause`, {
+    await this.request(`/admin/queue/pause`, {
       method: 'POST',
     });
   }
 
   async resumeQueue(): Promise<void> {
-    await this.request(`/api/admin/queue/resume`, {
+    await this.request(`/admin/queue/resume`, {
       method: 'POST',
     });
   }
 
   async clearFailedJobs(): Promise<void> {
-    await this.request(`/api/admin/queue/clear-failed`, {
+    await this.request(`/admin/queue/clear-failed`, {
       method: 'POST',
     });
   }
 
   async getSyncErrors(): Promise<any> {
-    return this.request(`/api/admin/sync/errors`);
+    return this.request(`/admin/sync/errors`);
   }
 
   // Admin Dashboard methods
   async getDashboardStats(): Promise<DashboardStats> {
-    return this.request<DashboardStats>('/api/admin/dashboard/stats');
+    return this.request<DashboardStats>('/admin/dashboard/stats');
   }
 
   async getRecentActivity(): Promise<RecentActivity> {
-    return this.request<RecentActivity>('/api/admin/dashboard/recent-activity');
+    return this.request<RecentActivity>('/admin/dashboard/recent-activity');
   }
 
   async getSyncStatusDashboard(): Promise<SyncStatus> {
-    return this.request<SyncStatus>('/api/admin/dashboard/sync-status');
+    return this.request<SyncStatus>('/admin/dashboard/sync-status');
   }
 
   async getVideoTrends(): Promise<VideoTrend[]> {
-    return this.request<VideoTrend[]>('/api/admin/dashboard/video-trends');
+    return this.request<VideoTrend[]>('/admin/dashboard/video-trends');
   }
 
   async getCategoryDistribution(): Promise<CategoryDistribution[]> {
-    return this.request<CategoryDistribution[]>('/api/admin/dashboard/category-distribution');
+    return this.request<CategoryDistribution[]>('/admin/dashboard/category-distribution');
   }
 
   async getTopBands(): Promise<TopBand[]> {
-    return this.request<TopBand[]>('/api/admin/dashboard/top-bands');
+    return this.request<TopBand[]>('/admin/dashboard/top-bands');
   }
 }
 

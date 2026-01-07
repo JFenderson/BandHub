@@ -78,7 +78,7 @@ async function syncAllBands() {
         part: ['snippet'],
         q: searchQuery,
         type: ['video'],
-        maxResults: 15, // Get 15 videos per band
+        maxResults: 100, // Get 100 videos per band
         order: 'relevance',
         publishedAfter: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(), // Last year
         videoDuration: 'any',

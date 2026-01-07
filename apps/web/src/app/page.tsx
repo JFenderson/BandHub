@@ -4,6 +4,9 @@ import { BandCard } from '@/components/bands/BandCard';
 import { VideoCard } from '@/components/videos/VideoCard';
 import FeaturedBandsCarousel from '@/components/home/FeaturedBandsCarousel';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function HomePage() {
   // Fetch featured content - using try/catch for resilience
   const [bandsResult, videosResult, categoriesResult] = await Promise.allSettled([

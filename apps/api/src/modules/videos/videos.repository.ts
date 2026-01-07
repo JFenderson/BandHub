@@ -5,6 +5,7 @@ import { DatabaseService } from '../../database/database.service';
 export interface VideoQueryDto {
   bandId?: string;
   bandSlug?: string;
+  category?: string;  // Category enum value like 'FIFTH_QUARTER'
   categoryId?: string;
   categorySlug?: string;
   creatorId?: string;
@@ -20,6 +21,21 @@ export interface VideoQueryDto {
   limit?: number;
 }
 
+// Map category enum values to search keywords
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  'FIFTH_QUARTER': ['5th quarter', 'fifth quarter', '5thquarter'],
+  'ZERO_QUARTER': ['0th quarter', 'zero quarter', 'zeroth quarter', '0thquarter'],
+  'FIELD_SHOW': ['field show', 'fieldshow'],
+  'STAND_BATTLE': ['stand battle', 'standbattle', 'stands battle'],
+  'HALFTIME': ['halftime', 'half time', 'half-time'],
+  'PARADE': ['parade', 'marching'],
+  'PRACTICE': ['practice', 'rehearsal'],
+  'CONCERT_BAND': ['concert', 'concert band'],
+  'ENTRANCE': ['entrance', 'band entrance', 'entering'],
+  'PREGAME': ['pregame', 'pre-game', 'pre game'],
+  'OTHER': [], // No specific keywords for OTHER
+};
+
 @Injectable()
 export class VideosRepository {
   constructor(private readonly db: DatabaseService) {}
@@ -28,6 +44,7 @@ export class VideosRepository {
     const {
       bandId,
       bandSlug,
+      category,
       categoryId,
       categorySlug,
       creatorId,
@@ -55,7 +72,16 @@ export class VideosRepository {
       where.band = { slug: bandSlug };
     }
 
-    if (categoryId) {
+    // Handle category filtering by searching video titles for keywords
+    if (category && CATEGORY_KEYWORDS[category]) {
+      const keywords = CATEGORY_KEYWORDS[category];
+      if (keywords.length > 0) {
+        // Search for any of the keywords in the title (case-insensitive)
+        where.OR = keywords.map(keyword => ({
+          title: { contains: keyword, mode: 'insensitive' as const }
+        }));
+      }
+    } else if (categoryId) {
       where.categoryId = categoryId;
     } else if (categorySlug) {
       where.category = { slug: categorySlug };
@@ -69,9 +95,17 @@ export class VideosRepository {
       where.opponentBandId = opponentBandId;
     }
 
+    // Filter by year extracted from publishedAt
     if (eventYear) {
-      where.eventYear = eventYear;
+      const startOfYear = new Date(eventYear, 0, 1);
+      const endOfYear = new Date(eventYear + 1, 0, 1);
+      
+      where.publishedAt = {
+        gte: startOfYear,
+        lt: endOfYear,
+      };
     }
+    
     if (eventName) {
       where.eventName = { contains: eventName, mode: 'insensitive' };
     }
@@ -81,14 +115,27 @@ export class VideosRepository {
       where.tags = { hasSome: tagList };
     }
 
+    // Handle search - if we already have OR from category, combine them
     if (search && search.trim().length > 0) {
       const searchTerm = search.trim();
-      where.OR = [
-        { title: { contains: searchTerm, mode: 'insensitive' } },
-        { description: { contains: searchTerm, mode: 'insensitive' } },
-        { eventName: { contains: searchTerm, mode: 'insensitive' } },
-        { band: { name: { contains: searchTerm, mode: 'insensitive' } } },
+      const searchConditions = [
+        { title: { contains: searchTerm, mode: 'insensitive' as const } },
+        { description: { contains: searchTerm, mode: 'insensitive' as const } },
+        { eventName: { contains: searchTerm, mode: 'insensitive' as const } },
+        { band: { name: { contains: searchTerm, mode: 'insensitive' as const } } },
       ];
+
+      // If we already have OR conditions from category, we need to use AND with nested OR
+      if (where.OR) {
+        const categoryConditions = where.OR;
+        delete where.OR;
+        where.AND = [
+          { OR: categoryConditions },
+          { OR: searchConditions }
+        ];
+      } else {
+        where.OR = searchConditions;
+      }
     }
 
     const orderBy: Prisma.VideoOrderByWithRelationInput = {};

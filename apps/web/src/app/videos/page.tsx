@@ -5,12 +5,15 @@ import { VideoFilters } from '@/components/videos/VideoFilters';
 import { Pagination } from '@/components/ui/Pagination';
 import type { VideoCategory } from '@/types/api';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface VideosPageProps {
   searchParams: {
     search?: string;
     bandId?: string;
     category?: VideoCategory;
-    year?: string;
+    eventYear?: string;  // ← CHANGED from 'year' to 'eventYear'
     sortBy?: 'publishedAt' | 'viewCount' | 'title';
     sortOrder?: 'asc' | 'desc';
     page?: string;
@@ -25,7 +28,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
     search: searchParams.search,
     bandId: searchParams.bandId,
     category: searchParams.category,
-    year: searchParams.year ? parseInt(searchParams.year) : undefined,
+    year: searchParams.eventYear ? parseInt(searchParams.eventYear) : undefined,  // ← CHANGED from searchParams.year
     sortBy: searchParams.sortBy || 'publishedAt',
     sortOrder: searchParams.sortOrder || 'desc',
     page,
