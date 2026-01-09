@@ -74,7 +74,7 @@ services:
       - hbcu-test-network
     command: >
       sh -c "
-        npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma &&
+        npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma &&
         npm run test:e2e --workspace=@hbcu-band-hub/api
       "
 
@@ -120,7 +120,7 @@ services:
       - hbcu-test-network
     command: >
       sh -c "
-        npx prisma migrate reset --force --schema=apps/api/prisma/schema.prisma &&
+        npx prisma migrate reset --force --schema=packages/database/prisma/schema.prisma &&
         npm run test
       "
 

@@ -5,7 +5,6 @@ import { PrismaService } from '@bandhub/database';
 dotenv.config();
 const prisma = new PrismaService();
 
-const prisma = new PrismaClient();
 
 async function promoteVideos() {
   console.log('Starting video promotion...');
@@ -42,7 +41,7 @@ async function promoteVideos() {
       }
 
       // Create in Video table
-      await prisma. video.create({
+      await prisma.video.create({
         data: {
           youtubeId: ytVideo.youtubeId,
           title: ytVideo.title,

@@ -110,7 +110,7 @@ run_migrations() {
     log_info "Running database migrations..."
     
     docker compose -f "${COMPOSE_FILE}" run --rm api \
-        sh -c "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma"
+        sh -c "npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma"
     
     log_success "Database migrations completed"
 }

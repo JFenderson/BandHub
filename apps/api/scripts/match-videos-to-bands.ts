@@ -503,7 +503,6 @@ async function main() {
   // Fetch all active bands
   console.log('📊 Fetching bands from database...');
   const bands = await prisma.band.findMany({
-    where: { isActive: true },
     select: {
       id: true,
       name: true,

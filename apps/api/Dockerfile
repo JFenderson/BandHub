@@ -37,7 +37,7 @@ COPY . .
 RUN cd libs/shared/types && npm run build
 
 # Generate Prisma client
-RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
+RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 
 # Build the NestJS application
 RUN cd apps/api && npm run build
