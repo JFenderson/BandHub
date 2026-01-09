@@ -2,7 +2,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import { Prisma } from '@prisma/client';
 import {
   GetNotificationsQueryDto,
@@ -13,7 +13,7 @@ import {
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: DatabaseService) {}
+  constructor(private prisma: PrismaService) {}
 
   async createNotification(userId: string, dto: CreateNotificationDto) {
     // Check user preferences

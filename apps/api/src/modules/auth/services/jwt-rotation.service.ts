@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions, JwtVerifyOptions } from '@nestjs/jwt';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import * as crypto from 'crypto';
 
 /**
@@ -54,7 +54,7 @@ export class JwtRotationService implements OnModuleInit {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly prisma: DatabaseService,
+    private readonly prisma: PrismaService,
   ) {
     // Get rotation configuration from environment
     this.rotationIntervalDays = this.configService.get<number>('JWT_ROTATION_INTERVAL_DAYS', 30);

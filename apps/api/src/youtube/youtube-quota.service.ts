@@ -1,8 +1,8 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
-import { DatabaseService } from '../database/database.service';
-import { CacheService } from '../cache/cache.service';
+import { PrismaService} from '@bandhub/database';
+import { CacheService } from '@bandhub/cache';
 import {
   YouTubeOperation,
   QUOTA_COSTS,
@@ -60,7 +60,7 @@ export class YoutubeQuotaService implements OnModuleInit {
   private config: QuotaConfig;
   
   constructor(
-    private readonly db: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly cache: CacheService,
     private readonly configService: ConfigService,
   ) {
@@ -547,7 +547,7 @@ export class YoutubeQuotaService implements OnModuleInit {
    * Persist usage record to database
    */
   private async persistUsageRecord(record: QuotaUsageRecord): Promise<void> {
-    await this.db.quotaUsageLog.create({
+    await this.prisma.quotaUsageLog.create({
       data: {
         id: record.id,
         operation: record.operation,
@@ -572,7 +572,7 @@ export class YoutubeQuotaService implements OnModuleInit {
     yesterday.setDate(yesterday.getDate() - 1);
     const dateKey = this.getDateKey(yesterday);
     
-    await this.db.quotaDailySummary.create({
+    await this.prisma.quotaDailySummary.create({
       data: {
         date: new Date(dateKey),
         totalUsage,
@@ -586,7 +586,7 @@ export class YoutubeQuotaService implements OnModuleInit {
    * Save alert to database
    */
   private async saveAlert(alert: QuotaAlert): Promise<void> {
-    await this.db.quotaAlert.create({
+    await this.prisma.quotaAlert.create({
       data: {
         id: alert.id,
         level: alert.level,
@@ -602,7 +602,7 @@ export class YoutubeQuotaService implements OnModuleInit {
    * Get operation breakdown for a date
    */
   private async getOperationBreakdown(dateKey: string): Promise<Record<YouTubeOperation, number>> {
-    const records = await this.db.quotaUsageLog.groupBy({
+    const records = await this.prisma.quotaUsageLog.groupBy({
       by: ['operation'],
       where: {
         timestamp: {
@@ -628,7 +628,7 @@ export class YoutubeQuotaService implements OnModuleInit {
    * Get top quota consumers
    */
 private async getTopConsumers(dateKey: string, limit: number) {
-  const records = await this.db.quotaUsageLog.groupBy({
+  const records = await this.prisma.quotaUsageLog.groupBy({
     by: ['bandId', 'bandName'],
     where: {
       timestamp: {
@@ -667,7 +667,7 @@ private async getTopConsumers(dateKey: string, limit: number) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     
-    const summaries = await this.db.quotaDailySummary.findMany({
+    const summaries = await this.prisma.quotaDailySummary.findMany({
       where: {
         date: { gte: startDate },
       },
@@ -703,7 +703,7 @@ private async getTopConsumers(dateKey: string, limit: number) {
   private async getCacheEfficiencyStats() {
     const today = this.getDateKey(new Date());
     
-    const stats = await this.db.quotaUsageLog.aggregate({
+    const stats = await this.prisma.quotaUsageLog.aggregate({
       where: {
         timestamp: {
           gte: new Date(today),
@@ -714,7 +714,7 @@ private async getTopConsumers(dateKey: string, limit: number) {
       _sum: { cost: true },
     });
     
-    const cacheHits = await this.db.quotaUsageLog.count({
+    const cacheHits = await this.prisma.quotaUsageLog.count({
       where: {
         timestamp: {
           gte: new Date(today),
@@ -740,7 +740,7 @@ private async getTopConsumers(dateKey: string, limit: number) {
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
     
-    const stats = await this.db.quotaUsageLog.groupBy({
+    const stats = await this.prisma.quotaUsageLog.groupBy({
       by: ['syncJobId'],
       where: {
         timestamp: { gte: last30Days },
@@ -762,7 +762,7 @@ private async getTopConsumers(dateKey: string, limit: number) {
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
     
-    const stats = await this.db.quotaUsageLog.groupBy({
+    const stats = await this.prisma.quotaUsageLog.groupBy({
       by: ['operation'],
       where: {
         timestamp: { gte: last30Days },

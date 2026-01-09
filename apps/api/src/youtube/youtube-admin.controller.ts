@@ -17,7 +17,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { AdminRole, SyncStatus } from '@prisma/client';
 import { YouTubeVideoRepository, YouTubeVideoQueryDto as RepoQueryDto } from './youtube-video.repository';
 import { YoutubeService } from './youtube.service';
-import { DatabaseService } from '../database/database.service';
+import { PrismaService} from '@bandhub/database';
 import { ConfigService } from '@nestjs/config';
 import {
   YouTubeVideoQueryDto,
@@ -37,7 +37,7 @@ export class YouTubeAdminController {
   constructor(
     private readonly youtubeVideoRepository: YouTubeVideoRepository,
     private readonly youtubeService: YoutubeService,
-    private readonly db: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {
     this.resetDailyQuotaIfNeeded();
@@ -59,7 +59,7 @@ export class YouTubeAdminController {
     @Param('bandId') bandId: string,
     @Body() dto: TriggerSyncDto,
   ) {
-    const band = await this.db.band.findUnique({
+    const band = await this.prisma.band.findUnique({
       where: { id: bandId },
       select: { id: true, name: true, youtubeChannelId: true, lastSyncAt: true },
     });
@@ -115,7 +115,7 @@ export class YouTubeAdminController {
     }
 
     // Update band sync tracking
-    await this.db.band.update({
+    await this.prisma.band.update({
       where: { id: band.id },
       data: {
         lastSyncAt: new Date(),
@@ -150,7 +150,7 @@ export class YouTubeAdminController {
     @Param('creatorId') creatorId: string,
     @Body() dto: TriggerSyncDto,
   ) {
-    const creator = await this.db.contentCreator.findUnique({
+    const creator = await this.prisma.contentCreator.findUnique({
       where: { id: creatorId },
       select: { id: true, name: true, youtubeChannelId: true, lastSyncedAt: true },
     });
@@ -199,12 +199,12 @@ export class YouTubeAdminController {
     }
 
     // Update creator sync tracking
-    await this.db.contentCreator.update({
+    await this.prisma.contentCreator.update({
       where: { id: creator.id },
       data: {
         lastSyncedAt: new Date(),
         ...(dto.fullSync && { lastFullSync: new Date() }),
-        videosInOurDb: await this.db.youTubeVideo.count({
+        videosInOurDb: await this.prisma.youTubeVideo.count({
           where: { creatorId: creator.id },
         }),
       },
@@ -231,7 +231,7 @@ export class YouTubeAdminController {
   @ApiOperation({ summary: 'Trigger YouTube video sync for all bands (use with caution)' })
   @ApiResponse({ status: 202, description: 'Bulk sync started' })
   async syncAllBands(@Body() dto: TriggerSyncDto) {
-    const bands = await this.db.band.findMany({
+    const bands = await this.prisma.band.findMany({
       where: {
         youtubeChannelId: { not: null },
         isActive: true,
@@ -261,7 +261,7 @@ export class YouTubeAdminController {
   @ApiOperation({ summary: 'Trigger YouTube video sync for all creators (use with caution)' })
   @ApiResponse({ status: 202, description: 'Bulk sync started' })
   async syncAllCreators(@Body() dto: TriggerSyncDto) {
-    const creators = await this.db.contentCreator.findMany({
+    const creators = await this.prisma.contentCreator.findMany({
       where: {
         youtubeChannelId: { not: null },
       },
@@ -294,11 +294,11 @@ export class YouTubeAdminController {
     const quotaLimit = this.configService.get<number>('YOUTUBE_QUOTA_LIMIT') || 10000;
 
     const [totalBands, totalCreators, totalYouTubeVideos, totalCuratedVideos, recentSyncJobs] = await Promise.all([
-      this.db.band.count({ where: { youtubeChannelId: { not: null }, isActive: true } }),
-      this.db.contentCreator.count({ where: { youtubeChannelId: { not: null } } }),
-      this.db.youTubeVideo.count(),
-      this.db.video.count(),
-      this.db.syncJob.findMany({
+      this.prisma.band.count({ where: { youtubeChannelId: { not: null }, isActive: true } }),
+      this.prisma.contentCreator.count({ where: { youtubeChannelId: { not: null } } }),
+      this.prisma.youTubeVideo.count(),
+      this.prisma.video.count(),
+      this.prisma.syncJob.findMany({
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: { band: { select: { name: true } } },

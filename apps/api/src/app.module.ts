@@ -1,7 +1,6 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { DatabaseModule } from './database/database.module';
-import { CacheModule } from './cache/cache.module';
+import { DatabaseService } from './database/database.service';
 import { QueueModule } from './queue/queue.module';
 import { BandsModule } from './modules/bands/bands.module';
 import { VideosModule } from './modules/videos/videos.module';
@@ -33,6 +32,8 @@ import { RateLimitExceptionFilter } from './common/filters/rate-limit-exception.
 import { IpExtractorMiddleware } from './common/middleware/ip-extractor.middleware';
 import Redis from 'ioredis';
 import { Reflector } from '@nestjs/core/services/reflector.service';
+import { PrismaModule } from '@bandhub/database'; // From shared package
+import { CacheModule } from '@bandhub/cache'; // From shared package
 
 @Module({
   imports: [
@@ -65,7 +66,7 @@ import { Reflector } from '@nestjs/core/services/reflector.service';
     }),
     
     // Core infrastructure
-    DatabaseModule,
+    PrismaModule,
     CacheModule,
     QueueModule,
     SecretsModule, // Centralized secrets management
@@ -91,11 +92,11 @@ import { Reflector } from '@nestjs/core/services/reflector.service';
     MetricsModule,
     ObservabilityModule,
   ],
-  providers: [
-    // Rate limiting service (used by guard)
-    RedisRateLimiterService,
-    
-    // Global guards
+providers: [
+// API-specific database service with business logic
+DatabaseService,
+// Rate limiting service (used by guard)
+RedisRateLimiterService,
 {
   provide: APP_GUARD,
   useFactory: (reflector: Reflector, rateLimiter: RedisRateLimiterService) => {

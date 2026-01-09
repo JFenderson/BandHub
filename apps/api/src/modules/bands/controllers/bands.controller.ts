@@ -25,18 +25,18 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { BandsService } from './bands.service';
-import { FeaturedRecommendationsService } from './featured-recommendations.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
+import { BandsService } from '../services/bands.service';
+import { FeaturedRecommendationsService } from '../services/featured-recommendations.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { CurrentUser, CurrentUserData } from '../../../common/decorators/current-user.decorator';
 import { diskStorage } from 'multer';
-import { processUploadedImage } from '../../common/utils/image-processing.util';
+import { processUploadedImage } from '../../../common/utils/image-processing.util';
 import { unlink } from 'fs/promises';
-import { CreateBandDto, UpdateBandDto, BandQueryDto, UpdateFeaturedOrderDto } from './dto';
-import { RateLimit } from '../../common/decorators/rate-limit.decorator';
-import { RateLimitType } from '../../common/interfaces/rate-limit.interface';
+import { CreateBandDto, UpdateBandDto, BandQueryDto, UpdateFeaturedOrderDto } from '../dto';
+import { RateLimit } from '../../../common/decorators/rate-limit.decorator';
+import { RateLimitType } from '../../../common/interfaces/rate-limit.interface';
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@prisma/client';

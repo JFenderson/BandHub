@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
-import { DatabaseModule } from '../../database/database.module';
+import { PrismaModule } from '@bandhub/database';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [PrismaModule],
   controllers: [EventsController],
   providers: [EventsService],
   exports: [EventsService],

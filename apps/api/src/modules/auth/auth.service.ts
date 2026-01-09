@@ -2,9 +2,9 @@ import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { DatabaseService } from '../../database/database.service';
-import { CacheStrategyService, CACHE_TTL } from '../../cache/cache-strategy.service';
-import { CacheKeyBuilder } from '../../cache/dto/cache-key.dto';
+import { PrismaService } from '@bandhub/database';
+import { CacheStrategyService, CACHE_TTL } from '@bandhub/cache';
+import { CacheKeyBuilder } from '@bandhub/cache';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AdminRole } from '@prisma/client';
@@ -27,7 +27,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private readonly db: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly cacheStrategy: CacheStrategyService,
@@ -38,7 +38,7 @@ export class AuthService {
    */
   async register(data: RegisterDto) {
     // Check if user already exists
-    const existing = await this.db.adminUser.findUnique({
+    const existing = await this.prisma.adminUser.findUnique({
       where: { email: data.email },
     });
 
@@ -53,7 +53,7 @@ export class AuthService {
     const role = (data.role || AdminRole.MODERATOR) as AdminRole;
 
     // Create user
-    const user = await this.db.adminUser.create({
+    const user = await this.prisma.adminUser.create({
       data: {
         email: data.email,
         passwordHash: hashedPassword,
@@ -80,7 +80,7 @@ export class AuthService {
    */
   async login(data: LoginDto) {
     // Find user
-    const user = await this.db.adminUser.findUnique({
+    const user = await this.prisma.adminUser.findUnique({
       where: { email: data.email },
     });
 
@@ -190,7 +190,7 @@ export class AuthService {
     return this.cacheStrategy.wrap(
       sessionKey,
       async () => {
-        const user = await this.db.adminUser.findUnique({
+        const user = await this.prisma.adminUser.findUnique({
           where: { id: userId },
           select: {
             id: true,
@@ -216,7 +216,7 @@ export class AuthService {
    * Invalidates all sessions to force re-login
    */
   async changePassword(userId: string, oldPassword: string, newPassword: string) {
-    const user = await this.db.adminUser.findUnique({
+    const user = await this.prisma.adminUser.findUnique({
       where: { id: userId },
     });
 
@@ -234,7 +234,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password
-    await this.db.adminUser.update({
+    await this.prisma.adminUser.update({
       where: { id: userId },
       data: { passwordHash: hashedPassword },
     });
@@ -252,7 +252,7 @@ export class AuthService {
    * In a real app, this would send an email with a reset token
    */
   async sendAdminPasswordReset(email: string) {
-    const user = await this.db.adminUser.findUnique({
+    const user = await this.prisma.adminUser.findUnique({
       where: { email },
     });
 
@@ -298,7 +298,7 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
       // Update password
-      await this.db.adminUser.update({
+      await this.prisma.adminUser.update({
         where: { id: userId },
         data: { passwordHash: hashedPassword },
       });

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import { VideosRepository } from '../videos/videos.repository';
 import { SyncService } from '../sync/sync.service';
 import { CreatorQueryDto, CreateCreatorDto, UpdateCreatorDto } from './dto';
@@ -8,7 +8,7 @@ import { VideoQueryDto } from '../videos/dto';
 @Injectable()
 export class CreatorsService {
   constructor(
-    private readonly database: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly videosRepository: VideosRepository,
     private readonly syncService: SyncService,
   ) {}
@@ -43,7 +43,7 @@ export class CreatorsService {
 
     const skip = (page - 1) * limit;
     const [creators, total] = await Promise.all([
-      this.database.contentCreator.findMany({
+      this.prisma.contentCreator.findMany({
         where,
         orderBy: { [sortBy]: sortOrder },
         skip,
@@ -52,7 +52,7 @@ export class CreatorsService {
           _count: { select: { videos: true } },
         },
       }),
-      this.database.contentCreator.count({ where }),
+      this.prisma.contentCreator.count({ where }),
     ]);
 
     return {
@@ -71,7 +71,7 @@ export class CreatorsService {
   }
 
   async getCreatorById(id: string) {
-    const creator = await this.database.contentCreator.findUnique({
+    const creator = await this.prisma.contentCreator.findUnique({
       where: { id },
       include: {
         _count: { select: { videos: true } },
@@ -91,17 +91,17 @@ export class CreatorsService {
   }
 
   async createCreator(dto: CreateCreatorDto) {
-    const existing = await this.database.contentCreator.findUnique({ where: { youtubeChannelId: dto.youtubeChannelId } });
+    const existing = await this.prisma.contentCreator.findUnique({ where: { youtubeChannelId: dto.youtubeChannelId } });
     if (existing) {
       throw new BadRequestException('Creator with this YouTube channel already exists');
     }
 
-    return this.database.contentCreator.create({ data: dto });
+    return this.prisma.contentCreator.create({ data: dto });
   }
 
   async updateCreator(id: string, dto: UpdateCreatorDto) {
     await this.ensureCreatorExists(id);
-    return this.database.contentCreator.update({
+    return this.prisma.contentCreator.update({
       where: { id },
       data: dto,
     });
@@ -109,7 +109,7 @@ export class CreatorsService {
 
   async deleteCreator(id: string) {
     await this.ensureCreatorExists(id);
-    await this.database.contentCreator.delete({ where: { id } });
+    await this.prisma.contentCreator.delete({ where: { id } });
     return { message: 'Creator deleted successfully' };
   }
 
@@ -119,7 +119,7 @@ export class CreatorsService {
   }
 
   private async ensureCreatorExists(id: string) {
-    const creator = await this.database.contentCreator.findUnique({ where: { id } });
+    const creator = await this.prisma.contentCreator.findUnique({ where: { id } });
     if (!creator) {
       throw new NotFoundException(`Creator with ID ${id} not found`);
     }

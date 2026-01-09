@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { PrismaService} from '@bandhub/database';
 import { YoutubeService } from './youtube.service';
 import { YoutubeQuotaService } from './youtube-quota.service';
 import { SyncJobType, SyncJobStatus, SyncStatus } from '@prisma/client';
@@ -59,7 +59,7 @@ export class YoutubeSyncService {
   private readonly logger = new Logger(YoutubeSyncService.name);
 
   constructor(
-    private readonly db: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly youtubeService: YoutubeService,
     private readonly quotaService: YoutubeQuotaService, // NEW: Inject quota service
   ) {}
@@ -71,7 +71,7 @@ export class YoutubeSyncService {
   async syncBand(bandId: string, options: SyncOptions = {}): Promise<SyncResult> {
     const startTime = Date.now();
     
-    const band = await this.db.band.findUnique({ where: { id: bandId } });
+    const band = await this.prisma.band.findUnique({ where: { id: bandId } });
     if (!band) {
       throw new NotFoundException(`Band with ID ${bandId} not found`);
     }
@@ -104,7 +104,7 @@ export class YoutubeSyncService {
     }
 
     // Create sync job record (UPDATED with quota fields)
-    const syncJob = await this.db.syncJob.create({
+    const syncJob = await this.prisma.syncJob.create({
       data: {
         bandId,
         jobType,
@@ -121,7 +121,7 @@ export class YoutubeSyncService {
     });
 
     // Update band sync status
-    await this.db.band.update({
+    await this.prisma.band.update({
       where: { id: bandId },
       data: { syncStatus: SyncStatus.IN_PROGRESS },
     });
@@ -144,7 +144,7 @@ export class YoutubeSyncService {
       await this.executeSyncWithQuotaTracking(band, syncJob.id, result, options);
 
       // Update sync job as completed
-      await this.db.syncJob.update({
+      await this.prisma.syncJob.update({
         where: { id: syncJob.id },
         data: {
           status: SyncJobStatus.COMPLETED,
@@ -159,7 +159,7 @@ export class YoutubeSyncService {
       });
 
       // Update band metadata
-      await this.db.band.update({
+      await this.prisma.band.update({
         where: { id: bandId },
         data: {
           syncStatus: SyncStatus.COMPLETED,
@@ -178,7 +178,7 @@ export class YoutubeSyncService {
       result.errors.push(errorMessage);
 
       // Update sync job as failed
-      await this.db.syncJob.update({
+      await this.prisma.syncJob.update({
         where: { id: syncJob.id },
         data: {
           status: SyncJobStatus.FAILED,
@@ -194,7 +194,7 @@ export class YoutubeSyncService {
       });
 
       // Update band sync status
-      await this.db.band.update({
+      await this.prisma.band.update({
         where: { id: bandId },
         data: { syncStatus: SyncStatus.FAILED },
       });
@@ -453,13 +453,13 @@ export class YoutubeSyncService {
     video: any,
     result: SyncResult,
   ): Promise<void> {
-    const existingVideo = await this.db.video.findUnique({
+    const existingVideo = await this.prisma.video.findUnique({
       where: { youtubeId: video.youtubeId },
     });
 
     if (existingVideo) {
       // Update existing video
-      await this.db.video.update({
+      await this.prisma.video.update({
         where: { youtubeId: video.youtubeId },
         data: {
           title: video.title,
@@ -473,7 +473,7 @@ export class YoutubeSyncService {
       result.videosUpdated++;
     } else {
       // Create new video
-      await this.db.video.create({
+      await this.prisma.video.create({
         data: {
           youtubeId: video.youtubeId,
           title: video.title,
@@ -512,7 +512,7 @@ export class YoutubeSyncService {
    * Sync all bands incrementally (UPDATED with quota awareness)
    */
   async syncAllBandsIncremental(): Promise<SyncResult[]> {
-    const bands = await this.db.band.findMany({
+    const bands = await this.prisma.band.findMany({
       where: { isActive: true },
       orderBy: { lastSyncAt: 'asc' },
     });
@@ -552,10 +552,10 @@ export class YoutubeSyncService {
     const quotaStatus = await this.quotaService.getQuotaStatus();
 
     const [totalBands, syncedBands, totalVideos, recentJobs] = await Promise.all([
-      this.db.band.count({ where: { isActive: true } }),
-      this.db.band.count({ where: { isActive: true, firstSyncedAt: { not: null } } }),
-      this.db.video.count(),
-      this.db.syncJob.findMany({
+      this.prisma.band.count({ where: { isActive: true } }),
+      this.prisma.band.count({ where: { isActive: true, firstSyncedAt: { not: null } } }),
+      this.prisma.video.count(),
+      this.prisma.syncJob.findMany({
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: { band: { select: { name: true } } },
@@ -586,7 +586,7 @@ export class YoutubeSyncService {
    * Get bands needing full sync (unchanged from original)
    */
   async getBandsNeedingFullSync() {
-    const bands = await this.db.band.findMany({
+    const bands = await this.prisma.band.findMany({
       where: {
         isActive: true,
         OR: [

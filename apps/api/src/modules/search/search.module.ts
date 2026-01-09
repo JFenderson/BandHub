@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
-import { DatabaseModule } from '../../database/database.module';
+import { PrismaModule } from '@bandhub/database';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [PrismaModule],
   controllers: [SearchController],
   providers: [SearchService],
   exports: [SearchService],

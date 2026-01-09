@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import { Prisma, EventType } from '@prisma/client';
 import { CreateEventDto, UpdateEventDto, EventFilterDto } from './dto/event.dto';
 
 @Injectable()
 export class EventsService {
-  constructor(private readonly prisma: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Generate a URL-friendly slug from event name

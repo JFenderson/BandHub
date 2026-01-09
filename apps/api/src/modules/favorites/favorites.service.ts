@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import {
   AddFavoriteVideoDto,
   UpdateFavoriteVideoDto,
@@ -24,7 +24,7 @@ import {
 
 @Injectable()
 export class FavoritesService {
-  constructor(private prisma: DatabaseService) {}
+  constructor(private prisma: PrismaService) {}
 
   // ============ FAVORITE VIDEOS ============
 

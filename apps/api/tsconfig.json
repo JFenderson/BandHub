@@ -1,6 +1,8 @@
-{
+{  
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "commonjs",
+    "rootDir": "./src",
     "moduleResolution": "node",
     "declaration": false,
     "removeComments": true,
@@ -20,6 +22,6 @@
       "@hbcu-band-hub/observability": ["../../libs/observability/dist"]
     }
   },
-  "include": ["src/**/*"],
+"include": ["src//*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }

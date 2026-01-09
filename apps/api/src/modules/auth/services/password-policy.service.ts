@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import * as bcrypt from 'bcrypt';
 
 export interface PasswordPolicy {
@@ -40,7 +40,7 @@ export class PasswordPolicyService {
   private policyCacheTime: number = 0;
   private readonly CACHE_TTL = 60000; // 1 minute cache
 
-  constructor(private prisma: DatabaseService) {}
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Get the active password policy

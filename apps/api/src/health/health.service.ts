@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
-import { CacheService } from '../cache/cache.service';
+import { PrismaService } from '@bandhub/database';
+import { CacheService } from '@bandhub/cache';
 import { QueueService } from '../queue/queue.service';
 
 @Injectable()
@@ -8,7 +8,7 @@ export class HealthService {
   private readonly logger = new Logger(HealthService.name);
 
   constructor(
-    private readonly db: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly cache: CacheService,
     private readonly queueService: QueueService,
   ) {}
@@ -16,9 +16,9 @@ export class HealthService {
   async checkDatabaseDetailed() {
     try {
       // Active connections
-      const active = await this.db.$queryRaw`SELECT count(*)::int as active FROM pg_stat_activity WHERE state = 'active'`;
-      const idle = await this.db.$queryRaw`SELECT count(*)::int as idle FROM pg_stat_activity WHERE state = 'idle'`;
-      const dbname = await this.db.$queryRaw`SELECT current_database() as name`;
+      const active = await this.prisma.$queryRaw`SELECT count(*)::int as active FROM pg_stat_activity WHERE state = 'active'`;
+      const idle = await this.prisma.$queryRaw`SELECT count(*)::int as idle FROM pg_stat_activity WHERE state = 'idle'`;
+      const dbname = await this.prisma.$queryRaw`SELECT current_database() as name`;
 
       return {
         status: 'ok',
@@ -105,7 +105,7 @@ export class HealthService {
   async liveness() {
     // liveness: basic process alive + optional light DB ping
     try {
-      await this.db.$queryRaw`SELECT 1`; // quick ping
+      await this.prisma.$queryRaw`SELECT 1`; // quick ping
       return { status: 'alive' };
     } catch (error) {
       return { status: 'dead', error: (error as Error).message };

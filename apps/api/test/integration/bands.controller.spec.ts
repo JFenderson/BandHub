@@ -926,4 +926,21 @@ describe('BandsController (Integration)', () => {
       expect(response.body).toEqual({});
     });
   });
+
+describe('GET /api/bands/trending', () => {
+  it('should return bands sorted by trending score', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/bands/trending?timeframe=week')
+      .expect(200);
+
+    const bands = response.body;
+    for (let i = 1; i < bands.length; i++) {
+      expect(bands[i-1].metrics.trendingScore).toBeGreaterThanOrEqual(
+        bands[i].metrics.trendingScore
+      );
+    }
+  });
+});
+
+
 });

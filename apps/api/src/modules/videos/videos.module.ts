@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { VideosController } from './videos.controller';
 import { VideosService } from './videos.service';
 import { VideosRepository } from './videos.repository';
-import { DatabaseModule } from '../../database/database.module';
-import { CacheModule } from '../../cache/cache.module';
+import { PrismaModule } from '@bandhub/database';
+import { CacheModule } from '@bandhub/cache';
 
 @Module({
-  imports: [DatabaseModule, CacheModule],
+  imports: [PrismaModule, CacheModule],
   controllers: [VideosController],
   providers: [VideosService, VideosRepository],
   exports: [VideosService, VideosRepository],

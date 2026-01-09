@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { CacheStrategyService, CACHE_TTL } from '../../cache/cache-strategy.service';
-import { CacheKeyBuilder } from '../../cache/dto/cache-key.dto';
-import { BandsRepository } from './bands.repository';
-import { CreateBandDto, UpdateBandDto, BandQueryDto } from './dto';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { CacheStrategyService, CACHE_TTL, CacheKeyBuilder } from '@bandhub/cache';
+import { BandsRepository } from '../bands.repository';
+import { CreateBandDto, UpdateBandDto, BandQueryDto } from '../dto';
+import { PrismaService } from '@bandhub/database';
 
 /**
  * BandsService with comprehensive caching
@@ -24,6 +24,7 @@ export class BandsService {
   constructor(
     private readonly bandsRepository: BandsRepository,
     private readonly cacheStrategy: CacheStrategyService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**

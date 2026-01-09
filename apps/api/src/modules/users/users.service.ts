@@ -9,7 +9,6 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { DatabaseService } from '../../database/database.service';
 import { EmailService } from '../email/email.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto, UserLoginResponseDto } from './dto/login-user.dto';
@@ -17,6 +16,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { PrismaService} from '@bandhub/database';
 
 @Injectable()
 export class UsersService {
@@ -28,7 +28,7 @@ export class UsersService {
   private readonly RESET_TOKEN_EXPIRY_HOURS = 1;
 
   constructor(
-    private prisma: DatabaseService,
+    private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,

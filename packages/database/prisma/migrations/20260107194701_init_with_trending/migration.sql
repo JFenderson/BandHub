@@ -11,6 +11,9 @@ CREATE TYPE "SyncJobType" AS ENUM ('FULL_SYNC', 'INCREMENTAL_SYNC', 'SINGLE_VIDE
 CREATE TYPE "SyncJobStatus" AS ENUM ('QUEUED', 'IN_PROGRESS', 'COMPLETED', 'FAILED');
 
 -- CreateEnum
+CREATE TYPE "TrendDirection" AS ENUM ('UP', 'DOWN', 'STABLE', 'NEW');
+
+-- CreateEnum
 CREATE TYPE "EventType" AS ENUM ('BAYOU_CLASSIC', 'SWAC_CHAMPIONSHIP', 'HOMECOMING', 'BATTLE_OF_THE_BANDS', 'FOOTBALL_GAME', 'PARADE', 'CONCERT', 'COMPETITION', 'EXHIBITION', 'OTHER');
 
 -- CreateEnum
@@ -133,6 +136,7 @@ CREATE TABLE "videos" (
     "opponent_band_id" TEXT,
     "category_id" TEXT,
     "creatorId" TEXT,
+    "search_vector" tsvector,
 
     CONSTRAINT "videos_pkey" PRIMARY KEY ("id")
 );
@@ -324,6 +328,51 @@ CREATE TABLE "magic_links" (
 );
 
 -- CreateTable
+CREATE TABLE "BandMetrics" (
+    "id" TEXT NOT NULL,
+    "bandId" TEXT NOT NULL,
+    "totalViews" INTEGER NOT NULL DEFAULT 0,
+    "viewsToday" INTEGER NOT NULL DEFAULT 0,
+    "viewsThisWeek" INTEGER NOT NULL DEFAULT 0,
+    "viewsThisMonth" INTEGER NOT NULL DEFAULT 0,
+    "totalFavorites" INTEGER NOT NULL DEFAULT 0,
+    "totalFollowers" INTEGER NOT NULL DEFAULT 0,
+    "totalShares" INTEGER NOT NULL DEFAULT 0,
+    "videoCount" INTEGER NOT NULL DEFAULT 0,
+    "recentUploads" INTEGER NOT NULL DEFAULT 0,
+    "avgVideoViews" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "trendingScore" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "trendDirection" "TrendDirection" NOT NULL DEFAULT 'STABLE',
+    "previousRank" INTEGER,
+    "currentRank" INTEGER,
+    "lastCalculated" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "BandMetrics_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserBandFavorite" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "bandId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserBandFavorite_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BandShare" (
+    "id" TEXT NOT NULL,
+    "bandId" TEXT NOT NULL,
+    "platform" TEXT NOT NULL,
+    "userId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BandShare_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "oauth_accounts" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
@@ -466,6 +515,17 @@ CREATE TABLE "quota_alerts" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "quota_alerts_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "popular_searches" (
+    "id" TEXT NOT NULL,
+    "query" TEXT NOT NULL,
+    "searchCount" INTEGER NOT NULL DEFAULT 1,
+    "lastSearched" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "popular_searches_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -787,6 +847,9 @@ CREATE INDEX "videos_quality_score_idx" ON "videos"("quality_score" DESC);
 CREATE INDEX "videos_band_id_view_count_idx" ON "videos"("band_id", "view_count" DESC);
 
 -- CreateIndex
+CREATE INDEX "videos_search_vector_idx" ON "videos" USING GIN ("search_vector");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "categories_name_key" ON "categories"("name");
 
 -- CreateIndex
@@ -916,6 +979,36 @@ CREATE INDEX "magic_links_email_idx" ON "magic_links"("email");
 CREATE INDEX "magic_links_expires_at_idx" ON "magic_links"("expires_at");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "BandMetrics_bandId_key" ON "BandMetrics"("bandId");
+
+-- CreateIndex
+CREATE INDEX "BandMetrics_trendingScore_idx" ON "BandMetrics"("trendingScore" DESC);
+
+-- CreateIndex
+CREATE INDEX "BandMetrics_bandId_idx" ON "BandMetrics"("bandId");
+
+-- CreateIndex
+CREATE INDEX "BandMetrics_lastCalculated_idx" ON "BandMetrics"("lastCalculated");
+
+-- CreateIndex
+CREATE INDEX "UserBandFavorite_userId_idx" ON "UserBandFavorite"("userId");
+
+-- CreateIndex
+CREATE INDEX "UserBandFavorite_bandId_idx" ON "UserBandFavorite"("bandId");
+
+-- CreateIndex
+CREATE INDEX "UserBandFavorite_createdAt_idx" ON "UserBandFavorite"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserBandFavorite_userId_bandId_key" ON "UserBandFavorite"("userId", "bandId");
+
+-- CreateIndex
+CREATE INDEX "BandShare_bandId_idx" ON "BandShare"("bandId");
+
+-- CreateIndex
+CREATE INDEX "BandShare_createdAt_idx" ON "BandShare"("createdAt");
+
+-- CreateIndex
 CREATE INDEX "oauth_accounts_user_id_idx" ON "oauth_accounts"("user_id");
 
 -- CreateIndex
@@ -1019,6 +1112,15 @@ CREATE INDEX "quota_alerts_acknowledged_idx" ON "quota_alerts"("acknowledged");
 
 -- CreateIndex
 CREATE INDEX "quota_alerts_level_acknowledged_idx" ON "quota_alerts"("level", "acknowledged");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "popular_searches_query_key" ON "popular_searches"("query");
+
+-- CreateIndex
+CREATE INDEX "popular_searches_searchCount_idx" ON "popular_searches"("searchCount");
+
+-- CreateIndex
+CREATE INDEX "popular_searches_lastSearched_idx" ON "popular_searches"("lastSearched");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "api_keys_key_key" ON "api_keys"("key");
@@ -1160,6 +1262,15 @@ ALTER TABLE "password_history" ADD CONSTRAINT "password_history_user_id_fkey" FO
 
 -- AddForeignKey
 ALTER TABLE "magic_links" ADD CONSTRAINT "magic_links_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "admin_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BandMetrics" ADD CONSTRAINT "BandMetrics_bandId_fkey" FOREIGN KEY ("bandId") REFERENCES "bands"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserBandFavorite" ADD CONSTRAINT "UserBandFavorite_bandId_fkey" FOREIGN KEY ("bandId") REFERENCES "bands"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BandShare" ADD CONSTRAINT "BandShare_bandId_fkey" FOREIGN KEY ("bandId") REFERENCES "bands"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "oauth_accounts" ADD CONSTRAINT "oauth_accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "admin_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

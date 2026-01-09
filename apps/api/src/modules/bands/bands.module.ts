@@ -1,15 +1,22 @@
 import { Module } from '@nestjs/common';
-import { BandsController } from './bands.controller';
-import { BandsService } from './bands.service';
+import { BandsService } from './services/bands.service';
+import { BandsController } from './controllers/bands.controller';
+import { FeaturedRecommendationsService } from './services/featured-recommendations.service';
+import { TrendingService } from './services/trending.service';
+import { TrendingController } from './controllers/trending.controller';
+import { PrismaModule } from '@bandhub/database';
+import { CacheModule } from '@bandhub/cache';
 import { BandsRepository } from './bands.repository';
-import { FeaturedRecommendationsService } from './featured-recommendations.service';
-import { DatabaseModule } from '../../database/database.module'; // Add this import
-import { CacheModule } from '../../cache/cache.module';
 
 @Module({
-  imports: [DatabaseModule, CacheModule], // Add DatabaseModule here
-  controllers: [BandsController],
-  providers: [BandsService, BandsRepository, FeaturedRecommendationsService],
-  exports: [BandsService, BandsRepository, FeaturedRecommendationsService],
+  imports: [PrismaModule, CacheModule],
+  controllers: [BandsController, TrendingController],
+  providers: [
+    BandsService,
+    FeaturedRecommendationsService,
+    TrendingService,
+    BandsRepository,
+  ],
+  exports: [BandsService, TrendingService],
 })
 export class BandsModule {}

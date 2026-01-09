@@ -7,7 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { DatabaseModule } from '../../database/database.module';
+import { PrismaModule } from '@bandhub/database';
 import { ApiKeyService } from './services/api-key.service';
 import { JwtRotationService } from './services/jwt-rotation.service';
 import { SecurityAuditService } from './services/security-audit.service';
@@ -24,10 +24,14 @@ import { MfaController } from './controllers/mfa.controller';
 import { PasswordController } from './controllers/password.controller';
 import { MagicLinkController } from './controllers/magic-link.controller';
 import { EmailModule } from '../email/email.module';
+import { RolesGuard, ApiKeyGuard } from 'src/common';
+import { OptionalAuthGuard } from 'src/common/guards/optional-auth.guard';
+import { UserAuthGuard } from '../users/guards/user-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [
-    DatabaseModule,
+    PrismaModule,
     EmailModule,
     PassportModule,
     ScheduleModule.forRoot(),
@@ -75,6 +79,12 @@ import { EmailModule } from '../email/email.module';
     DeviceFingerprintService,
     JwtRotationService,
     SecurityAuditService,
+      JwtStrategy,
+    JwtAuthGuard,
+    OptionalAuthGuard, // Add this
+    RolesGuard,
+    ApiKeyGuard,
+    UserAuthGuard,
   ],
   exports: [
     AuthService,
@@ -91,6 +101,12 @@ import { EmailModule } from '../email/email.module';
     DeviceFingerprintService,
     JwtRotationService,
     SecurityAuditService,
+        JwtModule,
+    JwtAuthGuard,
+    OptionalAuthGuard, // Add this
+    RolesGuard,
+    ApiKeyGuard,
+    UserAuthGuard,
   ],
 })
 export class AuthModule {}

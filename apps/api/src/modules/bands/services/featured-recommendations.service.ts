@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import { Prisma } from '@prisma/client';
 
 // Configuration constants for the recommendation algorithm
@@ -59,7 +59,7 @@ export interface FeaturedRecommendation {
 
 @Injectable()
 export class FeaturedRecommendationsService {
-  constructor(private readonly prisma: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async getRecommendations(limit: number = 5): Promise<FeaturedRecommendation[]> {
     // Get all active bands with their stats

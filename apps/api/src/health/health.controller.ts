@@ -68,7 +68,7 @@ export class HealthController {
   @Get('test-rate-limit')
 async testRateLimit() {
   const { RedisRateLimiterService } = await import('../common/services/redis-rate-limiter.service');
-  const { CacheService } = await import('../cache/cache.service');
+  const { CacheService } = await import('@bandhub/cache');
   
   try {
     const cacheService = new CacheService(null); // might fail but let's see

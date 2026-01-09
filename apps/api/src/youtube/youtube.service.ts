@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { google, youtube_v3 } from 'googleapis';
-import { DatabaseService } from '../database/database.service';
-import { CacheStrategyService, CACHE_TTL } from '../cache/cache-strategy.service';
-import { CacheKeyBuilder } from '../cache/dto/cache-key.dto';
+import { GaxiosResponse } from 'gaxios';
+import { CacheStrategyService, CACHE_TTL, CacheKeyBuilder } from '@bandhub/cache';
+import { PrismaService} from '@bandhub/database';
 
 export interface VideoMetadata {
   youtubeId: string;
@@ -57,7 +57,7 @@ export class YoutubeService {
 
   constructor(
     private configService: ConfigService,
-    private db: DatabaseService,
+    private prisma: PrismaService,
     private cacheStrategy: CacheStrategyService,
   ) {
     const apiKey = this.configService.get('YOUTUBE_API_KEY');
@@ -200,7 +200,7 @@ export class YoutubeService {
   async searchVideosForBand(bandId: string, keywords: string[], maxResults = 50) {
     if (!this.youtube) throw new Error('YouTube API not configured');
 
-    const band = await this.db.band.findUnique({ where: { id: bandId } });
+    const band = await this.prisma.band.findUnique({ where: { id: bandId } });
     if (!band) throw new Error('Band not found');
 
     const searchTerms = [

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 
 export type SecurityEventType =
   | 'LOGIN_SUCCESS'
@@ -62,7 +62,7 @@ export class SecurityService {
   private geoIpEnabled: boolean = false;
 
   constructor(
-    private prisma: DatabaseService,
+    private prisma: PrismaService,
     private configService: ConfigService,
   ) {
     // Check if GeoIP is configured

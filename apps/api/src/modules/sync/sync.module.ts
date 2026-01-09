@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { SyncController, AdminSyncJobController, AdminQueueController, AdminSyncErrorController } from './sync.controller';
 import { SyncService } from './sync.service';
 import { QueueModule } from '../../queue/queue.module';
-import { DatabaseModule } from '../../database/database.module';
+import { PrismaModule } from '@bandhub/database';
 import { YoutubeModule } from '../../youtube/youtube.module'; // Add this
 
 @Module({
-  imports: [QueueModule, DatabaseModule, YoutubeModule],
+  imports: [QueueModule, PrismaModule, YoutubeModule],
   controllers: [SyncController, AdminSyncJobController, AdminQueueController, AdminSyncErrorController],
   providers: [SyncService],
   exports: [SyncService],

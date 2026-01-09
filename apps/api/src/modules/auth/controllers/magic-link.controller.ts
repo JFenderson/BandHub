@@ -20,7 +20,7 @@ import { ConfigService } from '@nestjs/config';
 import { MagicLinkService } from '../services/magic-link.service';
 import { SecurityService } from '../services/security.service';
 import { SessionService } from '../services/session.service';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 
 class CreateMagicLinkDto {
   @ApiProperty({
@@ -51,7 +51,7 @@ export class MagicLinkController {
     private readonly sessionService: SessionService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly prisma: DatabaseService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Post('create')

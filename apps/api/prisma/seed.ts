@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '@bandhub/database';
 import { seedCategories, seedBands, seedCreators } from './seeders';
 
 const prisma = new PrismaClient();

@@ -4,7 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import { CacheService } from './cache/cache.service';
+import { CacheService } from '@bandhub/cache';
 import { QueueService } from './queue/queue.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import {

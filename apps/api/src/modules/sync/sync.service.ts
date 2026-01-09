@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { QueueService } from '../../queue/queue.service';
-import { DatabaseService } from '../../database/database.service';
 import { QUEUE_NAMES, SyncMode } from '@hbcu-band-hub/shared-types';
 import { SyncJobFilterDto } from './dto/sync-job-filter.dto';
 import { SyncJobDetailDto, SyncJobListResponseDto } from './dto/sync-job-detail.dto';
@@ -8,13 +7,14 @@ import { QueueStatusDto, ErrorStatsResponseDto, ErrorStatDto } from './dto/queue
 import { TriggerSyncDto, TriggerSyncType } from './dto/trigger-sync.dto';
 import { Prisma } from '@prisma/client';
 import { YoutubeService } from '../../youtube/youtube.service';
+import { PrismaService } from '@bandhub/database';
 
 @Injectable()
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
   constructor(
     private readonly queueService: QueueService,
-    private readonly database: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly youtubeService: YoutubeService,
   ) {}
 
@@ -110,7 +110,7 @@ export class SyncService {
   publishedBefore?: Date;
   maxVideos?: number;
 }) {
-  const creator = await this.database.contentCreator.findUnique({ 
+  const creator = await this.prisma.contentCreator.findUnique({ 
     where: { id: creatorId } 
   });
   
@@ -138,13 +138,13 @@ export class SyncService {
       );
 
       // Save video with creator attribution
-      const existing = await this.database.video.findUnique({
+      const existing = await this.prisma.video.findUnique({
         where: { youtubeId: video.youtubeId },
       });
 
       if (existing) {
         // Update existing video
-        await this.database.video.update({
+        await this.prisma.video.update({
           where: { id: existing.id },
           data: {
             viewCount: video.viewCount,
@@ -157,7 +157,7 @@ export class SyncService {
         updated++;
       } else {
         // Create new video
-        await this.database.video.create({
+        await this.prisma.video.create({
           data: {
             youtubeId: video.youtubeId,
             title: video.title,
@@ -180,7 +180,7 @@ export class SyncService {
   }
 
   // Update creator stats
-  await this.database.contentCreator.update({
+  await this.prisma.contentCreator.update({
     where: { id: creatorId },
     data: {
       lastSyncedAt: new Date(),
@@ -288,9 +288,9 @@ export class SyncService {
       }
     }
 
-    const total = await this.database.syncJob.count({ where });
+    const total = await this.prisma.syncJob.count({ where });
 
-    const syncJobs = await this.database.syncJob.findMany({
+    const syncJobs = await this.prisma.syncJob.findMany({
       where,
       skip,
       take: limit,
@@ -337,7 +337,7 @@ export class SyncService {
   }
 
   async getSyncJobById(id: string): Promise<SyncJobDetailDto> {
-    const syncJob = await this.database.syncJob.findUnique({
+    const syncJob = await this.prisma.syncJob.findUnique({
       where: { id },
       include: {
         band: {
@@ -375,7 +375,7 @@ export class SyncService {
   }
 
   async retryJob(id: string): Promise<{ message: string; jobId: string }> {
-    const syncJob = await this.database.syncJob.findUnique({
+    const syncJob = await this.prisma.syncJob.findUnique({
       where: { id },
     });
 
@@ -444,11 +444,11 @@ export class SyncService {
   }
 
   async clearFailedJobs(): Promise<{ message: string; count: number }> {
-    const failedJobs = await this.database.syncJob.findMany({
+    const failedJobs = await this.prisma.syncJob.findMany({
       where: { status: 'FAILED' },
     });
 
-    await this.database.syncJob.deleteMany({
+    await this.prisma.syncJob.deleteMany({
       where: { status: 'FAILED' },
     });
 
@@ -459,7 +459,7 @@ export class SyncService {
   }
 
   async getErrorStats(): Promise<ErrorStatsResponseDto> {
-    const jobsWithErrors = await this.database.syncJob.findMany({
+    const jobsWithErrors = await this.prisma.syncJob.findMany({
       where: {
         errors: {
           isEmpty: false,

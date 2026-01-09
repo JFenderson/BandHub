@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CacheStrategyService, CACHE_TTL } from './cache-strategy.service';
 import { CacheKeyBuilder } from './dto/cache-key.dto';
-import { DatabaseService } from '../database/database.service';
+import { PrismaService } from '@bandhub/database';
 
 /**
  * CacheWarmingService
@@ -24,9 +24,9 @@ export class CacheWarmingService implements OnModuleInit {
   private readonly logger = new Logger(CacheWarmingService.name);
 
   constructor(
-    private readonly cacheStrategy: CacheStrategyService,
-    private readonly db: DatabaseService,
-  ) {}
+private readonly cacheStrategy: CacheStrategyService,
+private readonly prisma: PrismaService,
+) {}
 
   /**
    * Warm cache on application startup
@@ -75,7 +75,7 @@ export class CacheWarmingService implements OnModuleInit {
    */
   async warmPopularBands(): Promise<void> {
     try {
-      const popularBands = await this.db.band.findMany({
+      const popularBands = await this.prisma.band.findMany({
         take: 20,
         orderBy: {
           videos: {
@@ -111,7 +111,7 @@ export class CacheWarmingService implements OnModuleInit {
    */
   async warmTrendingVideos(): Promise<void> {
     try {
-      const trendingVideos = await this.db.video.findMany({
+      const trendingVideos = await this.prisma.video.findMany({
         take: 50,
         orderBy: { viewCount: 'desc' },
         where: { isHidden: false },
@@ -161,7 +161,7 @@ export class CacheWarmingService implements OnModuleInit {
    */
   async warmRecentVideos(): Promise<void> {
     try {
-      const recentVideos = await this.db.video.findMany({
+      const recentVideos = await this.prisma.video.findMany({
         take: 100,
         orderBy: { createdAt: 'desc' },
         where: { isHidden: false },
@@ -202,7 +202,7 @@ export class CacheWarmingService implements OnModuleInit {
    */
   async warmCategories(): Promise<void> {
     try {
-      const categories = await this.db.category.findMany({
+      const categories = await this.prisma.category.findMany({
         orderBy: { sortOrder: 'asc' },
         include: {
           _count: {
@@ -227,7 +227,7 @@ export class CacheWarmingService implements OnModuleInit {
   async warmPopularVideosByBand(): Promise<void> {
     try {
       // Get top 10 bands
-      const topBands = await this.db.band.findMany({
+      const topBands = await this.prisma.band.findMany({
         take: 10,
         orderBy: {
           videos: {
@@ -239,7 +239,7 @@ export class CacheWarmingService implements OnModuleInit {
 
       // Warm popular videos for each band
       for (const band of topBands) {
-        const videos = await this.db.video.findMany({
+        const videos = await this.prisma.video.findMany({
           take: 10,
           where: {
             bandId: band.id,
@@ -274,7 +274,7 @@ export class CacheWarmingService implements OnModuleInit {
    */
   async warmBand(bandId: string): Promise<void> {
     try {
-      const band = await this.db.band.findUnique({
+      const band = await this.prisma.band.findUnique({
         where: { id: bandId },
         include: {
           _count: {
@@ -293,7 +293,7 @@ export class CacheWarmingService implements OnModuleInit {
       await this.cacheStrategy.set(profileKey, band, CACHE_TTL.BAND_PROFILE, true);
 
       // Warm popular videos for this band
-      const videos = await this.db.video.findMany({
+      const videos = await this.prisma.video.findMany({
         take: 10,
         where: { bandId, isHidden: false },
         orderBy: { viewCount: 'desc' },

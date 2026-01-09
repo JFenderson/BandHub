@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 
 export type OAuthProvider = 'google' | 'microsoft';
 
@@ -31,7 +31,7 @@ export interface OAuthAccountInfo {
 @Injectable()
 export class OAuthService {
   constructor(
-    private prisma: DatabaseService,
+    private prisma: PrismaService,
     private configService: ConfigService,
   ) {}
 

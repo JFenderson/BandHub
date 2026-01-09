@@ -14,7 +14,7 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import { CacheService } from '../../cache/cache.service';
+import { CacheService } from '@bandhub/cache';
 import {
   RateLimitConfig,
   RateLimitResult,

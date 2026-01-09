@@ -44,6 +44,9 @@ model Band {
   videos             Video[]             @relation("BandVideos")
   opponentVideos     Video[]             @relation("OpponentBandVideos")
   youtubeVideos      YouTubeVideo[]
+  metrics            BandMetrics? // One-to-one: Each band has one metrics record
+  favorites          UserBandFavorite[] // One-to-many: Band can be favorited by many users
+  shares             BandShare[] // One-to-many: Band can be shared many times
 
   @@index([slug])
   @@index([schoolName])
@@ -159,6 +162,7 @@ model Video {
   creator        ContentCreator? @relation(fields: [creatorId], references: [id])
   opponentBand   Band?           @relation("OpponentBandVideos", fields: [opponentBandId], references: [id])
   watchLater     WatchLater[]
+  search_vector Unsupported("tsvector")?
 
   @@index([bandId])
   @@index([opponentBandId])
@@ -180,6 +184,7 @@ model Video {
   @@index([duration])
   @@index([qualityScore(sort: Desc)])
   @@index([bandId, viewCount(sort: Desc)])
+  @@index([search_vector], type: Gin)
   @@map("videos")
 }
 
@@ -413,6 +418,67 @@ model MagicLink {
   @@index([email])
   @@index([expiresAt])
   @@map("magic_links")
+}
+
+model BandMetrics {
+  id     String @id @default(cuid())
+  bandId String @unique
+  band   Band   @relation(fields: [bandId], references: [id], onDelete: Cascade)
+
+  // View metrics
+  totalViews     Int @default(0)
+  viewsToday     Int @default(0)
+  viewsThisWeek  Int @default(0)
+  viewsThisMonth Int @default(0)
+
+  // Engagement metrics
+  totalFavorites Int @default(0)
+  totalFollowers Int @default(0)
+  totalShares    Int @default(0)
+
+  // Content metrics
+  videoCount    Int   @default(0)
+  recentUploads Int   @default(0) // Last 7 days
+  avgVideoViews Float @default(0)
+
+  // Trending score (composite calculation)
+  trendingScore  Float          @default(0)
+  trendDirection TrendDirection @default(STABLE)
+  previousRank   Int?
+  currentRank    Int?
+
+  // Metadata
+  lastCalculated DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([trendingScore(sort: Desc)])
+  @@index([bandId])
+  @@index([lastCalculated])
+}
+
+model UserBandFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  bandId    String
+  band      Band     @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, bandId])
+  @@index([userId])
+  @@index([bandId])
+  @@index([createdAt])
+}
+
+model BandShare {
+  id        String   @id @default(cuid())
+  bandId    String
+  band      Band     @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  platform  String // twitter, facebook, email, etc.
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([bandId])
+  @@index([createdAt])
 }
 
 model OAuthAccount {
@@ -821,6 +887,13 @@ enum SyncJobStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum TrendDirection {
+  UP
+  DOWN
+  STABLE
+  NEW
 }
 
 enum EventType {

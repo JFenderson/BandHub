@@ -6,16 +6,12 @@
   "workspaces": [
     "apps/*",
     "libs/*",
-    "libs/shared/types"
+    "libs/shared/types",
+    "packages/*"
   ],
   "scripts": {
-    "start:prod": "node dist/apps/api/src/main.js",
-    "setup": "npm install && npm run build:shared && npm run db:generate && npm run db:migrate && npm run db:seed",
-    "build:shared": "cd libs/shared/types && npm run build",
-    "dev": "npm run build:shared && turbo run dev",
     "dev:api": "npm run build:shared && cd apps/api && npm run dev",
     "dev:worker": "npm run build:shared && cd apps/worker && npm run start:dev",
-    "build": "npm run build:shared && turbo run build",
     "build:api": "npm run build:shared && nest build api",
     "build:worker": "npm run build:shared && nest build worker",
     "start": "turbo run start",
@@ -31,7 +27,15 @@
     "backfill": "tsx apps/api/src/scripts/backfill-historical-videos.ts",
     "backfill:bands": "tsx apps/api/scripts/backfill-band-videos.ts",
     "backfill:creators": "tsx apps/api/scripts/backfill-creator-videos.ts",
-    "match:videos": "tsx apps/api/scripts/match-videos-to-bands.ts"
+    "match:videos": "tsx apps/api/scripts/match-videos-to-bands.ts",
+    "prisma:migrate": "cd packages/database && npm run prisma:migrate",
+    "start:prod": "node dist/apps/api/src/main.js",
+    "setup": "npm install && npm run build:packages && npm run prisma:generate && npm run db:migrate && npm run db:seed",
+    "build:shared": "cd libs/shared/types && npm run build",
+    "build:packages": "npm run build:shared && cd packages/database && npm run build && cd ../cache && npm run build",
+    "prisma:generate": "cd packages/database && npm run prisma:generate",
+    "dev": "npm run build:packages && npm run prisma:generate && turbo run dev",
+    "build": "npm run build:packages && npm run prisma:generate && turbo run build"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
@@ -65,8 +69,10 @@
     "@sentry/nextjs": "^8.33.1",
     "@sentry/node": "^8.55.0",
     "bullmq": "^5.64.0",
+    "framer-motion": "^12.24.10",
     "googleapis": "^166.0.0",
     "ioredis": "^5.8.2",
+    "lucide-react": "^0.562.0",
     "pino": "^9.4.0",
     "pino-http": "^10.4.0",
     "prisma": "5.22.0",

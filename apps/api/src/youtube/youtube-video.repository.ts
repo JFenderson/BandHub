@@ -2,7 +2,8 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, SyncStatus } from '@prisma/client';
-import { DatabaseService } from '../database/database.service';
+import { PrismaService} from '@bandhub/database';
+
 
 export interface YouTubeVideoQueryDto {
   bandId?: string;
@@ -41,7 +42,7 @@ export interface YouTubeVideoCreateInput {
 export class YouTubeVideoRepository {
   private readonly logger = new Logger(YouTubeVideoRepository.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findMany(query: YouTubeVideoQueryDto) {
     const {
@@ -88,7 +89,7 @@ export class YouTubeVideoRepository {
     const takeValue = Math.max(1, Math.min(Number(limit) || 20, 100));
 
     const [videos, total] = await Promise.all([
-      this.db.youTubeVideo.findMany({
+      this.prisma.youTubeVideo.findMany({
         where,
         orderBy,
         skip,
@@ -132,7 +133,7 @@ export class YouTubeVideoRepository {
           },
         },
       }),
-      this.db.youTubeVideo.count({ where }),
+      this.prisma.youTubeVideo.count({ where }),
     ]);
 
     return {
@@ -147,7 +148,7 @@ export class YouTubeVideoRepository {
   }
 
   async findById(id: string) {
-    return this.db.youTubeVideo.findUnique({
+    return this.prisma.youTubeVideo.findUnique({
       where: { id },
       include: {
         band: {
@@ -173,7 +174,7 @@ export class YouTubeVideoRepository {
   }
 
   async findByYoutubeId(youtubeId: string) {
-    return this.db.youTubeVideo.findUnique({
+    return this.prisma.youTubeVideo.findUnique({
       where: { youtubeId },
       select: {
         id: true,
@@ -188,7 +189,7 @@ export class YouTubeVideoRepository {
   }
 
   async create(data: YouTubeVideoCreateInput) {
-    return this.db.youTubeVideo.create({
+    return this.prisma.youTubeVideo.create({
       data: {
         youtubeId: data.youtubeId,
         title: data.title,
@@ -236,7 +237,7 @@ export class YouTubeVideoRepository {
       updateData.creator = { connect: { id: data.creatorId } };
     }
 
-    const record = await this.db.youTubeVideo.upsert({
+    const record = await this.prisma.youTubeVideo.upsert({
       where: { youtubeId: data.youtubeId },
       create: {
         youtubeId: data.youtubeId,
@@ -306,7 +307,7 @@ export class YouTubeVideoRepository {
   }
 
   async update(id: string, data: Prisma.YouTubeVideoUpdateInput) {
-    return this.db.youTubeVideo.update({
+    return this.prisma.youTubeVideo.update({
       where: { id },
       data: {
         ...data,
@@ -321,25 +322,25 @@ export class YouTubeVideoRepository {
   }
 
   async delete(id: string) {
-    return this.db.youTubeVideo.delete({
+    return this.prisma.youTubeVideo.delete({
       where: { id },
     });
   }
 
   async getStats() {
     const [total, byBand, byCreator, bySyncStatus] = await Promise.all([
-      this.db.youTubeVideo.count(),
-      this.db.youTubeVideo.groupBy({
+      this.prisma.youTubeVideo.count(),
+      this.prisma.youTubeVideo.groupBy({
         by: ['bandId'],
         _count: true,
         where: { bandId: { not: null } },
       }),
-      this.db.youTubeVideo.groupBy({
+      this.prisma.youTubeVideo.groupBy({
         by: ['creatorId'],
         _count: true,
         where: { creatorId: { not: null } },
       }),
-      this.db.youTubeVideo.groupBy({
+      this.prisma.youTubeVideo.groupBy({
         by: ['syncStatus'],
         _count: true,
       }),
@@ -368,7 +369,7 @@ export class YouTubeVideoRepository {
       ];
     }
 
-    return this.db.youTubeVideo.findMany({
+    return this.prisma.youTubeVideo.findMany({
       where,
       select: {
         id: true,
@@ -386,7 +387,7 @@ export class YouTubeVideoRepository {
     if (bandId) where.bandId = bandId;
     if (creatorId) where.creatorId = creatorId;
 
-    const latestVideo = await this.db.youTubeVideo.findFirst({
+    const latestVideo = await this.prisma.youTubeVideo.findFirst({
       where,
       orderBy: { publishedAt: 'desc' },
       select: { publishedAt: true },
@@ -396,13 +397,13 @@ export class YouTubeVideoRepository {
   }
 
   async countByChannel(channelId: string) {
-    return this.db.youTubeVideo.count({
+    return this.prisma.youTubeVideo.count({
       where: { channelId },
     });
   }
 
   async getVideosBySyncStatus(syncStatus: SyncStatus, limit: number = 100): Promise<any[]> {
-    return this.db.youTubeVideo.findMany({
+    return this.prisma.youTubeVideo.findMany({
       where: { syncStatus },
       select: {
         id: true,
@@ -423,7 +424,7 @@ export class YouTubeVideoRepository {
     syncStatus: SyncStatus,
     syncErrors?: string[],
   ) {
-    return this.db.youTubeVideo.updateMany({
+    return this.prisma.youTubeVideo.updateMany({
       where: {
         youtubeId: {
           in: youtubeIds,

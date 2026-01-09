@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import { randomBytes } from 'crypto';
 
 /**
@@ -15,7 +15,7 @@ const EXPIRATION_WARNING_DAYS = [30, 14, 7, 3, 1];
 export class ApiKeyService {
   private readonly logger = new Logger(ApiKeyService.name);
 
-  constructor(private readonly prisma: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Generate a new API key

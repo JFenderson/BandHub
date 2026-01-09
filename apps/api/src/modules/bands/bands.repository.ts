@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import { BandQueryDto } from './dto';
 import { Prisma } from '@prisma/client';
 
@@ -10,7 +10,7 @@ import { Prisma } from '@prisma/client';
  */
 @Injectable()
 export class BandsRepository {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Find many bands with filters
@@ -33,7 +33,7 @@ export class BandsRepository {
     }
 
     const [bands, total] = await Promise.all([
-      this.db.band.findMany({
+      this.prisma.band.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
@@ -44,7 +44,7 @@ export class BandsRepository {
           },
         },
       }),
-      this.db.band.count({ where }),
+      this.prisma.band.count({ where }),
     ]);
 
     return {
@@ -62,7 +62,7 @@ export class BandsRepository {
    * Find band by ID
    */
   async findById(id: string) {
-    return this.db.band.findUnique({
+    return this.prisma.band.findUnique({
       where: { id },
       include: {
         _count: {
@@ -76,7 +76,7 @@ export class BandsRepository {
    * Find band by slug
    */
   async findBySlug(slug: string) {
-    return this.db.band.findUnique({
+    return this.prisma.band.findUnique({
       where: { slug },
       include: {
         _count: {
@@ -90,7 +90,7 @@ export class BandsRepository {
    * Create new band
    */
   async create(data: Prisma.BandCreateInput) {
-    return this.db.band.create({
+    return this.prisma.band.create({
       data,
       include: {
         _count: {
@@ -104,7 +104,7 @@ export class BandsRepository {
    * Update band
    */
   async update(id: string, data: Prisma.BandUpdateInput) {
-    return this.db.band.update({
+    return this.prisma.band.update({
       where: { id },
       data,
       include: {
@@ -119,7 +119,7 @@ export class BandsRepository {
    * Delete band
    */
   async delete(id: string) {
-    return this.db.band.delete({
+    return this.prisma.band.delete({
       where: { id },
     });
   }
@@ -129,7 +129,7 @@ export class BandsRepository {
    * Returns video count and other stats
    */
   async getBandStats(id: string) {
-    const band = await this.db.band.findUnique({
+    const band = await this.prisma.band.findUnique({
       where: { id },
       include: {
         _count: {
@@ -157,7 +157,7 @@ export class BandsRepository {
    * Returns bands ordered by video count
    */
   async getPopularBands(limit: number) {
-    return this.db.band.findMany({
+    return this.prisma.band.findMany({
       take: limit,
       orderBy: {
         videos: {
@@ -177,7 +177,7 @@ export class BandsRepository {
    * Full-text search across name, school, city, state
    */
   async search(query: string) {
-    return this.db.band.findMany({
+    return this.prisma.band.findMany({
       where: {
         OR: [
           { name: { contains: query, mode: 'insensitive' } },

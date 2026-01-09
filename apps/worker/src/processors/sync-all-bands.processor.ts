@@ -11,6 +11,7 @@ import {
 } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 
+
 @Processor(QueueName.VIDEO_SYNC, {
   concurrency: 1,  // Only one sync-all job at a time
 })

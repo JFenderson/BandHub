@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import { Prisma } from '@prisma/client';
 
 
@@ -84,7 +84,7 @@ export interface SearchResult {
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
 
-  constructor(private readonly prisma: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Advanced multi-faceted search with PostgreSQL full-text search

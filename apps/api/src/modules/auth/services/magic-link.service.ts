@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import * as crypto from 'crypto';
 
 export interface MagicLinkResult {
@@ -22,7 +22,7 @@ export class MagicLinkService {
   private readonly RATE_LIMIT_MINUTES = 1; // Minimum time between link requests
 
   constructor(
-    private prisma: DatabaseService,
+    private prisma: PrismaService,
     private configService: ConfigService,
   ) {}
 

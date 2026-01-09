@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import { SyncJobStatus, Prisma } from '@prisma/client';
 import {
   DashboardStatsDto,
@@ -17,7 +17,7 @@ import { VideoDetailDto } from './dto/video-detail.dto';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get dashboard statistics

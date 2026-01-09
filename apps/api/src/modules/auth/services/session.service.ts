@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import * as crypto from 'crypto';
 
 export interface SessionInfo {
@@ -38,7 +38,7 @@ export interface GeoLocation {
 export class SessionService {
   private readonly DEFAULT_SESSION_EXPIRY_DAYS = 30;
 
-  constructor(private prisma: DatabaseService) {}
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Create a new session for a user

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { DatabaseService } from '../../database/database.service';
+import { Prisma, Video, PrismaService } from '@bandhub/database';
 
 export interface VideoQueryDto {
   bandId?: string;
@@ -38,7 +37,7 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
 
 @Injectable()
 export class VideosRepository {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findMany(query: VideoQueryDto) {
     const {
@@ -199,14 +198,14 @@ export class VideosRepository {
     };
 
     const [videos, total] = await Promise.all([
-      this.db.video.findMany({
+      this.prisma.video.findMany({
         where,
         select,
         orderBy,
         ...(skip > 0 && { skip }),
         take: takeValue,
       }),
-      this.db.video.count({ where }),
+      this.prisma.video.count({ where }),
     ]);
 
     return {
@@ -265,7 +264,7 @@ export class VideosRepository {
     const limitParam = `$${paramIndex}`;
     const offsetParam = `$${paramIndex + 1}`;
 
-    const videos = await this.db.$queryRawUnsafe<any[]>(`
+    const videos = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT 
         v.id,
         v.youtube_id as "youtubeId",
@@ -310,7 +309,7 @@ export class VideosRepository {
 
     // Count query - use same params except limit/offset
     const countParams = params.slice(0, -2);
-    const [{ count }] = await this.db.$queryRawUnsafe<[{ count: bigint }]>(`
+    const [{ count }] = await this.prisma.$queryRawUnsafe<[{ count: bigint }]>(`
       SELECT COUNT(*) as count
       FROM videos v
       WHERE ${whereClause}
@@ -328,7 +327,7 @@ export class VideosRepository {
   }
 
   async findById(id: string) {
-    return this.db.video.findUnique({
+    return this.prisma.video.findUnique({
       where: { id },
       select: {
         id: true,
@@ -392,7 +391,7 @@ export class VideosRepository {
   }
 
   async findByYoutubeId(youtubeId: string) {
-    return this.db.video.findUnique({
+    return this.prisma.video.findUnique({
       where: { youtubeId },
       select: {
         id: true,
@@ -406,7 +405,7 @@ export class VideosRepository {
   }
 
   async create(data: Prisma.VideoCreateInput) {
-    return this.db.video.create({
+    return this.prisma.video.create({
       data,
       include: {
         band: { select: { id: true, name: true, slug: true } },
@@ -417,7 +416,7 @@ export class VideosRepository {
   }
 
   async update(id: string, data: Prisma.VideoUpdateInput) {
-    return this.db.video.update({
+    return this.prisma.video.update({
       where: { id },
       data: { ...data, updatedAt: new Date() },
       include: {
@@ -429,11 +428,11 @@ export class VideosRepository {
   }
 
   async delete(id: string) {
-    return this.db.video.delete({ where: { id } });
+    return this.prisma.video.delete({ where: { id } });
   }
 
   async findHidden() {
-    return this.db.video.findMany({
+    return this.prisma.video.findMany({
       where: { isHidden: true },
       select: {
         id: true,
@@ -451,9 +450,9 @@ export class VideosRepository {
 
   async getVideoStats() {
     const [total, hidden, byCategory] = await Promise.all([
-      this.db.video.count(),
-      this.db.video.count({ where: { isHidden: true } }),
-      this.db.video.groupBy({
+      this.prisma.video.count(),
+      this.prisma.video.count({ where: { isHidden: true } }),
+      this.prisma.video.groupBy({
         by: ['categoryId'],
         _count: true,
         where: { isHidden: false, categoryId: { not: null } },
@@ -469,7 +468,7 @@ export class VideosRepository {
   }
 
   async getPopularByBand(bandId: string, limit: number = 10) {
-    return this.db.video.findMany({
+    return this.prisma.video.findMany({
       where: { bandId, isHidden: false },
       select: {
         id: true,
@@ -486,9 +485,9 @@ export class VideosRepository {
   }
 
   async batchUpdateViewCounts(updates: Array<{ id: string; viewCount: number; likeCount: number }>) {
-    return this.db.$transaction(
+    return this.prisma.$transaction(
       updates.map((update) =>
-        this.db.video.update({
+        this.prisma.video.update({
           where: { id: update.id },
           data: {
             viewCount: update.viewCount,

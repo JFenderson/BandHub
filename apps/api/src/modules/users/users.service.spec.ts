@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { EmailService } from '../email/email.service';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '@bandhub/database';
 
 // Mock bcrypt module
 jest.mock('bcrypt', () => ({

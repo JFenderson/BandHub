@@ -2,7 +2,7 @@ import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { QueueName } from '@hbcu-band-hub/shared-types';
-import { PrismaService } from '../services/prisma.service';
+import { PrismaService } from '@bandhub/database';
 
 interface NewVideoNotificationJobData {
   type: 'NEW_VIDEO_NOTIFICATION';

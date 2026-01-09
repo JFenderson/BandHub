@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CacheService } from '../../cache/cache.service';
+import { CacheService } from '@bandhub/cache';
 import { VideosRepository } from './videos.repository';
 import { CreateVideoDto, UpdateVideoDto, VideoQueryDto } from './dto';
-import { DatabaseService } from '../../database/database.service';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { QueueName } from '@hbcu-band-hub/shared-types';
+import { PrismaService } from '@bandhub/database';
 
 /**
  * Production VideosService with full-text search and enhanced caching
@@ -24,7 +27,7 @@ export class VideosService {
     private readonly videosRepository: VideosRepository,
     private readonly cacheService: CacheService,
     private readonly configService: ConfigService,
-    private readonly prismaService: DatabaseService,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async findAll(query: VideoQueryDto) {

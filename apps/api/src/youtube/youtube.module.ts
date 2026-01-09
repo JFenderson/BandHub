@@ -9,8 +9,8 @@ import { YoutubeQuotaController } from './youtube-quota.controller'; // NEW
 import { SyncAdminController } from './sync-admin.controller';
 import { YouTubeAdminController } from './youtube-admin.controller';
 import { YouTubeVideoRepository } from './youtube-video.repository';
-import { DatabaseModule } from '../database/database.module';
-import { CacheModule } from '../cache/cache.module'; // NEW: Needed for quota service
+import { PrismaModule } from '@bandhub/database';
+import { CacheModule } from '@bandhub/cache'; // NEW: Needed for quota service
 
 /**
  * YouTube Module - UPDATED with Quota Management
@@ -30,7 +30,7 @@ import { CacheModule } from '../cache/cache.module'; // NEW: Needed for quota se
   imports: [
     ConfigModule,
     ScheduleModule.forRoot(),
-    DatabaseModule,
+    PrismaModule,
     CacheModule, // NEW: Required for quota tracking
   ],
   controllers: [

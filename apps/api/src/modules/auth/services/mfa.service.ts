@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '@bandhub/database';
 import * as crypto from 'crypto';
 
 // TOTP configuration
@@ -19,7 +19,7 @@ export class MfaService {
   private readonly encryptionKey: Buffer;
 
   constructor(
-    private prisma: DatabaseService,
+    private prisma: PrismaService,
     private configService: ConfigService,
   ) {
     // Get encryption key from environment or generate a warning

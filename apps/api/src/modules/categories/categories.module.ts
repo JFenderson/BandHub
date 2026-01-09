@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
-import { DatabaseModule } from '../../database/database.module';
+import { PrismaModule } from '@bandhub/database';
  
 @Module({
-  imports: [DatabaseModule],
+  imports: [PrismaModule],
   controllers: [CategoriesController],
   providers: [CategoriesService],
   exports: [CategoriesService],

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { FavoritesService } from './favorites.service';
-import { DatabaseService } from '../../database/database.service';
+import { DatabaseService } from '@bandhub/database';
 
 // Mock DatabaseService
 const mockDatabaseService = {
