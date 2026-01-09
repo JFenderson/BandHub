@@ -11,10 +11,12 @@
  *   --band-id    Sync only a specific band by ID
  *   --limit      Maximum number of bands to process (default: all)
  */
-
-import { PrismaClient, SyncStatus } from '@prisma/client';
+import * as dotenv from 'dotenv';
+import { PrismaService } from '@bandhub/database';
+import { SyncStatus } from '@prisma/client';
 import { google, youtube_v3 } from 'googleapis';
-
+dotenv.config();
+const prisma = new PrismaService();
 // Configuration
 const config = {
   YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
@@ -24,7 +26,6 @@ const config = {
   YOUTUBE_LAUNCH_DATE: new Date('2005-04-23'),
 };
 
-const prisma = new PrismaClient();
 let youtube: youtube_v3.Youtube | null = null;
 let quotaUsed = 0;
 

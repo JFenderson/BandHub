@@ -1,6 +1,6 @@
 // YouTube Import Script - Properly loads environment variables
 import { google } from 'googleapis';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '@bandhub/database';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -29,7 +29,8 @@ function loadEnvironmentVariables() {
   return false;
 }
 
-const prisma = new PrismaClient();
+
+const prisma = new PrismaService();
 
 async function importHBCUVideos() {
   // Load environment variables

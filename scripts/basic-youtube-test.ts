@@ -1,8 +1,10 @@
 // YouTube Import Script - Handles Required bandId
 import { google } from 'googleapis';
-import { PrismaClient } from '@prisma/client';
+import * as dotenv from 'dotenv';
+import { PrismaService } from '@bandhub/database';
 
-const prisma = new PrismaClient();
+dotenv.config();
+const prisma = new PrismaService();
 
 async function importHBCUVideos() {
   const API_KEY = process.env.YOUTUBE_API_KEY;

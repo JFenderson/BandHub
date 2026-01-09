@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { randomBytes } from 'crypto';
-
-const prisma = new PrismaClient();
+import * as dotenv from 'dotenv';
+import { PrismaService } from '@bandhub/database';
+dotenv.config();
+const prisma = new PrismaService();
 
 async function createApiKey() {
   const name = process.argv[2] || 'Worker Service';

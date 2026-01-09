@@ -24,11 +24,11 @@
  *   npx tsx apps/api/scripts/sync-videos.ts --dry-run --search
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '@bandhub/database';
 import { execSync } from 'child_process';
 import * as path from 'path';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaService();
 
 // Parse command line arguments
 const args = process.argv.slice(2);

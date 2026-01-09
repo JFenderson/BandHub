@@ -12,8 +12,12 @@
  *   --limit        Maximum number of creators to process (default: all)
  */
 
-import { PrismaClient, SyncStatus } from '@prisma/client';
+import * as dotenv from 'dotenv';
+import { PrismaService } from '@bandhub/database';
+import { SyncStatus } from '@prisma/client';
 import { google, youtube_v3 } from 'googleapis';
+dotenv.config();
+const prisma = new PrismaService();
 
 // Configuration
 const config = {
@@ -24,7 +28,6 @@ const config = {
   YOUTUBE_LAUNCH_DATE: new Date('2005-04-23'),
 };
 
-const prisma = new PrismaClient();
 let youtube: youtube_v3.Youtube | null = null;
 let quotaUsed = 0;
 

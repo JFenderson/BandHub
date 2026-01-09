@@ -1,7 +1,9 @@
+import * as dotenv from 'dotenv';
 import { PrismaService } from '@bandhub/database';
 import { seedCategories, seedBands, seedCreators } from './seeders';
+dotenv.config();
 
-const prisma = new PrismaClient();
+const prisma = new PrismaService();
 
 async function main() {
   console.log('🌱 Starting database seed...\n');

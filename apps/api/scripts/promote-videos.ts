@@ -1,8 +1,9 @@
 import { config } from 'dotenv';
 import { resolve } from 'path';
-import { PrismaClient } from '@prisma/client';
-
-config({ path: resolve(__dirname, '../../.env') });
+import * as dotenv from 'dotenv';
+import { PrismaService } from '@bandhub/database';
+dotenv.config();
+const prisma = new PrismaService();
 
 const prisma = new PrismaClient();
 

@@ -83,7 +83,7 @@
   },
   "prisma": {
     "seed": "ts-node apps/api/prisma/seed.ts",
-    "schema": "apps/api/prisma/schema.prisma"
+    "schema": "packages/database/prisma/schema.prisma"
   },
   "description": "",
   "main": "index.js",

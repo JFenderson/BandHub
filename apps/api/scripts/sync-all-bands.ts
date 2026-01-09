@@ -1,6 +1,6 @@
 // YouTube Import Script - Searches ALL bands in the database
 import { google } from 'googleapis';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '@bandhub/database';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -24,7 +24,8 @@ function loadEnvironmentVariables() {
   return false;
 }
 
-const prisma = new PrismaClient();
+
+const prisma = new PrismaService();
 
 async function syncAllBands() {
   loadEnvironmentVariables();

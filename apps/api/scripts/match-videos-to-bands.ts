@@ -12,9 +12,10 @@
  *   --min-confidence <n>   Minimum confidence score (0-100)
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import * as dotenv from 'dotenv';
+import { PrismaService } from '@bandhub/database';
+dotenv.config();
+const prisma = new PrismaService();
 
 // Parse command line arguments with validation
 const args = process.argv.slice(2);
