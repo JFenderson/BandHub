@@ -10,6 +10,9 @@
  * - Makes invalidation easier with patterns
  * - Human-readable for debugging
  */
+
+import { BandType } from '@prisma/client';
+
 export class CacheKeyBuilder {
   // ============ BAND KEYS ============
   
@@ -24,8 +27,10 @@ export class CacheKeyBuilder {
   /**
    * Key for band list with filters
    * Invalidation triggers: Band created/updated/deleted
+   * NOW includes bandType filter for HBCU vs ALL_STAR segregation
    */
   static bandList(filters?: {
+    bandType?: BandType;
     search?: string;
     state?: string;
     page?: number;
@@ -34,6 +39,7 @@ export class CacheKeyBuilder {
     if (!filters) return 'bands:list:all';
     
     const parts = ['bands', 'list'];
+    if (filters.bandType) parts.push(`type:${filters.bandType}`);
     if (filters.search) parts.push(`search:${this.sanitize(filters.search)}`);
     if (filters.state) parts.push(`state:${filters.state}`);
     if (filters.page) parts.push(`page:${filters.page}`);
@@ -82,7 +88,7 @@ export class CacheKeyBuilder {
     if (filters.creatorId) parts.push(`creator:${filters.creatorId}`);
     if (filters.year) parts.push(`year:${filters.year}`);
     if (filters.sortBy) parts.push(`sort:${filters.sortBy}`);
-    if (filters.sortOrder) parts.push(`order:${filters.sortOrder}`);
+    if (filters.sortOrder) parts.push(filters.sortOrder);
     if (filters.page) parts.push(`page:${filters.page}`);
     if (filters.limit) parts.push(`limit:${filters.limit}`);
     
@@ -91,9 +97,8 @@ export class CacheKeyBuilder {
 
   /**
    * Key for popular videos by band
-   * Invalidation triggers: Video views updated, new videos added
    */
-  static popularVideosByBand(bandId: string, limit: number): string {
+  static popularVideosByBand(bandId: string, limit = 10): string {
     return `videos:popular:band:${bandId}:${limit}`;
   }
 
@@ -101,7 +106,7 @@ export class CacheKeyBuilder {
   
   /**
    * Key for search results
-   * Invalidation triggers: New content added, content updated
+   * Includes type to distinguish band vs video searches
    */
   static searchResults(query: string, filters?: Record<string, any>): string {
     const sanitizedQuery = this.sanitize(query);

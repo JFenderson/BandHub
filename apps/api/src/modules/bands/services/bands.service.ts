@@ -3,6 +3,7 @@ import { CacheStrategyService, CACHE_TTL, CacheKeyBuilder } from '@bandhub/cache
 import { BandsRepository } from '../bands.repository';
 import { CreateBandDto, UpdateBandDto, BandQueryDto } from '../dto';
 import { PrismaService } from '@bandhub/database';
+import { BandType } from '@prisma/client';
 
 /**
  * BandsService with comprehensive caching
@@ -30,9 +31,11 @@ export class BandsService {
   /**
    * Find all bands with filters
    * Caches each unique filter combination
+   * NOW supports filtering by band type (HBCU or ALL_STAR)
    */
   async findAll(query: BandQueryDto) {
     const cacheKey = CacheKeyBuilder.bandList({
+      bandType: query.bandType, // NEW: Include bandType in cache key
       search: query.search,
       state: query.state,
       page: query.page,
@@ -68,7 +71,7 @@ export class BandsService {
 
   /**
    * Find band by slug
-   * Used for public-facing URLs like /bands/jackson-state-university
+   * Used for public-facing URLs like /bands/jackson-state-university or /bands/georgia-all-star-mass-band
    */
   async findBySlug(slug: string) {
     // Use slug in cache key for direct lookups
@@ -90,6 +93,7 @@ export class BandsService {
   /**
    * Create new band
    * Invalidates band lists
+   * NOW defaults to HBCU type unless specified
    */
   async create(data: CreateBandDto) {
     // Generate slug from name
@@ -98,11 +102,12 @@ export class BandsService {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
 
-    // FIX: Ensure all required fields are present
+    // Prepare band data with bandType (defaults to HBCU for backwards compatibility)
     const bandData = {
       ...data,
       slug,
       schoolName: data.schoolName || data.name, // Use name as fallback
+      bandType: data.bandType || BandType.HBCU, // NEW: Default to HBCU bandType
     };
 
     const band = await this.bandsRepository.create(bandData);
@@ -111,7 +116,7 @@ export class BandsService {
     await this.cacheStrategy.invalidatePattern('bands:list:*');
     await this.cacheStrategy.invalidatePattern('popular:bands:*');
 
-    this.logger.log(`Created band: ${band.name} (${band.id})`);
+    this.logger.log(`Created ${band.bandType} band: ${band.name} (${band.id})`);
 
     return band;
   }
@@ -214,7 +219,7 @@ export class BandsService {
           limit: 20,
         });
         
-        // FIX: Filter on data array, not on result object
+        // Filter on data array, not on result object
         return result.data.filter((band: any) => band.isFeatured);
       },
       CACHE_TTL.BAND_LIST,
@@ -242,6 +247,30 @@ export class BandsService {
         };
       },
       CACHE_TTL.BAND_STATS,
+    );
+  }
+
+  /**
+   * NEW: Get all-star bands specifically
+   * Called by GET /bands/all-stars endpoint
+   */
+  async getAllStarBands() {
+    const cacheKey = 'bands:all-star:list';
+
+    return this.cacheStrategy.wrap(
+      cacheKey,
+      async () => {
+        const result = await this.bandsRepository.findMany({
+          bandType: BandType.ALL_STAR,
+          page: 1,
+          limit: 100, // All-star bands are limited in number (15-20 total)
+          sortBy: 'name',
+          sortOrder: 'asc',
+        });
+        
+        return result.data;
+      },
+      CACHE_TTL.BAND_LIST,
     );
   }
 

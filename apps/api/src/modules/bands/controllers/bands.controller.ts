@@ -61,8 +61,11 @@ export class BandsController {
   // PUBLIC ROUTES
   // ========================================
 
-@Get()
-  @ApiOperation({ summary: 'Get all bands', description: 'Retrieve a paginated list of bands with optional filtering.' })
+  @Get()
+  @ApiOperation({ 
+    summary: 'Get all bands', 
+    description: 'Retrieve a paginated list of bands with optional filtering. Supports filtering by band type (HBCU or ALL_STAR).' 
+  })
   @ApiResponse({ status: 200, description: 'Bands retrieved successfully' })
   @ApiResponse({ status: 429, description: 'Too many requests', type: ApiErrorDto })
   async findAll(@Query() query: BandQueryDto) {
@@ -74,6 +77,16 @@ export class BandsController {
   @ApiResponse({ status: 200, description: 'Featured bands retrieved successfully' })
   async getFeaturedBands() {
     return this.bandsService.getFeaturedBands();
+  }
+
+  @Get('all-stars')
+  @ApiOperation({ 
+    summary: 'Get all-star bands', 
+    description: 'Retrieve all summer all-star marching bands. These are regional bands active during May-August.' 
+  })
+  @ApiResponse({ status: 200, description: 'All-star bands retrieved successfully' })
+  async getAllStarBands() {
+    return this.bandsService.getAllStarBands();
   }
 
   @Get('featured-recommendations')
@@ -129,11 +142,14 @@ export class BandsController {
   // MODERATOR ROUTES
   // ========================================
 
-@Post()
+  @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Create a new band', description: 'Creates a new band profile. Restricted to Moderators and Super Admins.' })
+  @ApiOperation({ 
+    summary: 'Create a new band', 
+    description: 'Creates a new band profile (HBCU or ALL_STAR type). Restricted to Moderators and Super Admins.' 
+  })
   @ApiResponse({ status: 201, description: 'Band created successfully', type: CreateBandDto })
   @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto })
   @ApiResponse({ status: 403, description: 'Insufficient permissions', type: ApiErrorDto })

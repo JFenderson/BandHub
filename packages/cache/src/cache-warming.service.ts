@@ -131,7 +131,7 @@ private readonly prisma: PrismaService,
               slug: true,
             },
           },
-          creator: {
+          contentCreator: {
             select: {
               id: true,
               name: true,
@@ -248,7 +248,7 @@ private readonly prisma: PrismaService,
           orderBy: { viewCount: 'desc' },
           include: {
             category: true,
-            creator: {
+            contentCreator: {
               select: {
                 id: true,
                 name: true,
@@ -299,7 +299,7 @@ private readonly prisma: PrismaService,
         orderBy: { viewCount: 'desc' },
         include: {
           category: true,
-          creator: {
+          contentCreator: {
             select: {
               id: true,
               name: true,

@@ -16,9 +16,14 @@ export class BandsRepository {
    * Find many bands with filters
    */
   async findMany(query: BandQueryDto) {
-    const { search, state, page = 1, limit = 20 } = query;
+    const { search, state, page = 1, limit = 20, bandType } = query;
 
     const where: Prisma.BandWhereInput = {};
+
+    if (bandType) {
+      where.bandType = bandType;
+    }
+
 
     if (search) {
       where.OR = [

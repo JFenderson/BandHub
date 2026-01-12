@@ -1,11 +1,22 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsBoolean, IsOptional, IsArray, IsUrl, IsNumber, Min } from 'class-validator';
+import { BandType } from '@prisma/client';
+import { IsString, IsBoolean, IsOptional, IsArray, IsUrl, IsNumber, Min, IsEnum } from 'class-validator';
 
 export class UpdateBandDto {
   @ApiPropertyOptional({ description: 'Band name' })
   @IsOptional()
   @IsString()
   name?: string;
+
+    @ApiPropertyOptional({ 
+      description: 'Band type: HBCU (school band) or ALL_STAR (summer all-star band)',
+      enum: BandType,
+      default: BandType.HBCU,
+      example: BandType.HBCU
+    })
+    @IsOptional()
+    @IsEnum(BandType)
+    type?: BandType;
 
   @ApiPropertyOptional({ description: 'URL-friendly slug (auto-generated from name)' })
   @IsOptional()

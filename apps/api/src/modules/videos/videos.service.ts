@@ -7,9 +7,11 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { QueueName } from '@hbcu-band-hub/shared-types';
 import { PrismaService } from '@bandhub/database';
+import { BandType } from '@prisma/client';
 
 /**
  * Production VideosService with full-text search and enhanced caching
+ * NOW supports category validation based on band type (HBCU vs ALL_STAR)
  */
 @Injectable()
 export class VideosService {
@@ -125,6 +127,11 @@ export class VideosService {
       throw new BadRequestException(`Video with YouTube ID ${data.youtubeId} already exists`);
     }
 
+    // NEW: Validate category is applicable to band type
+    if (data.categoryId) {
+      await this.validateCategoryForBand(data.bandId, data.categoryId);
+    }
+
     const createData = {
       youtubeId: data.youtubeId,
       title: data.title,
@@ -155,6 +162,11 @@ export class VideosService {
       throw new NotFoundException(`Video with ID ${id} not found`);
     }
 
+    // NEW: Validate category is applicable to band type if category is being updated
+    if (data.categoryId && data.categoryId !== existing.category?.id) {
+      await this.validateCategoryForBand(existing.band.id, data.categoryId);
+    }
+
     const video = await this.videosRepository.update(id, data);
 
     await this.cacheService.del(`video:${id}`);
@@ -175,6 +187,57 @@ export class VideosService {
     await this.invalidateVideosCaches(existing.band.id, existing.category?.id);
 
     return { message: 'Video deleted successfully' };
+  }
+
+  /**
+   * NEW: Assign category to video with validation
+   * Ensures category is applicable to the band's type
+   */
+  async assignCategory(videoId: string, categoryId: string) {
+    const video = await this.videosRepository.findById(videoId);
+    if (!video) {
+      throw new NotFoundException(`Video with ID ${videoId} not found`);
+    }
+
+    // Validate category is applicable to band type
+    await this.validateCategoryForBand(video.band.id, categoryId);
+
+    return this.update(videoId, { categoryId });
+  }
+
+  /**
+   * NEW: Validate category is applicable to band type
+   * Prevents assigning school-only categories to all-star bands and vice versa
+   */
+  private async validateCategoryForBand(bandId: string, categoryId: string): Promise<void> {
+    // Get band bandType
+    const band = await this.prismaService.band.findUnique({
+      where: { id: bandId },
+      select: { id: true, bandType: true, name: true },
+    });
+
+    if (!band) {
+      throw new NotFoundException(`Band with ID ${bandId} not found`);
+    }
+
+    // Get category with applicableTypes
+    const category = await this.prismaService.category.findUnique({
+      where: { id: categoryId },
+      select: { id: true, name: true, applicableTypes: true },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${categoryId} not found`);
+    }
+
+    // Check if category is applicable to this band type
+    if (!category.applicableTypes.includes(band.bandType)) {
+      const bandTypeLabel = band.bandType === BandType.HBCU ? 'HBCU' : 'all-star';
+      throw new BadRequestException(
+        `Category "${category.name}" is not applicable to ${bandTypeLabel} bands. ` +
+        `This category can only be used with: ${category.applicableTypes.join(', ')}`
+      );
+    }
   }
 
   async findHidden() {
@@ -257,7 +320,7 @@ export class VideosService {
     
     if (query.bandId) parts.push(`band:${query.bandId}`);
     if (query.bandSlug) parts.push(`bandSlug:${query.bandSlug}`);
-    if (query.category) parts.push(`category:${query.category}`);  // ADD THIS
+    if (query.category) parts.push(`category:${query.category}`);
     if (query.categoryId) parts.push(`cat:${query.categoryId}`);
     if (query.categorySlug) parts.push(`catSlug:${query.categorySlug}`);
     if (query.opponentBandId) parts.push(`opp:${query.opponentBandId}`);

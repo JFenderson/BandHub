@@ -1,18 +1,28 @@
-import { IsString, IsOptional, IsInt, IsArray, IsUrl, Min, Max, IsBoolean, IsNumber, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsArray, IsUrl, IsEnum, Min, Max, IsBoolean, IsNumber, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitizeText, SanitizeDescription, SanitizeUrl, IsUSState, IsValidBandName, IsValidConference, IsYouTubeChannelId } from '../../../common';
-
+import { BandType } from '@prisma/client';
 
 export class CreateBandDto {
-    @ApiProperty({ description: 'Band name' })
-  @SanitizeText()  // ← Add this
+  @ApiProperty({ description: 'Band name' })
+  @SanitizeText()
   @IsValidBandName()
   @IsString()
   @MaxLength(255)
   name!: string;
 
-  @ApiPropertyOptional({ description: 'School name' })
-  @SanitizeText()  // ← Add this
+ @ApiPropertyOptional({ 
+    description: 'Band type: HBCU (school band) or ALL_STAR (summer all-star band)',
+    enum: BandType,
+    default: BandType.HBCU,
+    example: BandType.HBCU
+  })
+  @IsOptional()
+  @IsEnum(BandType)
+  bandType?: BandType;
+
+  @ApiPropertyOptional({ description: 'School name (required for HBCU bands, optional for ALL_STAR)' })
+  @SanitizeText()
   @IsOptional()
   @IsString()
   @MaxLength(255)
@@ -24,40 +34,40 @@ export class CreateBandDto {
   school?: string;
 
   @ApiPropertyOptional({ description: 'City' })
-  @SanitizeText()  // ← Add this
+  @SanitizeText()
   @IsOptional()
   @IsString()
   @MaxLength(255)
   city!: string;
 
   @ApiPropertyOptional({ description: 'State' })
-  @SanitizeText()  // ← Add this
+  @SanitizeText()
   @IsUSState()
   @IsOptional()
   @IsString()
   state!: string;
 
-  @ApiPropertyOptional({ description: 'Conference' })
-  @SanitizeText()  // ← Add this
+  @ApiPropertyOptional({ description: 'Conference (HBCU bands only)' })
+  @SanitizeText()
   @IsValidConference()
   @IsOptional()
   @IsString()
   conference?: string;
 
   @ApiPropertyOptional({ description: 'Logo URL' })
-  @SanitizeUrl()  // ← Add this
+  @SanitizeUrl()
   @IsOptional()
   @IsUrl()
   logoUrl?: string;
 
   @ApiPropertyOptional({ description: 'Banner URL' })
-  @SanitizeUrl()  // ← Add this 
+  @SanitizeUrl()
   @IsOptional()
   @IsUrl()
   bannerUrl?: string;
 
   @ApiPropertyOptional({ description: 'Description' })
-  @SanitizeDescription()  // ← Add this (allows more content than Text)
+  @SanitizeDescription()
   @IsOptional()
   @IsString()
   @MaxLength(5000)
@@ -96,7 +106,7 @@ export class CreateBandDto {
   // Marked as optional to accept them without validation errors
 
   @ApiPropertyOptional({ description: 'Band nickname' })
-  @SanitizeText()  // ← Add this
+  @SanitizeText()
   @IsOptional()
   @IsString()
   nickname?: string;
@@ -105,20 +115,4 @@ export class CreateBandDto {
   @IsOptional()
   @IsString()
   division?: string;
-
-  @ApiPropertyOptional({ description: 'Founded year alias (not persisted)' })
-  @IsOptional()
-  @IsNumber()
-  founded?: number;
-
-  @ApiPropertyOptional({ description: 'Band colors (not persisted)' })
-  @IsOptional()
-  @IsString()
-  colors?: string;
-
-  @ApiPropertyOptional({ description: 'Website URL (not persisted)' })
-  @IsOptional()
-  @SanitizeUrl()
-  @IsUrl()
-  website?: string;
 }

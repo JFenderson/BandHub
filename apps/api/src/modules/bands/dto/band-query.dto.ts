@@ -1,9 +1,20 @@
-import { IsOptional, IsString, IsBoolean, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsInt, IsEnum, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { SanitizeSearch } from 'src/common';
+import { BandType } from '@prisma/client';
 
 export class BandQueryDto {
+  @ApiPropertyOptional({ 
+    description: 'Filter by band type',
+    enum: BandType,
+    example: BandType.HBCU 
+  })
+  @IsOptional()
+  @IsEnum(BandType)
+  bandType?: BandType;
+
+
   @ApiPropertyOptional({ example: 'SWAC' })
   @IsOptional()
   @IsString()
@@ -27,10 +38,10 @@ export class BandQueryDto {
   isFeatured?: boolean;
 
   @ApiPropertyOptional({ example: 'jackson' })
-@SanitizeSearch()
-@IsString()
-@IsOptional()
-search?: string;
+  @SanitizeSearch()
+  @IsString()
+  @IsOptional()
+  search?: string;
 
   @ApiPropertyOptional({ example: 1, default: 1 })
   @IsOptional()
