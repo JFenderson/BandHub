@@ -1,0 +1,158 @@
+[
+  {
+    "name": "LLI",
+    "schoolName": "LLI",
+    "city": "Various",
+    "state": "",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "LLI is an all-star marching band featuring talented musicians from the Various region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "LLI Band"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "Memphis Mass Band",
+    "schoolName": "Memphis Mass Band",
+    "city": "Memphis",
+    "state": "TN",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Memphis Mass Band is an all-star marching band featuring talented musicians from the Memphis, TN region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "MMB",
+      "Memphis All-Star"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "New Orleans All-Star Band",
+    "schoolName": "New Orleans All-Star Band",
+    "city": "New Orleans",
+    "state": "LA",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "New Orleans All-Star Band is an all-star marching band featuring talented musicians from the New Orleans, LA region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "NOASB",
+      "New Orleans All-Star",
+      "NOLA All-Star"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "Atlanta All-Star Mass Band",
+    "schoolName": "Atlanta All-Star Mass Band",
+    "city": "Atlanta",
+    "state": "GA",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Atlanta All-Star Mass Band is an all-star marching band featuring talented musicians from the Atlanta, GA region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "AAMB",
+      "Georgia Mass Band",
+      "GMB",
+      "Atlanta All-Star",
+      "Atlanta Mass Band"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "Magic City All-Star Band",
+    "schoolName": "Magic City All-Star Band",
+    "city": "Birmingham",
+    "state": "AL",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Magic City All-Star Band is an all-star marching band featuring talented musicians from the Birmingham, AL region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "Magic City All-Star",
+      "Magic City"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "Alabama Mass Band",
+    "schoolName": "Alabama Mass Band",
+    "city": "Alabama",
+    "state": "",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Alabama Mass Band is an all-star marching band featuring talented musicians from the Alabama region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "AMB",
+      "Alabama All-Star"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "Regulators",
+    "schoolName": "Regulators",
+    "city": "Various",
+    "state": "",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Regulators is an all-star marching band featuring talented musicians from the Various region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "The Regulators"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "North Carolina Mass Band",
+    "schoolName": "North Carolina Mass Band",
+    "city": "North Carolina",
+    "state": "",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "North Carolina Mass Band is an all-star marching band featuring talented musicians from the North Carolina region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "NCMB",
+      "NC Mass Band"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "Dallas Legion All-Star Band",
+    "schoolName": "Dallas Legion All-Star Band",
+    "city": "Dallas",
+    "state": "TX",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Dallas Legion All-Star Band is an all-star marching band featuring talented musicians from the Dallas, TX region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "DLASB",
+      "The Legion",
+      "Dallas Legion"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  }
+]

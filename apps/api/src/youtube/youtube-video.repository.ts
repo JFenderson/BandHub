@@ -122,7 +122,7 @@ export class YouTubeVideoRepository {
               logoUrl: true,
             },
           },
-          creator: {
+          contentCreator: {
             select: {
               id: true,
               name: true,
@@ -160,7 +160,7 @@ export class YouTubeVideoRepository {
             logoUrl: true,
           },
         },
-        creator: {
+        contentCreator: {
           select: {
             id: true,
             name: true,
@@ -234,7 +234,7 @@ export class YouTubeVideoRepository {
     }
 
     if (data.creatorId) {
-      updateData.creator = { connect: { id: data.creatorId } };
+      updateData.contentCreator = { connect: { id: data.creatorId } };
     }
 
     const record = await this.prisma.youTubeVideo.upsert({

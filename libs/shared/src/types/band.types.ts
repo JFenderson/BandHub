@@ -2,11 +2,13 @@
 // This keeps the frontend decoupled from Prisma
 
 export type SyncStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+export type BandType = 'HBCU' | 'ALL_STAR';
 
 export interface Band {
   id: string;
   name: string;
   slug: string;
+  bandType: BandType;
   schoolName: string;
   city: string;
   state: string;

@@ -10,260 +10,274 @@ datasource db {
 }
 
 model BandMetrics {
-  id             String         @id
-  bandId         String         @unique
-  totalViews     Int            @default(0)
-  viewsToday     Int            @default(0)
-  viewsThisWeek  Int            @default(0)
-  viewsThisMonth Int            @default(0)
-  totalFavorites Int            @default(0)
-  totalFollowers Int            @default(0)
-  totalShares    Int            @default(0)
-  videoCount     Int            @default(0)
-  recentUploads  Int            @default(0)
-  avgVideoViews  Float          @default(0)
-  trendingScore  Float          @default(0)
-  trendDirection TrendDirection @default(STABLE)
-  previousRank   Int?
-  currentRank    Int?
-  lastCalculated DateTime       @default(now())
-  updatedAt      DateTime
-  bands          bands          @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  id             String         @id @default(cuid())
+  bandId         String         @unique @map("bandId")
+  totalViews     Int            @default(0) @map("totalViews")
+  viewsToday     Int            @default(0) @map("viewsToday")
+  viewsThisWeek  Int            @default(0) @map("viewsThisWeek")
+  viewsThisMonth Int            @default(0) @map("viewsThisMonth")
+  totalFavorites Int            @default(0) @map("totalFavorites")
+  totalFollowers Int            @default(0) @map("totalFollowers")
+  totalShares    Int            @default(0) @map("totalShares")
+  videoCount     Int            @default(0) @map("videoCount")
+  recentUploads  Int            @default(0) @map("recentUploads")
+  avgVideoViews  Float          @default(0) @map("avgVideoViews")
+  trendingScore  Float          @default(0) @map("trendingScore")
+  trendDirection TrendDirection @default(STABLE) @map("trendDirection")
+  previousRank   Int?           @map("previousRank")
+  currentRank    Int?           @map("currentRank")
+  lastCalculated DateTime       @default(now()) @map("lastCalculated")
+  updatedAt      DateTime       @updatedAt @map("updatedAt")
+  band           Band           @relation(fields: [bandId], references: [id], onDelete: Cascade)
 
   @@index([bandId])
   @@index([lastCalculated])
   @@index([trendingScore(sort: Desc)])
+  @@map("BandMetrics")
 }
 
 model BandShare {
-  id        String   @id
-  bandId    String
+  id        String   @id @default(cuid())
+  bandId    String   @map("bandId")
   platform  String
-  userId    String?
-  createdAt DateTime @default(now())
-  bands     bands    @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  userId    String?  @map("userId")
+  createdAt DateTime @default(now()) @map("createdAt")
+  band      Band     @relation(fields: [bandId], references: [id], onDelete: Cascade)
 
   @@index([bandId])
   @@index([createdAt])
+  @@map("BandShare")
 }
 
 model UserBandFavorite {
-  id        String   @id
-  userId    String
-  bandId    String
-  createdAt DateTime @default(now())
-  bands     bands    @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String   @map("userId")
+  bandId    String   @map("bandId")
+  createdAt DateTime @default(now()) @map("createdAt")
+  band      Band     @relation(fields: [bandId], references: [id], onDelete: Cascade)
 
   @@unique([userId, bandId])
   @@index([bandId])
   @@index([createdAt])
   @@index([userId])
+  @@map("UserBandFavorite")
 }
 
-model admin_password_reset_tokens {
-  id            String      @id
-  token         String      @unique
-  admin_user_id String
-  expires_at    DateTime
-  used          Boolean     @default(false)
-  created_at    DateTime    @default(now())
-  admin_users   admin_users @relation(fields: [admin_user_id], references: [id], onDelete: Cascade)
+model AdminPasswordResetToken {
+  id          String     @id @default(cuid())
+  token       String     @unique
+  adminUserId String     @map("adminUserId")
+  expiresAt   DateTime   @map("expireAt")  // Fixed: was expireAt
+  used        Boolean    @default(false)
+  createdAt   DateTime   @default(now()) @map("createdAt")
+  adminUser   AdminUser  @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
 
-  @@index([admin_user_id])
-  @@index([expires_at])
+  @@index([adminUserId])
+  @@index([expiresAt])
   @@index([token])
+  @@map("admin_password_reset_tokens")
 }
 
-model admin_sessions {
-  id                 String           @id
-  user_id            String
-  ip_address         String?
-  user_agent         String?
-  device_type        String?
+model AdminSession {
+  id                 String          @id @default(cuid())
+  userId             String          @map("user_id")
+  ipAddress          String?         @map("ip_address")
+  userAgent          String?         @map("user_agent")
+  deviceType         String?         @map("device_type")
   browser            String?
   os                 String?
-  device_fingerprint String?
+  deviceFingerprint  String?         @map("device_fingerprint")
   country            String?
   region             String?
   city               String?
   latitude           Float?
   longitude          Float?
-  is_active          Boolean          @default(true)
-  last_activity_at   DateTime         @default(now())
-  created_at         DateTime         @default(now())
-  expires_at         DateTime
-  revoked_at         DateTime?
-  revoked_reason     String?
-  token_chain_id     String?
-  admin_users        admin_users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  refresh_tokens     refresh_tokens[]
+  isActive           Boolean         @default(true) @map("is_active")
+  lastActivityAt     DateTime        @default(now()) @map("last_activity_at")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  expiresAt          DateTime        @map("expires_at")
+  revokedAt          DateTime?       @map("revoked_at")
+  revokedReason      String?         @map("revoked_reason")
+  tokenChainId       String?         @map("token_chain_id")
+  adminUser          AdminUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens      RefreshToken[]
 
-  @@index([is_active])
-  @@index([last_activity_at(sort: Desc)])
-  @@index([token_chain_id])
-  @@index([user_id])
+  @@index([isActive])
+  @@index([lastActivityAt(sort: Desc)])
+  @@index([tokenChainId])
+  @@index([userId])
+  @@map("admin_sessions")
 }
 
-model admin_users {
-  id                          String                        @id
-  email                       String                        @unique
-  password_hash               String
-  name                        String
-  lastLoginAt                 DateTime?
-  lastLoginIp                 String?
-  failedLoginAttempts         Int                           @default(0)
-  lockedUntil                 DateTime?
-  updatedAt                   DateTime
-  createdAt                   DateTime                      @default(now())
-  isActive                    Boolean                       @default(true)
-  role                        AdminRole                     @default(ADMIN)
-  mfa_backup_codes            String[]                      @default([])
-  mfa_enabled                 Boolean                       @default(false)
-  mfa_enabled_at              DateTime?
-  mfa_secret                  String?
-  must_change_password        Boolean                       @default(false)
-  password_changed_at         DateTime?
-  password_expires_at         DateTime?
-  session_version             Int                           @default(0)
-  admin_password_reset_tokens admin_password_reset_tokens[]
-  admin_sessions              admin_sessions[]
-  audit_logs                  audit_logs[]
-  magic_links                 magic_links[]
-  oauth_accounts              oauth_accounts[]
-  password_history            password_history[]
-  refresh_tokens              refresh_tokens[]
-  security_events             security_events[]
+model AdminUser {
+  id                       String                     @id @default(cuid())
+  email                    String                     @unique
+  passwordHash             String                     @map("password_hash")
+  name                     String
+  lastLoginAt              DateTime?                  @map("lastLoginAt")
+  lastLoginIp              String?                    @map("lastLoginIp")
+  failedLoginAttempts      Int                        @default(0) @map("failedLoginAttempts")
+  lockedUntil              DateTime?                  @map("lockedUntil")
+  updatedAt                DateTime                   @updatedAt @map("updatedAt")
+  createdAt                DateTime                   @default(now()) @map("createdAt")
+  isActive                 Boolean                    @default(true) @map("isActive")
+  role                     AdminRole                  @default(ADMIN)
+  mfaBackupCodes           String[]                   @default([]) @map("mfa_backup_codes")
+  mfaEnabled               Boolean                    @default(false) @map("mfa_enabled")
+  mfaEnabledAt             DateTime?                  @map("mfa_enabled_at")
+  mfaSecret                String?                    @map("mfa_secret")
+  mustChangePassword       Boolean                    @default(false) @map("must_change_password")
+  passwordChangedAt        DateTime?                  @map("password_changed_at")
+  passwordExpiresAt        DateTime?                  @map("password_expires_at")
+  sessionVersion           Int                        @default(0) @map("session_version")
+  passwordResetTokens      AdminPasswordResetToken[]
+  adminSessions            AdminSession[]
+  auditLogs                AuditLog[]
+  magicLinks               MagicLink[]
+  oauthAccounts            OAuthAccount[]
+  passwordHistory          PasswordHistory[]
+  refreshTokens            RefreshToken[]
+  securityEvents           SecurityEvent[]
+
+  @@map("admin_users")
 }
 
-model api_keys {
-  id                     String    @id
-  key                    String    @unique
-  name                   String
-  description            String?
-  created_at             DateTime  @default(now())
-  expires_at             DateTime?
-  is_active              Boolean   @default(true)
-  last_used_at           DateTime?
-  updated_at             DateTime
-  last_rotated_at        DateTime?
-  rotation_warnings_sent Int       @default(0)
-  usage_count            Int       @default(0)
+model ApiKey {
+  id                    String    @id @default(cuid())
+  key                   String    @unique
+  name                  String
+  description           String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  expiresAt             DateTime? @map("expires_at")
+  isActive              Boolean   @default(true) @map("is_active")
+  lastUsedAt            DateTime? @map("last_used_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  lastRotatedAt         DateTime? @map("last_rotated_at")
+  rotationWarningsSent  Int       @default(0) @map("rotation_warnings_sent")
+  usageCount            Int       @default(0) @map("usage_count")
 
-  @@index([expires_at])
-  @@index([is_active])
+  @@index([expiresAt])
+  @@index([isActive])
   @@index([key])
+  @@map("api_keys")
 }
 
-model audit_logs {
-  id          String       @id
+model AuditLog {
+  id          String     @id @default(cuid())
   action      String
-  entity_type String
-  entity_id   String
+  entityType  String     @map("entity_type")
+  entityId    String     @map("entity_id")
   changes     Json?
-  created_at  DateTime     @default(now())
-  user_id     String?
-  ip_address  String?
-  severity    String       @default("info")
-  user_agent  String?
-  admin_users admin_users? @relation(fields: [user_id], references: [id])
+  createdAt   DateTime   @default(now()) @map("created_at")
+  userId      String?    @map("user_id")
+  ipAddress   String?    @map("ip_address")
+  severity    String     @default("info")
+  userAgent   String?    @map("user_agent")
+  adminUser   AdminUser? @relation(fields: [userId], references: [id])
 
   @@index([action])
-  @@index([created_at(sort: Desc)])
-  @@index([entity_type, entity_id])
+  @@index([createdAt(sort: Desc)])
+  @@index([entityType, entityId])
   @@index([severity])
-  @@index([user_id, created_at(sort: Desc)])
-  @@index([user_id])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("audit_logs")
 }
 
-model bands {
-  id                                    String                 @id
-  name                                  String
-  slug                                  String                 @unique
-  school_name                           String
-  city                                  String?
-  state                                 String
-  conference                            String?
-  logo_url                              String?
-  banner_url                            String?
-  description                           String?
-  founded_year                          Int?
-  youtube_channel_id                    String?
-  youtube_playlist_ids                  String[]
-  last_sync_at                          DateTime?
-  sync_status                           SyncStatus             @default(PENDING)
-  is_active                             Boolean                @default(true)
-  is_featured                           Boolean                @default(false)
-  created_at                            DateTime               @default(now())
-  updated_at                            DateTime
-  search_keywords                       String[]               @default([])
-  featured_order                        Int?
-  featured_since                        DateTime?
-  earliest_video_date                   DateTime?
-  first_synced_at                       DateTime?
-  last_full_sync                        DateTime?
-  latest_video_date                     DateTime?
-  total_video_count                     Int                    @default(0)
-  type                                  BandType               @default(SCHOOL)
-  BandMetrics                           BandMetrics?
-  BandShare                             BandShare[]
-  UserBandFavorite                      UserBandFavorite[]
-  favorite_bands                        favorite_bands[]
-  featured_band_clicks                  featured_band_clicks[]
-  quota_usage_log                       quota_usage_log[]
-  sync_jobs                             sync_jobs[]
-  videos_videos_band_idTobands          videos[]               @relation("videos_band_idTobands")
-  videos_videos_opponent_band_idTobands videos[]               @relation("videos_opponent_band_idTobands")
-  youtube_videos                        youtube_videos[]
+model Band {
+  id                 String              @id @default(cuid())
+  name               String
+  slug               String              @unique
+  schoolName         String              @map("school_name")
+  city               String?
+  state              String
+  bandType           BandType            @default(HBCU) @map("band_type")
+  conference         String?
+  logoUrl            String?             @map("logo_url")
+  bannerUrl          String?             @map("banner_url")
+  description        String?
+  foundedYear        Int?                @map("founded_year")
+  youtubeChannelId   String?             @map("youtube_channel_id")
+  youtubePlaylistIds String[]            @map("youtube_playlist_ids")
+  lastSyncAt         DateTime?           @map("last_sync_at")
+  syncStatus         SyncStatus          @default(PENDING) @map("sync_status")
+  isActive           Boolean             @default(true) @map("is_active")
+  isFeatured         Boolean             @default(false) @map("is_featured")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  searchKeywords     String[]            @default([]) @map("search_keywords")
+  featuredOrder      Int?                @map("featured_order")
+  featuredSince      DateTime?           @map("featured_since")
+  earliestVideoDate  DateTime?           @map("earliest_video_date")
+  firstSyncedAt      DateTime?           @map("first_synced_at")
+  lastFullSync       DateTime?           @map("last_full_sync")
+  latestVideoDate    DateTime?           @map("latest_video_date")
+  totalVideoCount    Int                 @default(0) @map("total_video_count")
+  
+  // Relations
+  metrics                   BandMetrics?
+  shares                    BandShare[]
+  userFavorites             UserBandFavorite[]
+  favoriteBands             FavoriteBand[]
+  featuredClicks            FeaturedBandClick[]
+  quotaUsageLogs            QuotaUsageLog[]
+  syncJobs                  SyncJob[]
+  videos                    Video[]             @relation("videos_band_idTobands")
+  opponentVideos            Video[]             @relation("videos_opponent_band_idTobands")
+  youtubeVideos             YouTubeVideo[]      @relation("youtube_videos_band")
+  opponentYoutubeVideos     YouTubeVideo[]      @relation("youtube_videos_opponent")
 
-  @@index([conference])
-  @@index([featured_order])
-  @@index([is_active, is_featured])
-  @@index([is_active, state])
-  @@index([is_featured, featured_order])
-  @@index([school_name])
   @@index([slug])
-  @@index([state, conference])
+  @@index([schoolName])
   @@index([state])
-  @@index([type])
-  @@index([youtube_channel_id])
+  @@index([conference])
+  @@index([bandType])
+  @@index([isActive, isFeatured])
+  @@index([featuredOrder])
+  @@index([youtubeChannelId])
+  @@index([state, conference])
+  @@index([isActive, state])
+  @@index([isFeatured, featuredOrder])
+  @@map("bands")
 }
 
-model categories {
-  id              String     @id
+model Category {
+  id              String     @id @default(cuid())
   name            String     @unique
   slug            String     @unique
   description     String?
-  sort_order      Int        @default(0)
-  created_at      DateTime   @default(now())
-  updated_at      DateTime
-  applicableTypes BandType[] @default([SCHOOL, ALL_STAR])
-  videos          videos[]
+  sortOrder       Int        @default(0) @map("sort_order")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  applicableTypes BandType[] @default([HBCU, ALL_STAR]) @map("applicableTypes")
+  videos          Video[]
 
   @@index([slug])
-  @@index([sort_order])
+  @@index([sortOrder])
+  @@map("categories")
 }
 
-model content_creators {
-  id               String           @id
+model ContentCreator {
+  id               String         @id @default(cuid())
   name             String
-  youtubeChannelId String           @unique
-  channelUrl       String
+  youtubeChannelId String         @unique @map("youtubeChannelId")
+  channelUrl       String         @map("channelUrl")
   description      String?
-  logoUrl          String?
-  thumbnailUrl     String?
-  subscriberCount  Int              @default(0)
-  totalVideoCount  Int              @default(0)
-  videosInOurDb    Int              @default(0)
-  isVerified       Boolean          @default(false)
-  isFeatured       Boolean          @default(false)
-  qualityScore     Int              @default(0)
-  lastSyncedAt     DateTime?
-  firstSyncedAt    DateTime?
-  lastFullSync     DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime
-  videos           videos[]
-  youtube_videos   youtube_videos[]
+  logoUrl          String?        @map("logoUrl")
+  thumbnailUrl     String?        @map("thumbnailUrl")
+  subscriberCount  Int            @default(0) @map("subscriberCount")
+  totalVideoCount  Int            @default(0) @map("totalVideoCount")
+  videosInOurDb    Int            @default(0) @map("videosInOurDb")
+  isVerified       Boolean        @default(false) @map("isVerified")
+  isFeatured       Boolean        @default(false) @map("isFeatured")
+  qualityScore     Int            @default(0) @map("qualityScore")
+  lastSyncedAt     DateTime?      @map("lastSyncedAt")
+  firstSyncedAt    DateTime?      @map("firstSyncedAt")
+  lastFullSync     DateTime?      @map("lastFullSync")
+  createdAt        DateTime       @default(now()) @map("createdAt")
+  updatedAt        DateTime       @updatedAt @map("updatedAt")
+  videos           Video[]
+  youtubeVideos    YouTubeVideo[]
 
   @@index([createdAt])
   @@index([isFeatured])
@@ -271,549 +285,584 @@ model content_creators {
   @@index([isVerified])
   @@index([qualityScore])
   @@index([youtubeChannelId])
+  @@map("content_creators")
 }
 
-model email_verification_tokens {
-  id         String   @id
-  token      String   @unique
-  user_id    String
-  expires_at DateTime
-  created_at DateTime @default(now())
-  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
-  @@index([user_id])
+  @@index([userId])
+  @@map("email_verification_tokens")
 }
 
-model event_bands {
-  id         String   @id
-  event_id   String
-  band_id    String
-  role       String?
-  created_at DateTime @default(now())
-  events     events   @relation(fields: [event_id], references: [id], onDelete: Cascade)
+model EventBand {
+  id        String   @id @default(cuid())
+  eventId   String   @map("event_id")
+  bandId    String   @map("band_id")
+  role      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  @@unique([event_id, band_id])
-  @@index([band_id])
-  @@index([event_id])
+  @@unique([eventId, bandId])
+  @@index([bandId])
+  @@index([eventId])
+  @@map("event_bands")
 }
 
-model event_videos {
-  id         String   @id
-  event_id   String
-  video_id   String
-  created_at DateTime @default(now())
-  events     events   @relation(fields: [event_id], references: [id], onDelete: Cascade)
+model EventVideo {
+  id        String   @id @default(cuid())
+  eventId   String   @map("event_id")
+  videoId   String   @map("video_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  @@unique([event_id, video_id])
-  @@index([event_id])
-  @@index([video_id])
+  @@unique([eventId, videoId])
+  @@index([eventId])
+  @@index([videoId])
+  @@map("event_videos")
 }
 
-model events {
-  id           String         @id
-  name         String
-  slug         String         @unique
-  description  String?
-  event_type   EventType
-  event_date   DateTime
-  end_date     DateTime?
-  location     String?
-  venue        String?
-  city         String?
-  state        String?
-  year         Int
-  is_recurring Boolean        @default(false)
-  is_active    Boolean        @default(true)
-  image_url    String?
-  created_at   DateTime       @default(now())
-  updated_at   DateTime
-  event_bands  event_bands[]
-  event_videos event_videos[]
+model Event {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  description String?
+  eventType   EventType    @map("event_type")
+  eventDate   DateTime     @map("event_date")
+  endDate     DateTime?    @map("end_date")
+  location    String?
+  venue       String?
+  city        String?
+  state       String?
+  year        Int
+  isRecurring Boolean      @default(false) @map("is_recurring")
+  isActive    Boolean      @default(true) @map("is_active")
+  imageUrl    String?      @map("image_url")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  eventBands  EventBand[]
+  eventVideos EventVideo[]
 
-  @@index([event_date])
-  @@index([event_type])
-  @@index([is_active])
-  @@index([is_active, year])
+  @@index([eventDate])
+  @@index([eventType])
+  @@index([isActive])
+  @@index([isActive, year])
   @@index([slug])
   @@index([year])
+  @@map("events")
 }
 
-model favorite_bands {
-  id                    String   @id
-  user_id               String
-  band_id               String
-  notifications_enabled Boolean  @default(true)
-  created_at            DateTime @default(now())
-  bands                 bands    @relation(fields: [band_id], references: [id], onDelete: Cascade)
-  users                 users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model FavoriteBand {
+  id                    String   @id @default(cuid())
+  userId                String   @map("user_id")
+  bandId                String   @map("band_id")
+  notificationsEnabled  Boolean  @default(true) @map("notifications_enabled")
+  createdAt             DateTime @default(now()) @map("created_at")
+  band                  Band     @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([user_id, band_id])
-  @@index([band_id])
-  @@index([user_id])
+  @@unique([userId, bandId])
+  @@index([bandId])
+  @@index([userId])
+  @@map("favorite_bands")
 }
 
-model favorite_videos {
-  id         String   @id
-  user_id    String
-  video_id   String
-  notes      String?
-  created_at DateTime @default(now())
-  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  videos     videos   @relation(fields: [video_id], references: [id], onDelete: Cascade)
+model FavoriteVideo {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  videoId   String   @map("video_id")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
-  @@unique([user_id, video_id])
-  @@index([user_id])
-  @@index([video_id])
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@index([videoId])
+  @@map("favorite_videos")
 }
 
-model featured_band_clicks {
-  id         String   @id
-  band_id    String
-  clicked_at DateTime @default(now())
-  session_id String?
-  bands      bands    @relation(fields: [band_id], references: [id], onDelete: Cascade)
+model FeaturedBandClick {
+  id        String   @id @default(cuid())
+  bandId    String   @map("band_id")
+  clickedAt DateTime @default(now()) @map("clicked_at")
+  sessionId String?  @map("session_id")
+  band      Band     @relation(fields: [bandId], references: [id], onDelete: Cascade)
 
-  @@index([band_id])
-  @@index([clicked_at])
+  @@index([bandId])
+  @@index([clickedAt])
+  @@map("featured_band_clicks")
 }
 
-model jwt_keys {
-  id         String    @id
-  key_id     String    @unique
-  version    Int       @default(1)
-  is_active  Boolean   @default(true)
-  is_primary Boolean   @default(false)
-  created_at DateTime  @default(now())
-  expires_at DateTime?
-  rotated_at DateTime?
+model JwtKey {
+  id        String    @id @default(cuid())
+  keyId     String    @unique @map("key_id")
+  version   Int       @default(1)
+  isActive  Boolean   @default(true) @map("is_active")
+  isPrimary Boolean   @default(false) @map("is_primary")
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime? @map("expires_at")
+  rotatedAt DateTime? @map("rotated_at")
 
-  @@index([is_active])
-  @@index([is_primary])
+  @@index([isActive])
+  @@index([isPrimary])
+  @@map("jwt_keys")
 }
 
-model magic_links {
-  id          String      @id
-  token       String      @unique
-  user_id     String
-  email       String
-  expires_at  DateTime
-  used_at     DateTime?
-  is_used     Boolean     @default(false)
-  ip_address  String?
-  user_agent  String?
-  created_at  DateTime    @default(now())
-  admin_users admin_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model MagicLink {
+  id         String     @id @default(cuid())
+  token      String     @unique
+  userId     String     @map("user_id")
+  email      String
+  expiresAt  DateTime   @map("expires_at")
+  usedAt     DateTime?  @map("used_at")
+  isUsed     Boolean    @default(false) @map("is_used")
+  ipAddress  String?    @map("ip_address")
+  userAgent  String?    @map("user_agent")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  adminUser  AdminUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([email])
-  @@index([expires_at])
+  @@index([expiresAt])
   @@index([token])
-  @@index([user_id])
+  @@index([userId])
+  @@map("magic_links")
 }
 
-model notification_preferences {
-  id                   String   @id
-  user_id              String   @unique
-  email_new_video      Boolean  @default(true)
-  email_upcoming       Boolean  @default(true)
-  email_weekly_digest  Boolean  @default(true)
-  in_app_notifications Boolean  @default(true)
-  created_at           DateTime @default(now())
-  updated_at           DateTime
-  users                users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model NotificationPreference {
+  id                  String   @id @default(cuid())
+  userId              String   @unique @map("user_id")
+  emailNewVideo       Boolean  @default(true) @map("email_new_video")
+  emailUpcoming       Boolean  @default(true) @map("email_upcoming")
+  emailWeeklyDigest   Boolean  @default(true) @map("email_weekly_digest")
+  inAppNotifications  Boolean  @default(true) @map("in_app_notifications")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }
 
-model notifications {
-  id         String   @id
-  user_id    String
-  type       String
-  title      String
-  message    String
-  data       Json?
-  read       Boolean  @default(false)
-  created_at DateTime @default(now())
-  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  message   String
+  data      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([created_at])
-  @@index([user_id, read])
+  @@index([createdAt])
+  @@index([userId, read])
+  @@map("notifications")
 }
 
-model oauth_accounts {
-  id               String      @id
-  user_id          String
-  provider         String
-  provider_user_id String
-  email            String?
-  display_name     String?
-  avatar_url       String?
-  access_token     String?
-  refresh_token    String?
-  token_expires_at DateTime?
-  created_at       DateTime    @default(now())
-  updated_at       DateTime
-  admin_users      admin_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model OAuthAccount {
+  id              String     @id @default(cuid())
+  userId          String     @map("user_id")
+  provider        String
+  providerUserId  String     @map("provider_user_id")
+  email           String?
+  displayName     String?    @map("display_name")
+  avatarUrl       String?    @map("avatar_url")
+  accessToken     String?    @map("access_token")
+  refreshToken    String?    @map("refresh_token")
+  tokenExpiresAt  DateTime?  @map("token_expires_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  adminUser       AdminUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, provider_user_id])
+  @@unique([provider, providerUserId])
   @@index([provider])
-  @@index([user_id])
+  @@index([userId])
+  @@map("oauth_accounts")
 }
 
-model password_history {
-  id            String      @id
-  user_id       String
-  password_hash String
-  created_at    DateTime    @default(now())
-  admin_users   admin_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model PasswordHistory {
+  id           String     @id @default(cuid())
+  userId       String     @map("user_id")
+  passwordHash String     @map("password_hash")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  adminUser    AdminUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([created_at(sort: Desc)])
-  @@index([user_id])
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("password_history")
 }
 
-model password_policies {
-  id                       String   @id
-  name                     String   @default("default")
-  min_length               Int      @default(8)
-  max_length               Int      @default(128)
-  require_uppercase        Boolean  @default(true)
-  require_lowercase        Boolean  @default(true)
-  require_numbers          Boolean  @default(true)
-  require_symbols          Boolean  @default(false)
-  expiration_days          Int      @default(90)
-  history_count            Int      @default(5)
-  max_failed_attempts      Int      @default(5)
-  lockout_duration_minutes Int      @default(15)
-  is_active                Boolean  @default(true)
-  created_at               DateTime @default(now())
-  updated_at               DateTime
+model PasswordPolicy {
+  id                      String   @id @default(cuid())
+  name                    String   @default("default")
+  minLength               Int      @default(8) @map("min_length")
+  maxLength               Int      @default(128) @map("max_length")
+  requireUppercase        Boolean  @default(true) @map("require_uppercase")
+  requireLowercase        Boolean  @default(true) @map("require_lowercase")
+  requireNumbers          Boolean  @default(true) @map("require_numbers")
+  requireSymbols          Boolean  @default(false) @map("require_symbols")
+  expirationDays          Int      @default(90) @map("expiration_days")
+  historyCount            Int      @default(5) @map("history_count")
+  maxFailedAttempts       Int      @default(5) @map("max_failed_attempts")
+  lockoutDurationMinutes  Int      @default(15) @map("lockout_duration_minutes")
+  isActive                Boolean  @default(true) @map("is_active")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("password_policies")
 }
 
-model password_reset_tokens {
-  id         String   @id
-  token      String   @unique
-  user_id    String
-  expires_at DateTime
-  used       Boolean  @default(false)
-  created_at DateTime @default(now())
-  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
-  @@index([user_id])
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
-model popular_searches {
-  id           String   @id
+model PopularSearch {
+  id           String   @id @default(cuid())
   query        String   @unique
-  searchCount  Int      @default(1)
-  lastSearched DateTime @default(now())
-  createdAt    DateTime @default(now())
+  searchCount  Int      @default(1) @map("searchCount")
+  lastSearched DateTime @default(now()) @map("lastSearched")
+  createdAt    DateTime @default(now()) @map("createdAt")
 
   @@index([lastSearched])
   @@index([searchCount])
+  @@map("popular_searches")
 }
 
-model quota_alerts {
-  id              String          @id
-  level           QuotaAlertLevel
-  message         String
-  current_usage   Int
-  timestamp       DateTime        @default(now())
-  acknowledged    Boolean         @default(false)
-  acknowledged_at DateTime?
-  acknowledged_by String?
-  created_at      DateTime        @default(now())
+model QuotaAlert {
+  id             String          @id @default(cuid())
+  level          QuotaAlertLevel
+  message        String
+  currentUsage   Int             @map("current_usage")
+  timestamp      DateTime        @default(now())
+  acknowledged   Boolean         @default(false)
+  acknowledgedAt DateTime?       @map("acknowledged_at")
+  acknowledgedBy String?         @map("acknowledged_by")
+  createdAt      DateTime        @default(now()) @map("created_at")
 
   @@index([acknowledged])
   @@index([level, acknowledged])
   @@index([level])
   @@index([timestamp(sort: Desc)])
+  @@map("quota_alerts")
 }
 
-model quota_daily_summary {
-  id                  String   @id
-  date                DateTime @unique @db.Date
-  total_usage         Int
-  quota_limit         Int
-  percentage_used     Float
-  operation_breakdown Json?
-  top_consumers       Json?
-  cache_hit_rate      Float?
-  created_at          DateTime @default(now())
-  updated_at          DateTime
+model QuotaDailySummary {
+  id                 String   @id @default(cuid())
+  date               DateTime @unique @db.Date
+  totalUsage         Int      @map("total_usage")
+  quotaLimit         Int      @map("quota_limit")
+  percentageUsed     Float    @map("percentage_used")
+  operationBreakdown Json?    @map("operation_breakdown")
+  topConsumers       Json?    @map("top_consumers")
+  cacheHitRate       Float?   @map("cache_hit_rate")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@index([date(sort: Desc)])
-  @@index([percentage_used(sort: Desc)])
+  @@index([percentageUsed(sort: Desc)])
+  @@map("quota_daily_summary")
 }
 
-model quota_usage_log {
-  id            String     @id
-  operation     String
-  cost          Int
-  timestamp     DateTime   @default(now())
-  band_id       String?
-  band_name     String?
-  sync_job_id   String?
-  success       Boolean    @default(true)
-  cache_hit     Boolean    @default(false)
-  error_message String?
-  metadata      Json?
-  created_at    DateTime   @default(now())
-  bands         bands?     @relation(fields: [band_id], references: [id])
-  sync_jobs     sync_jobs? @relation(fields: [sync_job_id], references: [id])
+model QuotaUsageLog {
+  id           String    @id @default(cuid())
+  operation    String
+  cost         Int
+  timestamp    DateTime  @default(now())
+  bandId       String?   @map("band_id")
+  bandName     String?   @map("band_name")
+  syncJobId    String?   @map("sync_job_id")
+  success      Boolean   @default(true)
+  cacheHit     Boolean   @default(false) @map("cache_hit")
+  errorMessage String?   @map("error_message")
+  metadata     Json?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  band         Band?     @relation(fields: [bandId], references: [id])
+  syncJob      SyncJob?  @relation(fields: [syncJobId], references: [id])
 
-  @@index([band_id])
-  @@index([cache_hit])
+  @@index([bandId])
+  @@index([cacheHit])
   @@index([operation])
   @@index([success])
-  @@index([sync_job_id])
-  @@index([timestamp(sort: Desc), band_id])
+  @@index([syncJobId])
+  @@index([timestamp(sort: Desc), bandId])
   @@index([timestamp(sort: Desc)])
   @@index([timestamp(sort: Desc), operation])
+  @@map("quota_usage_log")
 }
 
-model refresh_tokens {
-  id                 String          @id
-  token              String          @unique
-  userId             String
-  expiresAt          DateTime
-  createdAt          DateTime        @default(now())
-  userAgent          String?
-  ipAddress          String?
-  isRevoked          Boolean         @default(false)
-  revokedAt          DateTime?
-  device_fingerprint String?
-  replaced_by        String?
-  revoked_reason     String?
-  session_id         String?
-  admin_sessions     admin_sessions? @relation(fields: [session_id], references: [id])
-  admin_users        admin_users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model RefreshToken {
+  id                String        @id @default(cuid())
+  token             String        @unique
+  userId            String        @map("userId")
+  expiresAt         DateTime      @map("expiresAt")
+  createdAt         DateTime      @default(now()) @map("createdAt")
+  userAgent         String?       @map("userAgent")
+  ipAddress         String?       @map("ipAddress")
+  isRevoked         Boolean       @default(false) @map("isRevoked")
+  revokedAt         DateTime?     @map("revokedAt")
+  deviceFingerprint String?       @map("device_fingerprint")
+  replacedBy        String?       @map("replaced_by")
+  revokedReason     String?       @map("revoked_reason")
+  sessionId         String?       @map("session_id")
+  adminSession      AdminSession? @relation(fields: [sessionId], references: [id])
+  adminUser         AdminUser     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
-  @@index([session_id])
+  @@index([sessionId])
   @@index([token])
   @@index([userId])
+  @@map("refresh_tokens")
 }
 
-model search_logs {
-  id            String   @id
-  query         String
-  results_count Int
-  filters       Json?
-  user_id       String?
-  session_id    String?
-  created_at    DateTime @default(now())
+model SearchLog {
+  id           String   @id @default(cuid())
+  query        String
+  resultsCount Int      @map("results_count")
+  filters      Json?
+  userId       String?  @map("user_id")
+  sessionId    String?  @map("session_id")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  @@index([created_at(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
   @@index([query])
-  @@index([user_id])
+  @@index([userId])
+  @@map("search_logs")
 }
 
-model security_events {
-  id          String       @id
-  user_id     String?
-  event_type  String
-  severity    String       @default("info")
+model SecurityEvent {
+  id          String     @id @default(cuid())
+  userId      String?    @map("user_id")
+  eventType   String     @map("event_type")
+  severity    String     @default("info")
   description String?
   metadata    Json?
-  ip_address  String?
-  user_agent  String?
+  ipAddress   String?    @map("ip_address")
+  userAgent   String?    @map("user_agent")
   country     String?
   region      String?
   city        String?
   latitude    Float?
   longitude   Float?
-  created_at  DateTime     @default(now())
-  admin_users admin_users? @relation(fields: [user_id], references: [id])
+  createdAt   DateTime   @default(now()) @map("created_at")
+  adminUser   AdminUser? @relation(fields: [userId], references: [id])
 
-  @@index([created_at(sort: Desc)])
-  @@index([event_type])
-  @@index([ip_address])
+  @@index([createdAt(sort: Desc)])
+  @@index([eventType])
+  @@index([ipAddress])
   @@index([severity])
-  @@index([user_id])
+  @@index([userId])
+  @@map("security_events")
 }
 
-model sync_jobs {
-  id                    String            @id
-  band_id               String?
-  job_type              SyncJobType
-  status                SyncJobStatus     @default(QUEUED)
-  videos_found          Int               @default(0)
-  videos_added          Int               @default(0)
-  videos_updated        Int               @default(0)
-  errors                String[]          @default([])
-  priority              SyncPriority      @default(MEDIUM)
-  estimated_quota_cost  Int?
-  actual_quota_cost     Int?
-  quota_approved        Boolean           @default(false)
-  quota_approval_reason String?
-  started_at            DateTime?
-  completed_at          DateTime?
-  created_at            DateTime          @default(now())
-  error_message         String?
-  max_videos            Int?
-  published_after       DateTime?
-  published_before      DateTime?
-  quota_used            Int               @default(0)
-  quota_usage_log       quota_usage_log[]
-  bands                 bands?            @relation(fields: [band_id], references: [id])
+model SyncJob {
+  id                   String           @id @default(cuid())
+  bandId               String?          @map("band_id")
+  jobType              SyncJobType      @map("job_type")
+  status               SyncJobStatus    @default(QUEUED)
+  videosFound          Int              @default(0) @map("videos_found")
+  videosAdded          Int              @default(0) @map("videos_added")
+  videosUpdated        Int              @default(0) @map("videos_updated")
+  errors               String[]         @default([])
+  priority             SyncPriority     @default(MEDIUM)
+  estimatedQuotaCost   Int?             @map("estimated_quota_cost")
+  actualQuotaCost      Int?             @map("actual_quota_cost")
+  quotaApproved        Boolean          @default(false) @map("quota_approved")
+  quotaApprovalReason  String?          @map("quota_approval_reason")
+  startedAt            DateTime?        @map("started_at")
+  completedAt          DateTime?        @map("completed_at")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  errorMessage         String?          @map("error_message")
+  maxVideos            Int?             @map("max_videos")
+  publishedAfter       DateTime?        @map("published_after")
+  publishedBefore      DateTime?        @map("published_before")
+  quotaUsed            Int              @default(0) @map("quota_used")
+  quotaUsageLogs       QuotaUsageLog[]
+  band                 Band?            @relation(fields: [bandId], references: [id])
 
-  @@index([band_id])
-  @@index([band_id, status])
-  @@index([created_at(sort: Desc)])
+  @@index([bandId])
+  @@index([bandId, status])
+  @@index([createdAt(sort: Desc)])
   @@index([priority])
   @@index([priority, status])
-  @@index([quota_approved])
-  @@index([status, created_at(sort: Desc)])
+  @@index([quotaApproved])
+  @@index([status, createdAt(sort: Desc)])
   @@index([status])
+  @@map("sync_jobs")
 }
 
-model user_sessions {
-  id             String   @id
-  user_id        String
-  token          String   @unique
-  device_type    String?
-  browser        String?
-  ip_address     String?
-  last_active_at DateTime @default(now())
-  created_at     DateTime @default(now())
-  expires_at     DateTime
-  users          users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model UserSession {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  token         String   @unique
+  deviceType    String?  @map("device_type")
+  browser       String?
+  ipAddress     String?  @map("ip_address")
+  lastActiveAt  DateTime @default(now()) @map("last_active_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  expiresAt     DateTime @map("expires_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
-  @@index([user_id])
+  @@index([userId])
+  @@map("user_sessions")
 }
 
-model users {
-  id                        String                      @id
-  email                     String                      @unique
-  password_hash             String
-  name                      String
-  avatar                    String?
-  bio                       String?
-  email_verified            Boolean                     @default(false)
-  preferences               Json                        @default("{}")
-  last_seen_at              DateTime?
-  created_at                DateTime                    @default(now())
-  updated_at                DateTime
-  email_verification_tokens email_verification_tokens[]
-  favorite_bands            favorite_bands[]
-  favorite_videos           favorite_videos[]
-  notification_preferences  notification_preferences?
-  notifications             notifications[]
-  password_reset_tokens     password_reset_tokens[]
-  user_sessions             user_sessions[]
-  watch_later               watch_later[]
+model User {
+  id                       String                    @id @default(cuid())
+  email                    String                    @unique
+  passwordHash             String                    @map("password_hash")
+  name                     String
+  avatar                   String?
+  bio                      String?
+  emailVerified            Boolean                   @default(false) @map("email_verified")
+  preferences              Json                      @default("{}") 
+  lastSeenAt               DateTime?                 @map("last_seen_at")
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  updatedAt                DateTime                  @updatedAt @map("updated_at")
+  emailVerificationTokens  EmailVerificationToken[]
+  favoriteBands            FavoriteBand[]
+  favoriteVideos           FavoriteVideo[]
+  notificationPreferences  NotificationPreference?
+  notifications            Notification[]
+  passwordResetTokens      PasswordResetToken[]
+  userSessions             UserSession[]
+  watchLater               WatchLater[]
 
   @@index([email])
+  @@map("users")
 }
 
-model videos {
-  id                                   String                   @id
-  youtube_id                           String                   @unique
-  title                                String
-  description                          String?
-  thumbnail_url                        String
-  duration                             Int
-  published_at                         DateTime
-  view_count                           Int                      @default(0)
-  like_count                           Int                      @default(0)
-  event_name                           String?
-  event_year                           Int?
-  tags                                 String[]                 @default([])
-  is_hidden                            Boolean                  @default(false)
-  hide_reason                          String?
-  quality_score                        Int                      @default(0)
-  created_at                           DateTime                 @default(now())
-  updated_at                           DateTime
-  band_id                              String
-  opponent_band_id                     String?
-  category_id                          String?
-  creatorId                            String?
-  search_vector                        Unsupported("tsvector")?
-  favorite_videos                      favorite_videos[]
-  bands_videos_band_idTobands          bands                    @relation("videos_band_idTobands", fields: [band_id], references: [id], onDelete: Cascade)
-  categories                           categories?              @relation(fields: [category_id], references: [id])
-  content_creators                     content_creators?        @relation(fields: [creatorId], references: [id])
-  bands_videos_opponent_band_idTobands bands?                   @relation("videos_opponent_band_idTobands", fields: [opponent_band_id], references: [id])
-  watch_later                          watch_later[]
+model Video {
+  id                 String              @id @default(cuid())
+  youtubeId          String              @unique @map("youtube_id")
+  title              String
+  description        String?
+  thumbnailUrl       String              @map("thumbnail_url")
+  duration           Int
+  publishedAt        DateTime            @map("published_at")
+  viewCount          Int                 @default(0) @map("view_count")
+  likeCount          Int                 @default(0) @map("like_count")
+  eventName          String?             @map("event_name")
+  eventYear          Int?                @map("event_year")
+  tags               String[]            @default([])
+  isHidden           Boolean             @default(false) @map("is_hidden")
+  hideReason         String?             @map("hide_reason")
+  qualityScore       Int                 @default(0) @map("quality_score")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  bandId             String              @map("band_id")
+  opponentBandId     String?             @map("opponent_band_id")
+  categoryId         String?             @map("category_id")
+  creatorId          String?             @map("creatorId")
+  searchVector       Unsupported("tsvector")? @map("search_vector")
+  favoriteVideos     FavoriteVideo[]
+  band               Band                @relation("videos_band_idTobands", fields: [bandId], references: [id], onDelete: Cascade)
+  category           Category?           @relation(fields: [categoryId], references: [id])
+  contentCreator     ContentCreator?     @relation(fields: [creatorId], references: [id])
+  opponentBand       Band?               @relation("videos_opponent_band_idTobands", fields: [opponentBandId], references: [id])
+  watchLater         WatchLater[]
 
-  @@index([band_id, category_id])
-  @@index([band_id, category_id, is_hidden])
-  @@index([band_id, event_year])
-  @@index([band_id])
-  @@index([band_id, is_hidden, published_at(sort: Desc)])
-  @@index([band_id, view_count(sort: Desc)])
-  @@index([category_id])
-  @@index([category_id, is_hidden, published_at(sort: Desc)])
+  @@index([bandId, categoryId])
+  @@index([bandId, categoryId, isHidden])
+  @@index([bandId, eventYear])
+  @@index([bandId])
+  @@index([bandId, isHidden, publishedAt(sort: Desc)])
+  @@index([bandId, viewCount(sort: Desc)])
+  @@index([categoryId])
+  @@index([categoryId, isHidden, publishedAt(sort: Desc)])
   @@index([creatorId])
   @@index([duration])
-  @@index([event_year])
-  @@index([event_year, is_hidden])
-  @@index([is_hidden])
-  @@index([is_hidden, published_at(sort: Desc)])
-  @@index([opponent_band_id])
-  @@index([opponent_band_id, is_hidden])
-  @@index([published_at(sort: Desc)])
-  @@index([quality_score(sort: Desc)])
-  @@index([search_vector], type: Gin)
+  @@index([eventYear])
+  @@index([eventYear, isHidden])
+  @@index([isHidden])
+  @@index([isHidden, publishedAt(sort: Desc)])
+  @@index([opponentBandId])
+  @@index([opponentBandId, isHidden])
+  @@index([publishedAt(sort: Desc)])
+  @@index([qualityScore(sort: Desc)])
+  @@index([searchVector], type: Gin)
   @@index([title])
-  @@index([view_count(sort: Desc)])
+  @@index([viewCount(sort: Desc)])
+  @@map("videos")
 }
 
-model watch_later {
-  id         String    @id
-  user_id    String
-  video_id   String
-  watched    Boolean   @default(false)
-  watched_at DateTime?
-  created_at DateTime  @default(now())
-  updated_at DateTime
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  videos     videos    @relation(fields: [video_id], references: [id], onDelete: Cascade)
+model WatchLater {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  videoId   String    @map("video_id")
+  watched   Boolean   @default(false)
+  watchedAt DateTime? @map("watched_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
-  @@unique([user_id, video_id])
-  @@index([user_id])
-  @@index([video_id])
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@index([videoId])
+  @@map("watch_later")
 }
 
-model youtube_videos {
-  id               String            @id
-  youtube_id       String            @unique
+model YouTubeVideo {
+  id               String            @id @default(cuid())
+  youtubeId        String            @unique @map("youtube_id")
   title            String
   description      String?
-  thumbnail_url    String
+  thumbnailUrl     String            @map("thumbnail_url")
   url              String
   duration         Int               @default(0)
-  published_at     DateTime
-  view_count       Int               @default(0)
-  like_count       Int               @default(0)
-  channel_id       String
-  channel_title    String?
-  band_id          String?
-  creator_id       String?
-  sync_status      SyncStatus        @default(PENDING)
-  last_synced_at   DateTime?
-  sync_errors      String[]          @default([])
-  is_promoted      Boolean           @default(false)
-  promoted_at      DateTime?
-  quality_score    Int               @default(0)
-  created_at       DateTime          @default(now())
-  updated_at       DateTime
-  bands            bands?            @relation(fields: [band_id], references: [id])
-  content_creators content_creators? @relation(fields: [creator_id], references: [id])
+  publishedAt      DateTime          @map("published_at")
+  viewCount        Int               @default(0) @map("view_count")
+  likeCount        Int               @default(0) @map("like_count")
+  channelId        String            @map("channel_id")
+  channelTitle     String?           @map("channel_title")
+  bandId           String?           @map("band_id")
+  opponentBandId   String?           @map("opponent_band_id")
+  creatorId        String?           @map("creator_id")
+  syncStatus       SyncStatus        @default(PENDING) @map("sync_status")
+  lastSyncedAt     DateTime?         @map("last_synced_at")
+  syncErrors       String[]          @default([]) @map("sync_errors")
+  isPromoted       Boolean           @default(false) @map("is_promoted")
+  promotedAt       DateTime?         @map("promoted_at")
+  qualityScore     Int               @default(0) @map("quality_score")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  
+  band             Band?             @relation("youtube_videos_band", fields: [bandId], references: [id])
+  opponentBand     Band?             @relation("youtube_videos_opponent", fields: [opponentBandId], references: [id])
+  contentCreator   ContentCreator?   @relation(fields: [creatorId], references: [id])
 
-  @@index([band_id])
-  @@index([band_id, published_at(sort: Desc)])
-  @@index([channel_id])
-  @@index([channel_id, last_synced_at])
-  @@index([channel_id, sync_status])
-  @@index([creator_id])
-  @@index([creator_id, published_at(sort: Desc)])
-  @@index([is_promoted])
-  @@index([published_at(sort: Desc)])
-  @@index([quality_score(sort: Desc)])
-  @@index([sync_status, created_at])
-  @@index([sync_status])
-  @@index([view_count(sort: Desc)])
+  @@index([bandId])
+  @@index([opponentBandId])
+  @@index([bandId, publishedAt(sort: Desc)])
+  @@index([channelId])
+  @@index([channelId, lastSyncedAt])
+  @@index([channelId, syncStatus])
+  @@index([creatorId])
+  @@index([creatorId, publishedAt(sort: Desc)])
+  @@index([isPromoted])
+  @@index([publishedAt(sort: Desc)])
+  @@index([qualityScore(sort: Desc)])
+  @@index([syncStatus, createdAt])
+  @@index([syncStatus])
+  @@index([viewCount(sort: Desc)])
+  @@map("youtube_videos")
 }
 
 enum AdminRole {
@@ -823,7 +872,7 @@ enum AdminRole {
 }
 
 enum BandType {
-  SCHOOL
+  HBCU
   ALL_STAR
 }
 

@@ -108,7 +108,7 @@ export class TrendingService {
             },
             _count: {
               select: {
-                favorites: true,
+                favoriteBands: true,
               },
             },
           },
@@ -143,7 +143,7 @@ export class TrendingService {
           videoCount: metric.videoCount,
           recentUploads: metric.recentUploads,
           followerCount: 0, // Set to 0 for now
-          favoriteCount: metric.band._count.favorites,
+          favoriteCount: metric.band._count.favoriteBands,
         },
         latestVideos: metric.band.videos.map(video => ({
           ...video,
@@ -162,7 +162,7 @@ export class TrendingService {
     const bands = await this.prisma.band.findMany({
       include: {
         videos: true,
-        favorites: true,
+        favoriteBands: true,
         shares: true,
       },
     });
@@ -186,7 +186,7 @@ export class TrendingService {
         .reduce((sum, v) => sum + v.viewCount, 0);
 
       // Calculate engagement metrics
-      const totalFavorites = band.favorites.length;
+      const totalFavorites = band.favoriteBands.length;
       const totalFollowers = 0; // Set to 0 if followers doesn't exist
       const totalShares = band.shares?.length || 0;
 

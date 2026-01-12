@@ -394,7 +394,7 @@ export class SecurityService {
         take: filter.limit || 50,
         skip: filter.offset || 0,
         include: {
-          user: {
+          adminUser: {
             select: {
               id: true,
               email: true,

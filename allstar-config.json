@@ -1,0 +1,132 @@
+{
+  "allStarBands": [
+    {
+      "name": "Atlanta All-Star Mass Band",
+      "aliases": ["AAMB", "Georgia Mass Band", "GMB", "Atlanta All-Star", "Atlanta Mass Band"],
+      "region": "Atlanta, GA"
+    },
+    {
+      "name": "New Orleans All-Star Band",
+      "aliases": ["NOASB", "New Orleans All-Star", "NOLA All-Star"],
+      "region": "New Orleans, LA"
+    },
+    {
+      "name": "Dallas Legion All-Star Band",
+      "aliases": ["DLASB", "The Legion", "Dallas Legion"],
+      "region": "Dallas, TX"
+    },
+    {
+      "name": "Broward All-Star Band",
+      "aliases": ["BAB", "Broward All-Star"],
+      "region": "Broward County, FL"
+    },
+    {
+      "name": "Austin All-Star Band",
+      "aliases": ["Austin All-Star"],
+      "region": "Austin, TX"
+    },
+    {
+      "name": "Alabama Mass Band",
+      "aliases": ["AMB", "Alabama All-Star"],
+      "region": "Alabama"
+    },
+    {
+      "name": "Magic City All-Star Band",
+      "aliases": ["Magic City All-Star", "Magic City"],
+      "region": "Birmingham, AL"
+    },
+    {
+      "name": "Memphis Mass Band",
+      "aliases": ["MMB", "Memphis All-Star"],
+      "region": "Memphis, TN"
+    },
+    {
+      "name": "Regulators",
+      "aliases": ["The Regulators"],
+      "region": "Various"
+    },
+    {
+      "name": "North Carolina Mass Band",
+      "aliases": ["NCMB", "NC Mass Band"],
+      "region": "North Carolina"
+    },
+    {
+      "name": "LLI",
+      "aliases": ["LLI Band"],
+      "region": "Various"
+    }
+  ],
+  "specialEvents": [
+    {
+      "name": "Honda Battle of the Bands",
+      "aliases": ["HBOB", "Honda BOTB", "Honda Battle"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "National Battle of the Bands",
+      "aliases": ["NBOTB", "National BOTB"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Band of the Year",
+      "aliases": ["BOTY"],
+      "type": "COMPETITION"
+    },
+    {
+      "name": "Mayhem in the Mecca",
+      "aliases": ["Mayhem Mecca"],
+      "type": "ALL_STAR_EVENT"
+    },
+    {
+      "name": "Midsouth Massacre",
+      "aliases": ["Mid South Massacre"],
+      "type": "ALL_STAR_EVENT"
+    },
+    {
+      "name": "Gulf Coast Takeover",
+      "aliases": ["GCT"],
+      "type": "ALL_STAR_EVENT"
+    },
+    {
+      "name": "Battle for the Culture",
+      "aliases": ["BFTC"],
+      "type": "ALL_STAR_EVENT"
+    },
+    {
+      "name": "Battle of the Gulf Coast",
+      "aliases": ["BOTGC", "Gulf Coast BOTB"],
+      "type": "ALL_STAR_EVENT"
+    }
+  ],
+  "exclusionPatterns": {
+    "highSchool": [
+      "high school",
+      "hs ",
+      " hs",
+      "academy",
+      "preparatory",
+      "prep school"
+    ],
+    "middleSchool": [
+      "middle school",
+      "ms ",
+      " ms",
+      "junior high"
+    ],
+    "podcasts": [
+      "hanging with",
+      "season ",
+      "episode ",
+      " s\\d+e\\d+",
+      "versus",
+      "showdown",
+      "band head"
+    ],
+    "generic": [
+      "drum major intro",
+      "tuba battle",
+      "crank session",
+      "invitational"
+    ]
+  }
+}

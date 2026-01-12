@@ -154,10 +154,10 @@ export class OAuthService {
           providerUserId,
         },
       },
-      include: { user: true },
+      include: { adminUser: true },
     });
 
-    return oauthAccount?.user || null;
+    return oauthAccount?.adminUser || null;
   }
 
   /**
@@ -265,7 +265,7 @@ export class OAuthService {
           providerUserId: profile.providerUserId,
         },
       },
-      include: { user: true },
+      include: { adminUser: true },
     });
 
     if (existingOAuth) {
@@ -279,7 +279,7 @@ export class OAuthService {
         },
       });
 
-      return { user: existingOAuth.user, isNewUser: false };
+      return { user: existingOAuth.adminUser, isNewUser: false };
     }
 
     // Try to find user by email

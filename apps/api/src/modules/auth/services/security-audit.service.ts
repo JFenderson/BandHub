@@ -239,7 +239,7 @@ export class SecurityAuditService {
         take: limit,
         skip: offset,
         include: {
-          user: {
+          adminUser: {
             select: { id: true, email: true, name: true },
           },
         },

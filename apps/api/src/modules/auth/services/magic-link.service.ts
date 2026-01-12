@@ -142,7 +142,7 @@ export class MagicLinkService {
     // Find the magic link
     const magicLink = await this.prisma.magicLink.findUnique({
       where: { token: hashedToken },
-      include: { user: true },
+      include: { adminUser: true },
     });
 
     if (!magicLink) {
@@ -160,7 +160,7 @@ export class MagicLinkService {
     }
 
     // Check if user is still active
-    if (!magicLink.user.isActive) {
+    if (!magicLink.adminUser.isActive) {
       throw new UnauthorizedException('Account is deactivated');
     }
 

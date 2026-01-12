@@ -1,67 +1,83 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, BandType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 const categories = [
   {
-    name: '5th Quarter',
-    slug: '5th-quarter',
-    description: 'Post-game performances in the stands',
-    sortOrder: 1,
-  },
-  {
-    name: 'Field Show',
-    slug: 'field-show',
-    description: 'Halftime and competition field performances',
-    sortOrder: 2,
-  },
-  {
     name: 'Stand Battle',
     slug: 'stand-battle',
-    description: 'Band battles in the stands during games',
-    sortOrder: 3,
+    description: 'Bands competing in the stands',
+    applicableTypes: [BandType.HBCU, BandType.ALL_STAR], // Use enum, not strings
   },
   {
-    name: 'Halftime',
-    slug: 'halftime',
-    description: 'Halftime show performances',
-    sortOrder: 4,
+    name: 'Field Playing',
+    slug: 'field-playing',
+    description: 'On-field performances and battles',
+    applicableTypes: [BandType.HBCU, BandType.ALL_STAR],
+  },
+  
+  // All-Star and HBCU categories
+  {
+    name: 'Entrance',
+    slug: 'entrance',
+    description: 'Band entrance before the games',
+    applicableTypes: [BandType.HBCU, BandType.ALL_STAR],
   },
   {
-    name: 'Pregame',
-    slug: 'pregame',
-    description: 'Pre-game performances and entrances',
-    sortOrder: 5,
+    name: 'Exit',
+    slug: 'exit',
+    description: 'Band exit performances after the games',
+    applicableTypes: [BandType.HBCU, BandType.ALL_STAR],
+  },
+  {
+    name: 'Percussion Feature',
+    slug: 'percussion-feature',
+    description: 'Drumline and percussion showcases',
+    applicableTypes: [BandType.HBCU, BandType.ALL_STAR],
+  },
+  
+  // HBCU only categories
+  {
+    name: '5th Quarter',
+    slug: '5th-quarter',
+    description: 'Post-game performances',
+    applicableTypes: [BandType.HBCU],
+  },
+  {
+    name: 'Halftime Show',
+    slug: 'halftime-show',
+    description: 'Halftime field performances',
+    applicableTypes: [BandType.HBCU],
   },
   {
     name: 'Parade',
     slug: 'parade',
-    description: 'Parade and marching performances',
-    sortOrder: 6,
+    description: 'Parade performances',
+    applicableTypes: [BandType.HBCU, BandType.ALL_STAR], // Rare but possible
   },
   {
     name: 'Practice',
     slug: 'practice',
     description: 'Practice sessions and rehearsals',
-    sortOrder: 7,
+    applicableTypes: [BandType.HBCU, BandType.ALL_STAR],
   },
   {
     name: 'Concert',
     slug: 'concert',
     description: 'Concert band and indoor performances',
-    sortOrder: 8,
+    applicableTypes: [BandType.HBCU],
   },
-    {
+  {
     name: 'Zero Quarter',
     slug: 'zero-quarter',
     description: 'Zero quarter performances',
-    sortOrder: 9,
+    applicableTypes: [BandType.HBCU],
   },
   {
     name: 'Other',
     slug: 'other',
     description: 'Other band-related content',
-    sortOrder: 99,
+    applicableTypes: [BandType.HBCU, BandType.ALL_STAR],
   },
 ];
 
@@ -71,7 +87,7 @@ export async function seedCategories(prisma: PrismaClient) {
   for (const category of categories) {
     await prisma.category.upsert({
       where: { slug: category.slug },
-      update: category,
+      update: { applicableTypes: category.applicableTypes },
       create: category,
     });
   }
