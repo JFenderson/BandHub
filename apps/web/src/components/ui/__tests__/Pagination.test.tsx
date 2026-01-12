@@ -8,7 +8,7 @@ const mockUseSearchParams = jest.spyOn(navigation, 'useSearchParams');
 
 describe('Pagination component', () => {
   beforeEach(() => {
-    mockUseSearchParams.mockReturnValue(new URLSearchParams());
+    mockUseSearchParams.mockReturnValue(new URLSearchParams() as any);
   });
 
   it('renders page links and navigation buttons', () => {

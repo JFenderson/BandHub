@@ -27,7 +27,7 @@ export class TrendingMetricsProcessor extends WorkerHost {
     const bands = await this.prisma.band.findMany({
       include: {
         videos: true,
-        favorites: true,
+        userFavorites: true,
         shares: true,
       },
     });
@@ -49,7 +49,7 @@ export class TrendingMetricsProcessor extends WorkerHost {
         .filter((v) => v.publishedAt > oneMonthAgo)
         .reduce((sum, v) => sum + v.viewCount, 0);
 
-      const totalFavorites = band.favorites.length;
+      const totalFavorites = band.userFavorites.length;
       const totalFollowers = 0;
       const totalShares = band.shares?.length || 0;
       const videoCount = band.videos.length;

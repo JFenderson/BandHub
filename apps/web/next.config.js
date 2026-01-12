@@ -4,6 +4,7 @@ const path = require('path');
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@hbcu-band-hub/shared-types'],
+  output: 'standalone',
   eslint: {
     ignoreDuringBuilds: true,
   },

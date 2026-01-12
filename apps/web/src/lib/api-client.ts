@@ -40,7 +40,7 @@ const API_URL = getApiUrl();
 
 console.log('🔍 API_URL being used:', API_URL);
 
-class ApiClient {
+export class ApiClient {
   private baseUrl: string;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;

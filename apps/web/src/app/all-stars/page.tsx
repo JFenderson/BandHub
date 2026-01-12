@@ -2,18 +2,26 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: 'All-Star Bands | HBCU Band Hub',
   description: 'Explore summer all-star marching bands from cities across the nation. Watch battles, entrances, and performances from elite regional ensembles.',
 };
 
 async function getAllStarBands() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bands/all-stars`, {
-    next: { revalidate: 3600 }, // ISR: 1 hour
-  });
-  
-  if (!res.ok) throw new Error('Failed to fetch all-star bands');
-  return res.json();
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bands/all-stars`, {
+      cache: 'no-store',
+    });
+    
+    if (!res.ok) return [];
+    return res.json();
+  } catch (error) {
+    console.error('Failed to fetch all-star bands:', error);
+    return [];
+  }
 }
 
 export default async function AllStarBandsPage() {

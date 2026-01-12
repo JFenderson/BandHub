@@ -3,6 +3,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: 'Featured Bands | HBCU Band Hub',
   description: 'Discover our highlighted HBCU marching bands. Explore featured performances from the best Historically Black College and University bands.',
@@ -122,7 +125,12 @@ export default async function FeaturedBandsPage() {
   );
 }
 
-function FeaturedBandCard({ band }: { band: FeaturedBand }) {
+interface FeaturedBandCardProps {
+  band: FeaturedBand;
+  key?: string;
+}
+
+function FeaturedBandCard({ band }: FeaturedBandCardProps) {
   const truncateDescription = (text: string | null, maxLength: number = 100) => {
     if (!text) return 'Explore this amazing HBCU band and their performances.';
     if (text.length <= maxLength) return text;
