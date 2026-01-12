@@ -112,7 +112,7 @@ function generateMockVideos(count: number): Video[] {
         : `${band.name} ${category} Performance`,
       bandName: band.name,
       bandId: band.id,
-      thumbnailUrl: `/api/placeholder/400/300?text=${encodeURIComponent(band.nickname)}`,
+      thumbnailUrl: `https://via.placeholder.com/400x300/3b82f6/ffffff?text=${encodeURIComponent(band.nickname)}`,
       duration: Math.floor(Math.random() * 600) + 180, // 3-13 minutes
       viewCount: Math.floor(Math.random() * 500000) + 1000,
       uploadDate: uploadDate.toISOString(),
@@ -573,8 +573,9 @@ export function VideoRecommendations({ userId, userLocation }: VideoRecommendati
     const initializeData = async () => {
       setLoading(true);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API delay (for development only)
+      // TODO: Remove this delay in production
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Generate mock videos
       const videos = generateMockVideos(100);
@@ -606,10 +607,13 @@ export function VideoRecommendations({ userId, userLocation }: VideoRecommendati
     // Content-based recommendations
     const contentBased = getContentBasedRecommendations(allVideos, preferences);
     if (contentBased.length > 0) {
-      const recentBand = allVideos.find(v => preferences.watchedVideos.includes(v.id))?.bandName || 'similar bands';
+      const recentBand = allVideos.find(v => preferences.watchedVideos.includes(v.id))?.bandName;
+      const title = recentBand 
+        ? `Because you watched ${recentBand}`
+        : 'More Like What You\'ve Watched';
       newSections.push({
         id: 'content-based',
-        title: `Because you watched ${recentBand}`,
+        title,
         icon: <Sparkles className="h-6 w-6" />,
         videos: contentBased,
         explanation: 'Videos from bands and categories similar to what you\'ve watched recently',
@@ -791,17 +795,6 @@ export function VideoRecommendations({ userId, userLocation }: VideoRecommendati
           dislikedVideos={new Set(preferences.dislikedVideos)}
         />
       ))}
-      
-      {/* CSS for hiding scrollbar */}
-      <style jsx global>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   );
 }
