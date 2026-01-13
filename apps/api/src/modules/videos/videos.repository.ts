@@ -184,7 +184,7 @@ export class VideosRepository {
           logoUrl: true,
         },
       },
-      creator: {
+      contentCreator: {
         select: {
           id: true,
           name: true,

@@ -18,7 +18,7 @@ async function promoteVideos() {
     take: 50000, // Promote in batches
     include: {
       band: true,
-      creator: true,
+      contentCreator: true,
     },
   });
 
