@@ -32,6 +32,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const insertFormatting = (startTag: string, endTag: string) => {
     if (!textareaRef.current) return;
@@ -76,15 +77,17 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const handleInsertLink = () => {
     if (!linkUrl || !textareaRef.current) return;
 
+    setError(null);
+
     // Validate URL to prevent XSS
     try {
       const url = new URL(linkUrl);
       if (!['http:', 'https:'].includes(url.protocol)) {
-        alert('Only HTTP and HTTPS URLs are allowed');
+        setError('Only HTTP and HTTPS URLs are allowed');
         return;
       }
     } catch {
-      alert('Please enter a valid URL');
+      setError('Please enter a valid URL');
       return;
     }
 
@@ -142,6 +145,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       {/* Link input modal */}
       {showLinkInput && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 p-3 space-y-2">
+          {error && (
+            <div className="text-sm text-red-500 mb-2" role="alert">
+              {error}
+            </div>
+          )}
           <input
             type="url"
             value={linkUrl}
@@ -170,6 +178,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 setShowLinkInput(false);
                 setLinkUrl('');
                 setLinkText('');
+                setError(null);
               }}
               className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400"
             >

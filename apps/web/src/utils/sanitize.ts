@@ -89,13 +89,21 @@ export function sanitizeHTML(html: string): string {
         const allowedAttrs = ALLOWED_ATTRIBUTES[tagName];
         Array.from(element.attributes).forEach(attr => {
           if (allowedAttrs.includes(attr.name.toLowerCase())) {
+            // Escape attribute values to prevent XSS
+            const escapedValue = attr.value
+              .replace(/&/g, '&amp;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#039;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
+            
             // Special handling for URLs
             if (attr.name.toLowerCase() === 'href') {
               if (isValidUrl(attr.value)) {
-                attrs += ` ${attr.name}="${attr.value}"`;
+                attrs += ` ${attr.name}="${escapedValue}"`;
               }
             } else {
-              attrs += ` ${attr.name}="${attr.value}"`;
+              attrs += ` ${attr.name}="${escapedValue}"`;
             }
           }
         });

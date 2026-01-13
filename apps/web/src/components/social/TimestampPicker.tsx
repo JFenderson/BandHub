@@ -6,12 +6,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { formatTimestamp } from '../../utils/sanitize';
 
-// Constant for timestamp removal
-const REMOVE_TIMESTAMP = -1;
+/**
+ * Special value used to indicate timestamp removal
+ * When this value is passed to onSelect, it means the user wants to remove the timestamp
+ * Consumer of this component should check for this value:
+ * if (timestamp === REMOVE_TIMESTAMP) { removeTimestamp(); }
+ */
+export const REMOVE_TIMESTAMP = -1;
 
 interface TimestampPickerProps {
   currentTime: number;
   duration: number;
+  /**
+   * Called when user selects a timestamp
+   * @param timestamp - The selected timestamp in seconds, or REMOVE_TIMESTAMP to remove
+   */
   onSelect: (timestamp: number) => void;
   selectedTimestamp?: number;
 }
