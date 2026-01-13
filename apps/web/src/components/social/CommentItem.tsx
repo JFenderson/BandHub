@@ -147,12 +147,9 @@ export const CommentItem: React.FC<CommentItemProps> = ({
             {comment.timestamp !== undefined && (
               <>
                 <span className="text-sm text-gray-500">•</span>
-                <button
-                  className="text-sm text-blue-500 hover:underline"
-                  onClick={() => {/* Jump to timestamp */}}
-                >
+                <span className="text-sm text-blue-500">
                   {formatTimestamp(comment.timestamp)}
-                </button>
+                </span>
               </>
             )}
           </div>

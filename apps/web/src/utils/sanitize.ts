@@ -138,13 +138,22 @@ export function escapeHTML(text: string): string {
 
 /**
  * Detect and filter profanity
+ * Note: This is a minimal example list. For production, consider:
+ * - Using a comprehensive profanity filter library
+ * - Loading from external configuration file
+ * - Supporting multiple languages
  */
 const PROFANITY_LIST = [
-  // Add profanity words here - keeping minimal for now
-  'badword1', 'badword2'
+  // Add actual profanity words based on your community guidelines
+  // This is intentionally minimal - customize for your use case
 ];
 
 export function containsProfanity(text: string): boolean {
+  if (PROFANITY_LIST.length === 0) {
+    // No profanity list configured
+    return false;
+  }
+  
   const lowerText = text.toLowerCase();
   return PROFANITY_LIST.some(word => lowerText.includes(word));
 }

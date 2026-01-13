@@ -5,6 +5,15 @@
 
 import React, { useRef, useState } from 'react';
 
+/**
+ * Escape text for safe insertion in HTML
+ */
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -67,14 +76,29 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const handleInsertLink = () => {
     if (!linkUrl || !textareaRef.current) return;
 
+    // Validate URL to prevent XSS
+    try {
+      const url = new URL(linkUrl);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        alert('Only HTTP and HTTPS URLs are allowed');
+        return;
+      }
+    } catch {
+      alert('Please enter a valid URL');
+      return;
+    }
+
     const textarea = textareaRef.current;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     
-    const text = linkText || 'link text';
+    // Escape both URL and text to prevent XSS
+    const safeUrl = escapeHtml(linkUrl);
+    const safeText = escapeHtml(linkText || 'link text');
+    
     const newValue = 
       value.substring(0, start) +
-      `<a href="${linkUrl}">${text}</a>` +
+      `<a href="${safeUrl}">${safeText}</a>` +
       value.substring(end);
 
     onChange(newValue);

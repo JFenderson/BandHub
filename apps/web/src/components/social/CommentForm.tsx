@@ -73,8 +73,12 @@ export const CommentForm: React.FC<CommentFormProps> = ({
       ? videoCurrentTime 
       : undefined;
 
-    // Note: Content is stored as-is. Sanitization should happen on render
-    // or on the server side before storing in the database
+    // IMPORTANT: Content should be sanitized server-side before storing in database
+    // This prevents XSS attacks from persisted data
+    // Client-side sanitization is only a first line of defense
+    // Example server-side sanitization:
+    //   const sanitized = DOMPurify.sanitize(content);
+    //   await db.comments.create({ content: sanitized, ... });
     onSubmit(trimmedContent, timestamp);
     setContent('');
     setAttachTimestamp(false);

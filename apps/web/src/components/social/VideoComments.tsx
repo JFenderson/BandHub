@@ -291,12 +291,19 @@ export const VideoComments: React.FC<VideoCommentsProps> = ({
   const handleSubmitReport = async (category: string, description?: string) => {
     if (!reportingCommentId) return;
 
+    // Validate category
+    const validCategories = ['spam', 'harassment', 'inappropriate', 'off-topic', 'other'];
+    if (!validCategories.includes(category)) {
+      setError('Invalid report category');
+      return;
+    }
+
     try {
       const newReport: CommentReport = {
         id: Date.now().toString(),
         commentId: reportingCommentId,
         reporterId: currentUserId,
-        category: category as any,
+        category: category as CommentReport['category'],
         description,
         status: 'pending',
         createdAt: new Date(),

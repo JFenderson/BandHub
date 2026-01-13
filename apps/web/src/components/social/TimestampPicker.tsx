@@ -6,6 +6,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { formatTimestamp } from '../../utils/sanitize';
 
+// Constant for timestamp removal
+const REMOVE_TIMESTAMP = -1;
+
 interface TimestampPickerProps {
   currentTime: number;
   duration: number;
@@ -198,7 +201,7 @@ export const TimestampPicker: React.FC<TimestampPickerProps> = ({
             <button
               type="button"
               onClick={() => {
-                onSelect(-1); // Use -1 to indicate removal
+                onSelect(REMOVE_TIMESTAMP);
                 setShowPicker(false);
               }}
               className="w-full mt-2 px-3 py-1 text-xs text-red-500 hover:text-red-600"
