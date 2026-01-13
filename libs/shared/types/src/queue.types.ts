@@ -11,6 +11,10 @@ export enum JobType {
   PROCESS_VIDEO = 'process-video',
   CLEANUP_VIDEOS = 'cleanup-videos',
   UPDATE_STATS = 'update-stats',
+  BACKFILL_CREATORS = 'backfill-creators',
+  BACKFILL_BANDS = 'backfill-bands',
+  MATCH_VIDEOS = 'match-videos',
+  PROMOTE_VIDEOS = 'promote-videos',
 }
 
 export enum JobPriority {
@@ -60,12 +64,43 @@ export interface UpdateStatsJobData {
   batchSize?: number;
 }
 
+export interface BackfillCreatorsJobData {
+  type: JobType.BACKFILL_CREATORS;
+  triggeredBy: 'admin' | 'schedule' | 'system';
+  creatorId?: string;
+  limit?: number;
+}
+
+export interface BackfillBandsJobData {
+  type: JobType.BACKFILL_BANDS;
+  triggeredBy: 'admin' | 'schedule' | 'system';
+  bandId?: string;
+  limit?: number;
+}
+
+export interface MatchVideosJobData {
+  type: JobType.MATCH_VIDEOS;
+  triggeredBy: 'admin' | 'schedule' | 'system';
+  limit?: number;
+  minConfidence?: number;
+}
+
+export interface PromoteVideosJobData {
+  type: JobType.PROMOTE_VIDEOS;
+  triggeredBy: 'admin' | 'schedule' | 'system';
+  limit?: number;
+}
+
 export type JobData =
   | SyncBandJobData
   | SyncAllBandsJobData
   | ProcessVideoJobData
   | CleanupVideosJobData
-  | UpdateStatsJobData;
+  | UpdateStatsJobData
+  | BackfillCreatorsJobData
+  | BackfillBandsJobData
+  | MatchVideosJobData
+  | PromoteVideosJobData;
 
 export interface YouTubeVideoMetadata {
   id: string;

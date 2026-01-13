@@ -7,6 +7,10 @@ import {
   JobType, 
   SyncAllBandsJobData, 
   CleanupVideosJobData,
+  BackfillCreatorsJobData,
+  BackfillBandsJobData,
+  MatchVideosJobData,
+  PromoteVideosJobData,
   SyncMode,
   JobPriority,
 } from '@hbcu-band-hub/shared-types';
@@ -20,6 +24,8 @@ export class SyncScheduler implements OnModuleInit {
   constructor(
     @InjectQueue(QueueName.VIDEO_SYNC)
     private videoSyncQueue: Queue,
+    @InjectQueue(QueueName.VIDEO_PROCESSING)
+    private videoProcessingQueue: Queue,
     @InjectQueue(QueueName.MAINTENANCE)
     private maintenanceQueue: Queue,
     private configService: ConfigService,
@@ -41,10 +47,51 @@ export class SyncScheduler implements OnModuleInit {
   }
   
   /**
-   * Daily incremental sync - runs every day at 3 AM UTC
-   * This catches new videos published since the last sync
+   * Daily backfill - runs every day at 3 AM UTC
+   * Pulls videos from official band channels and content creator channels
    */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async dailyBackfill() {
+    if (!this.isProduction) {
+      this.logger.debug('Skipping daily backfill in non-production environment');
+      return;
+    }
+    
+    this.logger.log('Starting daily backfill');
+    
+    // Queue both backfill jobs in parallel
+    await Promise.all([
+      this.videoSyncQueue.add(
+        JobType.BACKFILL_CREATORS,
+        {
+          type: JobType.BACKFILL_CREATORS,
+          triggeredBy: 'schedule',
+        } as BackfillCreatorsJobData,
+        {
+          priority: JobPriority.NORMAL,
+          jobId: `backfill-creators-${new Date().toISOString().split('T')[0]}`,
+        }
+      ),
+      this.videoSyncQueue.add(
+        JobType.BACKFILL_BANDS,
+        {
+          type: JobType.BACKFILL_BANDS,
+          triggeredBy: 'schedule',
+        } as BackfillBandsJobData,
+        {
+          priority: JobPriority.NORMAL,
+          jobId: `backfill-bands-${new Date().toISOString().split('T')[0]}`,
+        }
+      ),
+    ]);
+  }
+  
+  /**
+   * Daily incremental sync (legacy) - runs every day at 3 AM UTC
+   * This catches new videos published since the last sync
+   * NOTE: This is now supplemented by the new backfill jobs above
+   */
+  @Cron('0 3 * * *', { disabled: true })
   async dailyIncrementalSync() {
     if (!this.isProduction) {
       this.logger.debug('Skipping daily sync in non-production environment');
@@ -97,10 +144,63 @@ export class SyncScheduler implements OnModuleInit {
   }
   
   /**
-   * Daily cleanup - runs every day at 4 AM UTC
-   * This removes duplicates and hides irrelevant videos
+   * Daily matching - runs every day at 4 AM UTC (after backfill)
+   * Matches unmatched videos to bands
    */
   @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  async dailyMatching() {
+    if (!this.isProduction) {
+      this.logger.debug('Skipping daily matching in non-production environment');
+      return;
+    }
+    
+    this.logger.log('Starting daily matching');
+    
+    await this.videoProcessingQueue.add(
+      JobType.MATCH_VIDEOS,
+      {
+        type: JobType.MATCH_VIDEOS,
+        triggeredBy: 'schedule',
+        minConfidence: 30,
+      } as MatchVideosJobData,
+      {
+        priority: JobPriority.NORMAL,
+        jobId: `match-videos-${new Date().toISOString().split('T')[0]}`,
+      }
+    );
+  }
+  
+  /**
+   * Daily promotion - runs every day at 5 AM UTC (after matching)
+   * Promotes matched videos to production
+   */
+  @Cron('0 5 * * *')
+  async dailyPromotion() {
+    if (!this.isProduction) {
+      this.logger.debug('Skipping daily promotion in non-production environment');
+      return;
+    }
+    
+    this.logger.log('Starting daily promotion');
+    
+    await this.videoProcessingQueue.add(
+      JobType.PROMOTE_VIDEOS,
+      {
+        type: JobType.PROMOTE_VIDEOS,
+        triggeredBy: 'schedule',
+      } as PromoteVideosJobData,
+      {
+        priority: JobPriority.NORMAL,
+        jobId: `promote-videos-${new Date().toISOString().split('T')[0]}`,
+      }
+    );
+  }
+  
+  /**
+   * Daily cleanup - runs every day at 6 AM UTC (after promotion)
+   * This removes duplicates and hides irrelevant videos
+   */
+  @Cron('0 6 * * *')
   async dailyCleanup() {
     if (!this.isProduction) {
       this.logger.debug('Skipping daily cleanup in non-production environment');
@@ -167,9 +267,11 @@ export class SyncScheduler implements OnModuleInit {
   
   private logSchedule() {
     this.logger.log('Scheduled jobs:');
-    this.logger.log('  - Daily incremental sync: 3:00 AM UTC');
+    this.logger.log('  - Daily backfill (creators + bands): 3:00 AM UTC');
+    this.logger.log('  - Daily matching: 4:00 AM UTC');
+    this.logger.log('  - Daily promotion: 5:00 AM UTC');
+    this.logger.log('  - Daily cleanup: 6:00 AM UTC');
     this.logger.log('  - Weekly full sync: Sundays at 2:00 AM UTC');
-    this.logger.log('  - Daily cleanup: 4:00 AM UTC');
     this.logger.log('  - Hourly stats update: Every hour (9 AM - 11 PM UTC)');
   }
 }
