@@ -11,3 +11,6 @@ export { ReactionPicker } from './ReactionPicker';
 export { ReactionDisplay } from './ReactionDisplay';
 export { CommentReport } from './CommentReport';
 export { ModerationPanel } from './ModerationPanel';
+export { RichTextEditor } from './RichTextEditor';
+export { MentionInput } from './MentionInput';
+export { TimestampPicker } from './TimestampPicker';
