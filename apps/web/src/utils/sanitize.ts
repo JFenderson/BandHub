@@ -117,8 +117,20 @@ export function sanitizeHTML(html: string): string {
 
 /**
  * Escape HTML to prevent script injection
+ * Works in both browser and server environments
  */
 export function escapeHTML(text: string): string {
+  // Server-side or when DOM is not available
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+  
+  // Browser environment - use DOM for escaping
   const temp = document.createElement('div');
   temp.textContent = text;
   return temp.innerHTML;
