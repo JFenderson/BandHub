@@ -27,6 +27,17 @@ interface BackfillResult {
   duration: number;
 }
 
+/**
+ * BackfillBandsProcessor
+ * 
+ * Pulls videos from official HBCU band YouTube channels.
+ * 
+ * Key Difference from BackfillCreatorsProcessor:
+ * - Videos from official band channels get bandId set immediately (since we know the band)
+ * - Videos from creator channels have bandId = null (need matching later)
+ * 
+ * This is the most reliable source of band videos since they come from official channels.
+ */
 @Processor(QueueName.VIDEO_SYNC, {
   concurrency: 1, // Run one at a time to manage quota
 })

@@ -21,6 +21,15 @@ export class SyncScheduler implements OnModuleInit {
   private readonly logger = new Logger(SyncScheduler.name);
   private readonly isProduction: boolean;
   
+  /**
+   * Constructor
+   * 
+   * Note: We inject both VIDEO_SYNC and VIDEO_PROCESSING queues:
+   * - VIDEO_SYNC: For backfill operations (pulling videos from YouTube)
+   * - VIDEO_PROCESSING: For matching and promotion (processing existing videos)
+   * 
+   * This separation allows independent scaling and priority management.
+   */
   constructor(
     @InjectQueue(QueueName.VIDEO_SYNC)
     private videoSyncQueue: Queue,

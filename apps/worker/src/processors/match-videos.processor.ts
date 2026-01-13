@@ -92,6 +92,12 @@ export class MatchVideosProcessor extends WorkerHost {
     this.loadConfigurations();
   }
   
+  /**
+   * Load HBCU bands and all-star configurations from files
+   * 
+   * Note: These paths are relative to the project root where the worker runs.
+   * If deployment structure changes, update these paths or use env variables.
+   */
   private loadConfigurations() {
     try {
       // Load all-star configuration
@@ -99,6 +105,7 @@ export class MatchVideosProcessor extends WorkerHost {
       this.allStarConfig = JSON.parse(fs.readFileSync(allStarConfigPath, 'utf-8'));
       
       // Load HBCU bands - try to require from API
+      // TODO: Move HBCU_BANDS to a shared location to avoid fragile relative paths
       try {
         const hbcuBandsModule = require('../../../../apps/api/src/config/hbcu-bands');
         this.hbcuBands = hbcuBandsModule.HBCU_BANDS || [];

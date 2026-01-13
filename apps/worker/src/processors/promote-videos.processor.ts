@@ -134,7 +134,8 @@ export class PromoteVideosProcessor extends WorkerHost {
               publishedAt: youtubeVideo.publishedAt,
               viewCount: youtubeVideo.viewCount,
               likeCount: youtubeVideo.likeCount,
-              bandId: youtubeVideo.bandId!,
+              // bandId is guaranteed to be non-null by query filter, but add explicit check for safety
+              bandId: youtubeVideo.bandId || '',
               categoryId: category?.id,
               isHidden: false,
               qualityScore: youtubeVideo.qualityScore,
