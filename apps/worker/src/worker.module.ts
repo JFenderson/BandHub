@@ -18,6 +18,10 @@ import { SyncAllBandsProcessor } from './processors/sync-all-bands.processor';
 import { ProcessVideoProcessor } from './processors/process-video.processor';
 import { CleanupProcessor } from './processors/cleanup.processor';
 import { NotificationProcessor } from './processors/notification.processor';
+import { BackfillCreatorsProcessor } from './processors/backfill-creators.processor';
+import { BackfillBandsProcessor } from './processors/backfill-bands.processor';
+import { MatchVideosProcessor } from './processors/match-videos.processor';
+import { PromoteVideosProcessor } from './processors/promote-videos.processor';
 // Scheduler
 import { SyncScheduler } from './scheduler/sync.scheduler';
 
@@ -108,6 +112,10 @@ SyncAllBandsProcessor,
 ProcessVideoProcessor,
 CleanupProcessor,
 NotificationProcessor,
+BackfillCreatorsProcessor,
+BackfillBandsProcessor,
+MatchVideosProcessor,
+PromoteVideosProcessor,
 
 // Scheduler
 SyncScheduler,
