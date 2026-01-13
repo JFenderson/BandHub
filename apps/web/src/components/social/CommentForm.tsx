@@ -4,7 +4,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { escapeHTML, containsProfanity, isSpam } from '../../utils/sanitize';
+import { containsProfanity, isSpam } from '../../utils/sanitize';
 
 interface CommentFormProps {
   videoId: string;
@@ -73,7 +73,9 @@ export const CommentForm: React.FC<CommentFormProps> = ({
       ? videoCurrentTime 
       : undefined;
 
-    onSubmit(escapeHTML(trimmedContent), timestamp);
+    // Note: Content is stored as-is. Sanitization should happen on render
+    // or on the server side before storing in the database
+    onSubmit(trimmedContent, timestamp);
     setContent('');
     setAttachTimestamp(false);
   };

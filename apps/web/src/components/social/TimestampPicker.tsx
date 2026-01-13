@@ -67,14 +67,17 @@ export const TimestampPicker: React.FC<TimestampPickerProps> = ({
     setSeconds(s);
   };
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleApply = () => {
     const totalSeconds = hours * 3600 + minutes * 60 + seconds;
     
     if (totalSeconds > duration) {
-      alert('Timestamp exceeds video duration');
+      setError('Timestamp exceeds video duration');
       return;
     }
     
+    setError(null);
     onSelect(totalSeconds);
     setShowPicker(false);
   };
@@ -164,6 +167,13 @@ export const TimestampPicker: React.FC<TimestampPickerProps> = ({
           <div className="text-center mb-3 text-lg font-mono text-gray-900 dark:text-gray-100">
             {formatTimestamp(timestamp)}
           </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="mb-3 text-sm text-red-500 text-center" role="alert">
+              {error}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-2">

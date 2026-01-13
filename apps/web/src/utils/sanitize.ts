@@ -1,5 +1,11 @@
 /**
  * Sanitization utilities for comment content to prevent XSS attacks
+ * 
+ * SECURITY NOTE: This is a basic sanitization implementation.
+ * For production use, consider using a dedicated library like DOMPurify:
+ * npm install dompurify
+ * import DOMPurify from 'dompurify';
+ * const clean = DOMPurify.sanitize(dirty);
  */
 
 const ALLOWED_TAGS = ['b', 'i', 'a', 'p', 'br'];
@@ -7,51 +13,106 @@ const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
   a: ['href', 'title'],
 };
 
+// Dangerous URL protocols that should be blocked
+const DANGEROUS_PROTOCOLS = [
+  'javascript:',
+  'data:',
+  'vbscript:',
+  'file:',
+  'about:',
+];
+
+/**
+ * Validate URL to prevent XSS via href attributes
+ */
+function isValidUrl(url: string): boolean {
+  try {
+    const trimmed = url.trim().toLowerCase();
+    
+    // Check for dangerous protocols
+    if (DANGEROUS_PROTOCOLS.some(protocol => trimmed.startsWith(protocol))) {
+      return false;
+    }
+    
+    // Only allow http(s) and relative URLs
+    if (!trimmed.startsWith('http://') && 
+        !trimmed.startsWith('https://') && 
+        !trimmed.startsWith('/')) {
+      return false;
+    }
+    
+    // Additional validation with URL constructor
+    if (trimmed.startsWith('http')) {
+      new URL(url);
+    }
+    
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Basic HTML sanitizer to prevent XSS
- * In production, consider using DOMPurify or similar library
+ * This strips all HTML tags and returns plain text.
+ * Use this for user input that should not contain any formatting.
  */
 export function sanitizeHTML(html: string): string {
-  // Create a temporary element
+  // Create a temporary element to parse HTML
+  if (typeof window === 'undefined') {
+    // Server-side: just strip all tags
+    return html.replace(/<[^>]*>/g, '');
+  }
+  
   const temp = document.createElement('div');
-  temp.textContent = html;
-  let sanitized = temp.innerHTML;
-
-  // Allow only specific tags
-  const tagRegex = /<(\/?)([\w]+)([^>]*)>/g;
-  sanitized = sanitized.replace(tagRegex, (match, slash, tag, attrs) => {
-    if (!ALLOWED_TAGS.includes(tag.toLowerCase())) {
-      return '';
+  temp.innerHTML = html;
+  
+  // Recursively sanitize all nodes
+  function sanitizeNode(node: Node): string {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent || '';
     }
     
-    // For allowed tags, sanitize attributes
-    if (attrs && ALLOWED_ATTRIBUTES[tag.toLowerCase()]) {
-      const allowedAttrs = ALLOWED_ATTRIBUTES[tag.toLowerCase()];
-      const attrRegex = /([\w-]+)\s*=\s*["']([^"']*)["']/g;
-      let cleanAttrs = '';
-      let attrMatch;
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as Element;
+      const tagName = element.tagName.toLowerCase();
       
-      while ((attrMatch = attrRegex.exec(attrs)) !== null) {
-        const [, attrName, attrValue] = attrMatch;
-        if (allowedAttrs.includes(attrName.toLowerCase())) {
-          // Basic URL validation for href
-          if (attrName.toLowerCase() === 'href') {
-            if (attrValue.startsWith('http://') || attrValue.startsWith('https://')) {
-              cleanAttrs += ` ${attrName}="${attrValue}"`;
-            }
-          } else {
-            cleanAttrs += ` ${attrName}="${attrValue}"`;
-          }
-        }
+      // Only allow specific tags
+      if (!ALLOWED_TAGS.includes(tagName)) {
+        // Return text content of disallowed tags
+        return element.textContent || '';
       }
       
-      return `<${slash}${tag}${cleanAttrs}>`;
+      // Sanitize attributes
+      let attrs = '';
+      if (ALLOWED_ATTRIBUTES[tagName]) {
+        const allowedAttrs = ALLOWED_ATTRIBUTES[tagName];
+        Array.from(element.attributes).forEach(attr => {
+          if (allowedAttrs.includes(attr.name.toLowerCase())) {
+            // Special handling for URLs
+            if (attr.name.toLowerCase() === 'href') {
+              if (isValidUrl(attr.value)) {
+                attrs += ` ${attr.name}="${attr.value}"`;
+              }
+            } else {
+              attrs += ` ${attr.name}="${attr.value}"`;
+            }
+          }
+        });
+      }
+      
+      // Recursively process children
+      const children = Array.from(element.childNodes)
+        .map(child => sanitizeNode(child))
+        .join('');
+      
+      return `<${tagName}${attrs}>${children}</${tagName}>`;
     }
     
-    return `<${slash}${tag}>`;
-  });
-
-  return sanitized;
+    return '';
+  }
+  
+  return Array.from(temp.childNodes).map(node => sanitizeNode(node)).join('');
 }
 
 /**

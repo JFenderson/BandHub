@@ -34,17 +34,22 @@ export const VideoComments: React.FC<VideoCommentsProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
 
-  // Fetch comments from API (mock implementation)
+  // Fetch comments from API
+  // TODO: Replace mock implementation with actual API integration
+  // See README.md for required API endpoints
   useEffect(() => {
     const fetchComments = async () => {
       try {
         setLoading(true);
-        // TODO: Replace with actual API call
-        // const response = await fetch(`/api/videos/${videoId}/comments`);
-        // const data = await response.json();
-        // setComments(data);
         
-        // Mock data for now
+        // Example API integration:
+        // const response = await fetch(`/api/videos/${videoId}/comments`);
+        // if (!response.ok) throw new Error('Failed to fetch');
+        // const data = await response.json();
+        // setComments(data.comments);
+        // setReactions(data.reactions);
+        
+        // Mock: Start with empty comments for demo
         setComments([]);
         setLoading(false);
       } catch (err) {
@@ -113,14 +118,17 @@ export const VideoComments: React.FC<VideoCommentsProps> = ({
   // Handle new comment submission
   const handleSubmitComment = async (content: string, timestamp?: number) => {
     try {
-      // TODO: Replace with actual API call
+      // Example API integration:
       // const response = await fetch(`/api/videos/${videoId}/comments`, {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({ content, timestamp }),
       // });
+      // if (!response.ok) throw new Error('Failed to post');
       // const newComment = await response.json();
+      // setComments(prev => [...prev, newComment]);
 
+      // Mock: Create comment locally for demo
       const newComment: Comment = {
         id: Date.now().toString(),
         videoId,

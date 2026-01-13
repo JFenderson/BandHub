@@ -20,6 +20,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showToolbar, setShowToolbar] = useState(false);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
 
   const insertFormatting = (startTag: string, endTag: string) => {
     if (!textareaRef.current) return;
@@ -50,9 +53,6 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   const insertLink = () => {
-    const url = prompt('Enter URL:');
-    if (!url) return;
-
     if (!textareaRef.current) return;
 
     const textarea = textareaRef.current;
@@ -60,13 +60,27 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const end = textarea.selectionEnd;
     const selectedText = value.substring(start, end);
     
-    const linkText = selectedText || 'link text';
+    setLinkText(selectedText || '');
+    setShowLinkInput(true);
+  };
+
+  const handleInsertLink = () => {
+    if (!linkUrl || !textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    
+    const text = linkText || 'link text';
     const newValue = 
       value.substring(0, start) +
-      `<a href="${url}">${linkText}</a>` +
+      `<a href="${linkUrl}">${text}</a>` +
       value.substring(end);
 
     onChange(newValue);
+    setShowLinkInput(false);
+    setLinkUrl('');
+    setLinkText('');
   };
 
   return (
@@ -98,6 +112,46 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           >
             🔗
           </button>
+        </div>
+      )}
+
+      {/* Link input modal */}
+      {showLinkInput && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 p-3 space-y-2">
+          <input
+            type="url"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="https://example.com"
+            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          />
+          <input
+            type="text"
+            value={linkText}
+            onChange={(e) => setLinkText(e.target.value)}
+            placeholder="Link text (optional)"
+            className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleInsertLink}
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Insert
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowLinkInput(false);
+                setLinkUrl('');
+                setLinkText('');
+              }}
+              className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
