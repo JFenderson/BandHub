@@ -135,7 +135,7 @@ export class MatchVideosProcessor extends WorkerHost {
     try {
       // Fetch all bands from database
       this.logger.log('Fetching bands from database...');
-      const bands = await this.databaseService.prisma.band.findMany({
+      const bands = await this.databaseService.band.findMany({
         select: {
           id: true,
           name: true,
@@ -152,7 +152,7 @@ export class MatchVideosProcessor extends WorkerHost {
       
       // Fetch unmatched videos
       this.logger.log('Fetching unmatched videos...');
-      const videos = await this.databaseService.prisma.youTubeVideo.findMany({
+      const videos = await this.databaseService.youTubeVideo.findMany({
         where: { bandId: null },
         select: {
           id: true,
@@ -244,7 +244,7 @@ export class MatchVideosProcessor extends WorkerHost {
         
         // Update database
         try {
-          await this.databaseService.prisma.youTubeVideo.update({
+          await this.databaseService.youTubeVideo.update({
             where: { id: video.id },
             data: {
               bandId: topMatch.bandId,

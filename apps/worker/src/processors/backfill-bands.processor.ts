@@ -151,7 +151,7 @@ export class BackfillBandsProcessor extends WorkerHost {
       where.id = specificBandId;
     }
     
-    return this.databaseService.prisma.band.findMany({
+    return this.databaseService.band.findMany({
       where,
       select: {
         id: true,
@@ -257,13 +257,13 @@ export class BackfillBandsProcessor extends WorkerHost {
           const publishedAt = new Date(item.snippet?.publishedAt || item.contentDetails?.videoPublishedAt || new Date());
           
           try {
-            const existing = await this.databaseService.prisma.youTubeVideo.findUnique({
+            const existing = await this.databaseService.youTubeVideo.findUnique({
               where: { youtubeId: videoId },
             });
             
             if (existing) {
               // Update existing video
-              await this.databaseService.prisma.youTubeVideo.update({
+              await this.databaseService.youTubeVideo.update({
                 where: { id: existing.id },
                 data: {
                   title: item.snippet?.title || 'Unknown',
@@ -279,7 +279,7 @@ export class BackfillBandsProcessor extends WorkerHost {
               updated++;
             } else {
               // Create new video with bandId set (from official channel)
-              await this.databaseService.prisma.youTubeVideo.create({
+              await this.databaseService.youTubeVideo.create({
                 data: {
                   youtubeId: videoId,
                   title: item.snippet?.title || 'Unknown',
@@ -311,7 +311,7 @@ export class BackfillBandsProcessor extends WorkerHost {
       }
       
       // Update band sync tracking
-      await this.databaseService.prisma.band.update({
+      await this.databaseService.band.update({
         where: { id: band.id },
         data: {
           lastSyncAt: new Date(),

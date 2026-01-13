@@ -50,7 +50,7 @@ export class PromoteVideosProcessor extends WorkerHost {
     try {
       // Find YouTubeVideo records where bandId IS NOT NULL and isPromoted = false
       this.logger.log('Fetching videos ready for promotion...');
-      const videosToPromote = await this.databaseService.prisma.youTubeVideo.findMany({
+      const videosToPromote = await this.databaseService.youTubeVideo.findMany({
         where: {
           bandId: { not: null },
           isPromoted: false,
@@ -93,7 +93,7 @@ export class PromoteVideosProcessor extends WorkerHost {
         
         try {
           // Check if Video with same youtubeId already exists
-          const existingVideo = await this.databaseService.prisma.video.findFirst({
+          const existingVideo = await this.databaseService.video.findFirst({
             where: { youtubeId: youtubeVideo.youtubeId },
           });
           
@@ -102,7 +102,7 @@ export class PromoteVideosProcessor extends WorkerHost {
             result.skipped++;
             
             // Mark as promoted anyway to avoid reprocessing
-            await this.databaseService.prisma.youTubeVideo.update({
+            await this.databaseService.youTubeVideo.update({
               where: { id: youtubeVideo.id },
               data: {
                 isPromoted: true,
@@ -117,33 +117,32 @@ export class PromoteVideosProcessor extends WorkerHost {
           
           // Get category ID
           const category = categorySlug 
-            ? await this.databaseService.prisma.category.findUnique({
+            ? await this.databaseService.category.findUnique({
                 where: { slug: categorySlug },
                 select: { id: true },
               })
             : null;
           
           // Copy to Video table (user-facing content)
-          await this.databaseService.prisma.video.create({
+          await this.databaseService.video.create({
             data: {
               youtubeId: youtubeVideo.youtubeId,
               title: youtubeVideo.title,
               description: youtubeVideo.description || '',
               thumbnailUrl: youtubeVideo.thumbnailUrl,
-              url: youtubeVideo.url,
               duration: youtubeVideo.duration,
               publishedAt: youtubeVideo.publishedAt,
               viewCount: youtubeVideo.viewCount,
               likeCount: youtubeVideo.likeCount,
               bandId: youtubeVideo.bandId!,
               categoryId: category?.id,
-              isVisible: true,
-              isFeatured: false,
+              isHidden: false,
+              qualityScore: youtubeVideo.qualityScore,
             },
           });
           
           // Mark as promoted
-          await this.databaseService.prisma.youTubeVideo.update({
+          await this.databaseService.youTubeVideo.update({
             where: { id: youtubeVideo.id },
             data: {
               isPromoted: true,

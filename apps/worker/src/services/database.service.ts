@@ -34,6 +34,14 @@ export class DatabaseService {
   get category() {
     return this.prisma.category;
   }
+  
+  get youTubeVideo() {
+    return this.prisma.youTubeVideo;
+  }
+  
+  get contentCreator() {
+    return this.prisma.contentCreator;
+  }
   /**
    * Load categories into memory for fast lookup
    */

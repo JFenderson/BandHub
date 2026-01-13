@@ -152,7 +152,7 @@ export class BackfillCreatorsProcessor extends WorkerHost {
       where.id = specificCreatorId;
     }
     
-    return this.databaseService.prisma.contentCreator.findMany({
+    return this.databaseService.contentCreator.findMany({
       where,
       select: {
         id: true,
@@ -253,13 +253,13 @@ export class BackfillCreatorsProcessor extends WorkerHost {
           const publishedAt = new Date(item.snippet?.publishedAt || item.contentDetails?.videoPublishedAt || new Date());
           
           try {
-            const existing = await this.databaseService.prisma.youTubeVideo.findUnique({
+            const existing = await this.databaseService.youTubeVideo.findUnique({
               where: { youtubeId: videoId },
             });
             
             if (existing) {
               // Update existing video
-              await this.databaseService.prisma.youTubeVideo.update({
+              await this.databaseService.youTubeVideo.update({
                 where: { id: existing.id },
                 data: {
                   title: item.snippet?.title || 'Unknown',
@@ -277,7 +277,7 @@ export class BackfillCreatorsProcessor extends WorkerHost {
               updated++;
             } else {
               // Create new video (bandId = null for matching later)
-              await this.databaseService.prisma.youTubeVideo.create({
+              await this.databaseService.youTubeVideo.create({
                 data: {
                   youtubeId: videoId,
                   title: item.snippet?.title || 'Unknown',
@@ -310,12 +310,12 @@ export class BackfillCreatorsProcessor extends WorkerHost {
       }
       
       // Update creator sync tracking
-      await this.databaseService.prisma.contentCreator.update({
+      await this.databaseService.contentCreator.update({
         where: { id: creator.id },
         data: {
           lastSyncedAt: new Date(),
           lastFullSync: new Date(),
-          videosInOurDb: await this.databaseService.prisma.youTubeVideo.count({
+          videosInOurDb: await this.databaseService.youTubeVideo.count({
             where: { creatorId: creator.id },
           }),
         },
