@@ -9,6 +9,13 @@ interface VideoCardProps {
 }
 
 export function VideoCard({ video }: VideoCardProps) {
+  // Check if video was added to database within the last 7 days
+  const isRecentlyAdded = () => {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    return new Date(video.createdAt) > sevenDaysAgo;
+  };
+
   return (
     <div className="group bg-white rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
       {/* Video Link Wrapper */}
@@ -30,10 +37,17 @@ export function VideoCard({ video }: VideoCardProps) {
             </div>
           )}
 
-          {/* Category Badge */}
+          {/* Category Badge - top-left */}
           {video.category && (
             <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
               {VIDEO_CATEGORY_LABELS[video.category]}
+            </div>
+          )}
+
+          {/* Recently Added Badge - top-right, won't overlap with category */}
+          {isRecentlyAdded() && (
+            <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded font-semibold">
+              NEW
             </div>
           )}
         </div>
