@@ -16,14 +16,5 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-// Provide a lightweight mock for the CacheService interface used across services
-jest.mock('../src/cache/cache.service', () => {
-  return {
-    CacheService: jest.fn().mockImplementation(() => ({
-      get: jest.fn(),
-      set: jest.fn(),
-      del: jest.fn(),
-      delPattern: jest.fn(),
-    })),
-  };
-});
+// Note: CacheService is mocked in individual tests as needed
+
