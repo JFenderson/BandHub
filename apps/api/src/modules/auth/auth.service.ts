@@ -88,11 +88,58 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // CHECK 1: Account active status
+    if (!user.isActive) {
+      this.logger.warn(`Login attempt for inactive account: ${user.email}`);
+      throw new UnauthorizedException('Invalid credentials'); // Don't reveal account is disabled
+    }
+
+    // CHECK 2: Account lockout
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const minutesLeft = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+      this.logger.warn(`Login attempt for locked account: ${user.email}`);
+      throw new UnauthorizedException(
+        `Account is temporarily locked. Please try again in ${minutesLeft} minutes.`
+      );
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
+    
     if (!isPasswordValid) {
+      // INCREMENT failed attempts
+      const newFailedAttempts = user.failedLoginAttempts + 1;
+      const maxAttempts = 5;
+      
+      const updateData: any = {
+        failedLoginAttempts: newFailedAttempts,
+      };
+      
+      // Lock account if max attempts reached
+      if (newFailedAttempts >= maxAttempts) {
+        const lockoutMinutes = 15;
+        updateData.lockedUntil = new Date(Date.now() + lockoutMinutes * 60000);
+        this.logger.warn(`Account locked due to failed attempts: ${user.email}`);
+      }
+      
+      await this.prisma.adminUser.update({
+        where: { id: user.id },
+        data: updateData,
+      });
+      
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    // SUCCESS: Update user state
+    await this.prisma.adminUser.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+        lastLoginIp: data.ipAddress || null,
+        failedLoginAttempts: 0, // Reset counter
+        lockedUntil: null, // Clear any lockout
+      },
+    });
 
     // Generate tokens
     const accessToken = await this.generateAccessToken(user.id, user.email, user.role);

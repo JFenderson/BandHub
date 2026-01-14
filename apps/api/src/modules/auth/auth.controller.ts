@@ -8,6 +8,7 @@ import {
   Get,
   Req,
   Delete,
+  Ip,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
@@ -179,7 +180,11 @@ export class AuthController {
       },
     },
   })
-  async login(@Body() loginDto: LoginDto) {
+  async login(
+    @Body() loginDto: LoginDto,
+    @Ip() ipAddress: string,
+  ) {
+    loginDto.ipAddress = ipAddress;
     return this.authService.login(loginDto);
   }
 
