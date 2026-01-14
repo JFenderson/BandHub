@@ -87,11 +87,18 @@ load_environment() {
         
         # Export secrets from Doppler
         log_info "Fetching secrets from Doppler config: ${DOPPLER_CONFIG}"
-        if eval "$(doppler secrets download --format=env-no-quotes --config=${DOPPLER_CONFIG})"; then
+        # Use a temporary file for security instead of eval
+        TEMP_ENV=$(mktemp)
+        if doppler secrets download --format=env-no-quotes --config="${DOPPLER_CONFIG}" > "$TEMP_ENV"; then
+            set -a
+            source "$TEMP_ENV"
+            set +a
+            rm -f "$TEMP_ENV"
             log_success "Doppler secrets loaded successfully"
             export USING_DOPPLER=true
             return 0
         else
+            rm -f "$TEMP_ENV"
             log_warning "Failed to load from Doppler, falling back to .env files"
         fi
     fi
