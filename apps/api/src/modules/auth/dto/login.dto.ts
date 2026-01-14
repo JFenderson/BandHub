@@ -41,6 +41,14 @@ export class LoginDto {
   @IsOptional()
   @IsString()
   deviceFingerprint?: string;
+
+  @ApiPropertyOptional({
+    description: 'IP address of login attempt (populated by server)',
+    example: '192.168.1.1',
+  })
+  @IsOptional()
+  @IsString()
+  ipAddress?: string;
 }
 
 export class LoginResponseDto {

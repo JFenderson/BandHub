@@ -72,6 +72,18 @@ Swagger documentation at `http://localhost:3001/api/docs`
 
 The API uses JWT (JSON Web Token) for authentication. Admin users can register and login to access protected endpoints.
 
+### Create/Reset Admin User
+
+To create or reset an admin user with known credentials:
+
+```bash
+pnpm tsx apps/api/prisma/seed-admin.ts
+```
+
+Default credentials:
+- Email: admin@bandhub.com  
+- Password: SecurePass123!
+
 ### Register a New Admin User
 
 ```bash
@@ -79,7 +91,7 @@ curl -X POST http://localhost:3001/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@bandhub.com",
-    "password": "SecurePass123",
+    "password": "SecurePass123!",
     "name": "John Doe"
   }'
 ```
@@ -91,7 +103,7 @@ curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@bandhub.com",
-    "password": "SecurePass123"
+    "password": "SecurePass123!"
   }'
 ```
 
@@ -123,6 +135,13 @@ curl -X GET http://localhost:3001/api/auth/me \
 - At least one uppercase letter
 - At least one lowercase letter
 - At least one number
+- At least one symbol (for registration)
+
+### Account Security
+
+- Accounts are automatically locked after 5 failed login attempts
+- Locked accounts remain locked for 15 minutes
+- Failed login attempts are reset upon successful login
 
 ## Environment Variables
 
