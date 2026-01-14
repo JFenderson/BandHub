@@ -52,11 +52,55 @@ export class AuthController {
   })
   @ApiOperation({ 
     summary: 'Register a new admin user',
-    description: 'Creates a new administrator account. Requires a unique email address.'
+    description: `Creates a new administrator account with the specified email, password, and name.
+    
+**Requirements:**
+- Email must be unique and valid
+- Password must be at least 8 characters with uppercase, lowercase, number, and symbol
+- Name is required
+
+**Rate Limit:** 3 attempts per hour per IP address
+
+**Response:** Returns the created user object (without password)`,
   })
-  @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 400, description: 'Validation failed or User already exists', type: ApiErrorDto })
-  @ApiResponse({ status: 429, description: 'Too many registration attempts', type: ApiErrorDto })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'User registered successfully. Returns user object without password.',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'clx7yj8k90000uxl9aabbccdd' },
+        email: { type: 'string', example: 'admin@bandhub.com' },
+        name: { type: 'string', example: 'John Doe' },
+        role: { type: 'string', enum: ['SUPER_ADMIN', 'ADMIN', 'MODERATOR'], example: 'MODERATOR' },
+        createdAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Validation failed - Invalid email format, weak password, or user already exists',
+    type: ApiErrorDto,
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['Email already exists', 'Password must contain uppercase letter'],
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 429, 
+    description: 'Rate limit exceeded - Too many registration attempts from this IP',
+    type: ApiErrorDto,
+    schema: {
+      example: {
+        statusCode: 429,
+        message: 'Too many registration attempts. Please try again later.',
+        error: 'Too Many Requests',
+      },
+    },
+  })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
@@ -76,11 +120,65 @@ export class AuthController {
   })
   @ApiOperation({ 
     summary: 'Login with email and password',
-    description: 'Authenticates a user and returns JWT access and refresh tokens.'
+    description: `Authenticates a user with email and password credentials.
+
+**Process:**
+1. Validates email and password
+2. Checks account status (active/locked)
+3. Verifies credentials
+4. Generates JWT access token (15 min expiry) and refresh token (7 day expiry)
+5. Creates session for tracking
+
+**Rate Limit:** 5 attempts per 15 minutes per IP address
+
+**Security Features:**
+- Account lockout after 5 failed attempts
+- Brute force protection via rate limiting
+- Session tracking with device fingerprinting
+- Automatic logout after password change`,
   })
-  @ApiResponse({ status: 200, description: 'Login successful', type: LoginResponseDto })
-  @ApiResponse({ status: 401, description: 'Invalid credentials', type: ApiErrorDto })
-  @ApiResponse({ status: 429, description: 'Too many login attempts', type: ApiErrorDto })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Login successful - Returns tokens and user info',
+    type: LoginResponseDto,
+    schema: {
+      example: {
+        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        expiresIn: 900,
+        user: {
+          id: 'clx7yj8k90000uxl9aabbccdd',
+          email: 'admin@bandhub.com',
+          name: 'John Doe',
+          role: 'ADMIN',
+        },
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Authentication failed - Invalid credentials or account locked',
+    type: ApiErrorDto,
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Invalid email or password',
+        error: 'Unauthorized',
+      },
+    },
+  })
+  @ApiResponse({ 
+    status: 429, 
+    description: 'Rate limit exceeded - Too many login attempts',
+    type: ApiErrorDto,
+    schema: {
+      example: {
+        statusCode: 429,
+        message: 'Too many login attempts. Please try again in 15 minutes.',
+        error: 'Too Many Requests',
+      },
+    },
+  })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }

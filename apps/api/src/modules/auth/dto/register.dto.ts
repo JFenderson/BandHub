@@ -10,8 +10,10 @@ import {
 
 export class RegisterDto {
   @ApiProperty({
-    description: 'User email address',
+    description: 'User email address. Must be unique and valid.',
     example: 'admin@bandhub.com',
+    format: 'email',
+    required: true,
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
   @IsNotEmpty({ message: 'Email is required' })
@@ -19,8 +21,12 @@ export class RegisterDto {
 
   @ApiProperty({
     description:
-      'User password (min 8 chars, requires uppercase, lowercase, and number)',
-    example: 'SecurePass123',
+      'User password. Must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol.',
+    example: 'SecurePass123!',
+    minLength: 8,
+    maxLength: 128,
+    required: true,
+    format: 'password',
   })
   @IsString({ message: 'Password must be a string' })
   @IsNotEmpty({ message: 'Password is required' })
@@ -29,8 +35,11 @@ export class RegisterDto {
   password!: string;
 
   @ApiProperty({
-    description: 'User full name',
+    description: 'User full name (first and last name)',
     example: 'John Doe',
+    minLength: 2,
+    maxLength: 100,
+    required: true,
   })
   @IsString({ message: 'Name must be a string' })
   @IsNotEmpty({ message: 'Name is required' })

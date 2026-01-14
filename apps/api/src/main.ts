@@ -143,15 +143,28 @@ Endpoints accepting files use \`multipart/form-data\`. Ensure your client sets t
   });
 
   const document = SwaggerModule.createDocument(app, config);
-// Set up Swagger UI
+  // Set up Swagger UI
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true, // Keep user logged in across reloads
-      displayRequestDuration: true,
+      displayRequestDuration: true, // Show request duration
       filter: true, // Enable search bar for tags
-      syntaxHighlight: { theme: 'monokai' },
+      syntaxHighlight: { theme: 'monokai' }, // Syntax highlighting theme
+      tryItOutEnabled: true, // Enable "Try it out" by default
+      docExpansion: 'list', // How to display operations (none, list, full)
+      defaultModelsExpandDepth: 2, // How deep to expand models
+      defaultModelExpandDepth: 2, // Default depth for model expansion
+      displayOperationId: false, // Hide operation IDs
+      showExtensions: true, // Show vendor extensions
+      showCommonExtensions: true, // Show common extensions
     },
     customSiteTitle: 'HBCU Band Hub API Docs',
+    customCss: `
+      .swagger-ui .topbar { display: none; }
+      .swagger-ui .info { margin: 20px 0; }
+      .swagger-ui .scheme-container { padding: 20px 0; }
+    `,
+    customfavIcon: '/favicon.ico',
   });
 
 Sentry.setupExpressErrorHandler(app.getHttpAdapter().getInstance());
