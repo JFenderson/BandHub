@@ -60,17 +60,52 @@ check_requirements() {
     log_success "All requirements met"
 }
 
-# Load environment file
+# Load environment file or use Doppler
 load_environment() {
     log_info "Loading environment: ${ENVIRONMENT}"
     
+    # Check if Doppler is available and configured
+    if command -v doppler &> /dev/null && [ -n "${DOPPLER_TOKEN:-}" ]; then
+        log_info "Using Doppler for secrets management"
+        
+        # Map environment names to Doppler configs
+        local DOPPLER_CONFIG=""
+        case "${ENVIRONMENT}" in
+            development)
+                DOPPLER_CONFIG="dev"
+                ;;
+            staging)
+                DOPPLER_CONFIG="stg"
+                ;;
+            production)
+                DOPPLER_CONFIG="prd"
+                ;;
+            *)
+                DOPPLER_CONFIG="dev"
+                ;;
+        esac
+        
+        # Export secrets from Doppler
+        log_info "Fetching secrets from Doppler config: ${DOPPLER_CONFIG}"
+        if eval "$(doppler secrets download --format=env-no-quotes --config=${DOPPLER_CONFIG})"; then
+            log_success "Doppler secrets loaded successfully"
+            export USING_DOPPLER=true
+            return 0
+        else
+            log_warning "Failed to load from Doppler, falling back to .env files"
+        fi
+    fi
+    
+    # Fallback to .env files
     if [ -f ".env.${ENVIRONMENT}" ]; then
         set -a
         source ".env.${ENVIRONMENT}"
         set +a
         log_success "Environment file loaded"
+        export USING_DOPPLER=false
     else
         log_warning "Environment file .env.${ENVIRONMENT} not found, using defaults"
+        export USING_DOPPLER=false
     fi
 }
 

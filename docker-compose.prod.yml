@@ -280,8 +280,57 @@ services:
         max-size: "5m"
         max-file: "2"
 
+  # ========================================
+  # Doppler Secrets Manager (Optional)
+  # ========================================
+  # Uncomment this service to use Doppler for secrets management
+  # Requires DOPPLER_TOKEN to be set in environment
+  # See docs/DOPPLER_SETUP.md for configuration instructions
+  #
+  # doppler:
+  #   image: dopplerhq/cli:latest
+  #   container_name: hbcu-band-hub-doppler
+  #   environment:
+  #     DOPPLER_TOKEN: ${DOPPLER_TOKEN}
+  #   command: >
+  #     secrets download 
+  #     --format=env 
+  #     --config=${DOPPLER_CONFIG:-prd}
+  #     --project=hbcu-band-hub
+  #     --no-file
+  #     --mount=/secrets/.env
+  #   volumes:
+  #     - doppler_secrets:/secrets
+  #   networks:
+  #     - hbcu-internal
+  #   restart: always
+  #   healthcheck:
+  #     test: ["CMD", "test", "-f", "/secrets/.env"]
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 10s
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "2"
+  #
+  # To use Doppler with your services, add these to the service definition:
+  #   depends_on:
+  #     doppler:
+  #       condition: service_healthy
+  #   volumes:
+  #     - doppler_secrets:/secrets:ro
+  #   env_file:
+  #     - /secrets/.env
+
 # ========================================
 # Secrets (for Docker Swarm or external secrets management)
+# ========================================
+# Note: If using Doppler (see service above), these file-based secrets
+# can be replaced. Doppler provides centralized secrets management with
+# automatic rotation, access control, and audit logs.
 # ========================================
 secrets:
   postgres_user:
@@ -307,6 +356,8 @@ volumes:
     driver: local
   certbot_www:
     driver: local
+  # doppler_secrets:  # Uncomment if using Doppler sidecar
+  #   driver: local
 
 # ========================================
 # Networks
