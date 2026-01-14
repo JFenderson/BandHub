@@ -65,8 +65,8 @@ describe('AuthService - Security Features (Integration)', () => {
     };
 
     const mockConfigService = {
-      get: jest.fn((key: string, defaultValue?: any) => {
-        const config: Record<string, any> = {
+      get: jest.fn((key: string, defaultValue?: string) => {
+        const config: Record<string, string> = {
           JWT_ACCESS_EXPIRY: '15m',
           JWT_REFRESH_EXPIRY: '7d',
         };

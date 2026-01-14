@@ -111,7 +111,10 @@ export class AuthService {
       const newFailedAttempts = user.failedLoginAttempts + 1;
       const maxAttempts = 5;
       
-      const updateData: any = {
+      const updateData: {
+        failedLoginAttempts: number;
+        lockedUntil?: Date;
+      } = {
         failedLoginAttempts: newFailedAttempts,
       };
       
