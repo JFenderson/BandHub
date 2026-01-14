@@ -86,7 +86,7 @@ export interface VideoQueryParams {
   year?: number;
   eventName?: string;
   isHidden?: boolean;
-  sortBy?: 'publishedAt' | 'viewCount' | 'likeCount' | 'title';
+  sortBy?: 'publishedAt' | 'viewCount' | 'likeCount' | 'title' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;

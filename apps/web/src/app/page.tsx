@@ -9,15 +9,17 @@ export const revalidate = 0;
 
 export default async function HomePage() {
   // Fetch featured content - using try/catch for resilience
-  const [bandsResult, videosResult, categoriesResult] = await Promise.allSettled([
+  const [bandsResult, videosResult, recentlyAddedResult, categoriesResult] = await Promise.allSettled([
     apiClient.getBands({ limit: 10 }),
     apiClient.getVideos({ limit: 10, sortBy: 'publishedAt', sortOrder: 'desc' }),
+    apiClient.getVideos({ limit: 8, sortBy: 'createdAt', sortOrder: 'desc' }),
     apiClient.getCategories(),
   ]);
 
 
   const bands = bandsResult.status === 'fulfilled' ? bandsResult.value.data : [];
   const videos = videosResult.status === 'fulfilled' ? videosResult.value.data : [];
+  const recentlyAddedVideos = recentlyAddedResult.status === 'fulfilled' ? recentlyAddedResult.value.data : [];
   const categories = categoriesResult.status === 'fulfilled' 
     ? categoriesResult.value.slice(0, 6)  // Limit to 6 for display
     : [];
@@ -103,6 +105,27 @@ export default async function HomePage() {
             </div>
           )}
         </div>
+
+        {/* Recently Added to BandHub Section */}
+        {recentlyAddedVideos.length > 0 && (
+          <div className="container-custom mt-16">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">Recently Added to BandHub</h2>
+                <p className="text-gray-600 mt-2">New videos added to our platform</p>
+              </div>
+              <Link href="/videos?sortBy=createdAt" className="text-primary-600 hover:text-primary-700 font-medium">
+                View All →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recentlyAddedVideos.map((video) => (
+                <VideoCard key={video.id} video={video} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Categories Preview */}
   {categories.length > 0 && (

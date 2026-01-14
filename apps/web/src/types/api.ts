@@ -89,7 +89,7 @@ export interface VideoFilters {
   category?: VideoCategory;
   year?: number;
   search?: string;
-  sortBy?: 'publishedAt' | 'viewCount' | 'title';
+  sortBy?: 'publishedAt' | 'viewCount' | 'title' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;

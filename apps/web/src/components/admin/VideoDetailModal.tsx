@@ -219,12 +219,20 @@ export function VideoDetailModal({
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">{video.title}</h3>
             <p className="text-sm text-gray-600 mb-4">{video.description}</p>
-            <div className="flex items-center space-x-4 text-sm text-gray-600">
-              <span>{video.band.name}</span>
-              <span>•</span>
-              <span>{new Date(video.publishedAt).toLocaleDateString()}</span>
-              <span>•</span>
-              <span>{video.viewCount.toLocaleString()} views</span>
+            <div className="flex flex-col space-y-2 text-sm text-gray-600 mb-4">
+              <div className="flex items-center space-x-4">
+                <span className="font-medium">{video.band.name}</span>
+                <span>•</span>
+                <span>{video.viewCount.toLocaleString()} views</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="font-medium text-gray-700">YouTube Upload:</span>
+                <span>{new Date(video.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="font-medium text-gray-700">Added to DB:</span>
+                <span>{new Date(video.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              </div>
             </div>
           </div>
 

@@ -26,6 +26,7 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
   const currentBandId = searchParams.get('bandId') || '';
   const currentCategory = searchParams.get('category') || '';
   const currentEventYear = searchParams.get('eventYear') || '';
+  const currentSortBy = searchParams.get('sortBy') || 'publishedAt';
 
   useEffect(() => {
     apiClient.getCategories()
@@ -61,11 +62,11 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
   const currentYearNum = new Date().getFullYear();
   const years = Array.from({ length: currentYearNum - 2009 }, (_, i) => currentYearNum - i);
 
-  const hasActiveFilters = currentSearch || currentBandId || currentCategory || currentEventYear;
+  const hasActiveFilters = currentSearch || currentBandId || currentCategory || currentEventYear || currentSortBy !== 'publishedAt';
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Search Input */}
         <div>
           <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
@@ -140,6 +141,24 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
             ))}
           </select>
         </div>
+
+        {/* Sort By Filter */}
+        <div>
+          <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-1">
+            Sort By
+          </label>
+          <select
+            id="sortBy"
+            value={currentSortBy}
+            onChange={(e) => updateFilter('sortBy', e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="publishedAt">Latest Uploads</option>
+            <option value="createdAt">Recently Added</option>
+            <option value="viewCount">Most Viewed</option>
+            <option value="title">Title (A-Z)</option>
+          </select>
+        </div>
       </div>
 
       {/* Active Filters with Clear All */}
@@ -176,6 +195,13 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
                   onRemove={() => updateFilter('eventYear', '')}
                 />
               )}
+
+              {currentSortBy !== 'publishedAt' && (
+                <FilterChip
+                  label={`Sort: ${getSortLabel(currentSortBy)}`}
+                  onRemove={() => updateFilter('sortBy', 'publishedAt')}
+                />
+              )}
             </div>
 
             <button
@@ -189,6 +215,17 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
       )}
     </div>
   );
+}
+
+// Helper function to get sort label
+function getSortLabel(sortBy: string): string {
+  const labels: Record<string, string> = {
+    publishedAt: 'Latest Uploads',
+    createdAt: 'Recently Added',
+    viewCount: 'Most Viewed',
+    title: 'Title (A-Z)',
+  };
+  return labels[sortBy] || sortBy;
 }
 
 // Filter chip component
