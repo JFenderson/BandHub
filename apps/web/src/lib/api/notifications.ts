@@ -101,41 +101,41 @@ class NotificationsApiClient {
     if (params?.type) searchParams.set('type', params.type);
 
     const query = searchParams.toString();
-    return this.request(`/api/notifications${query ? `?${query}` : ''}`);
+    return this.request(`/notifications${query ? `?${query}` : ''}`);
   }
 
   async getUnreadCount(): Promise<{ count: number }> {
-    return this.request('/api/notifications/unread-count');
+    return this.request('/notifications/unread-count');
   }
 
   async getStats(): Promise<NotificationStats> {
-    return this.request('/api/notifications/stats');
+    return this.request('/notifications/stats');
   }
 
   async markAsRead(notificationId: string): Promise<Notification> {
-    return this.request(`/api/notifications/${notificationId}/read`, {
+    return this.request(`/notifications/${notificationId}/read`, {
       method: 'PATCH',
     });
   }
 
   async markAllAsRead(): Promise<{ count: number }> {
-    return this.request('/api/notifications/read-all', {
+    return this.request('/notifications/read-all', {
       method: 'PATCH',
     });
   }
 
   async deleteNotification(notificationId: string): Promise<{ message: string }> {
-    return this.request(`/api/notifications/${notificationId}`, {
+    return this.request(`/notifications/${notificationId}`, {
       method: 'DELETE',
     });
   }
 
   async getPreferences(): Promise<NotificationPreferences> {
-    return this.request('/api/notifications/preferences');
+    return this.request('/notifications/preferences');
   }
 
   async updatePreferences(preferences: Partial<Omit<NotificationPreferences, 'id' | 'createdAt' | 'updatedAt'>>): Promise<NotificationPreferences> {
-    return this.request('/api/notifications/preferences', {
+    return this.request('/notifications/preferences', {
       method: 'PATCH',
       body: JSON.stringify(preferences),
     });

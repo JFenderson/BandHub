@@ -103,14 +103,14 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     school: "Mississippi Valley State University",
     city: "Itta Bena",
     state: "Mississippi",
-    keywords: ["mississippi valley state", "mean green marching machine", "swac", "mvsu", "mississippi valley", "valley", "mean green", "mgmm", "delta devils"]
+    keywords: ["mississippi valley state", "mean green marching machine", "swac", "mvsu", "mississippi valley", "valley", "mean green", "mgmm", "delta devils", "devils"]
   },
   {
     name: "UAPB Marching Musical Machine of the Mid-South",
     school: "University of Arkansas at Pine Bluff",
     city: "Pine Bluff",
     state: "Arkansas",
-    keywords: ["uapb", "m4", "marching musical machine", "swac", "arkansas"]
+    keywords: ["uapb", "m4", "marching musical machine", "swac", "arkansas", "university of arkansas at pine bluff"]
   },
 
   // ==========================================
@@ -129,7 +129,8 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     school: "North Carolina Central University",
     city: "Durham",
     state: "North Carolina",
-    keywords: ["nccu", "sound machine", "meac", "durham", "eagles"]
+    keywords: ["nccu", "sound machine", "meac", "durham", "eagles", 'north carolina central', 'nccu', 'sound machine', 'nc central',
+    'ncc university', 'durham eagles', 'north carolina central university']
   },
   {
     name: "Norfolk State Spartan Legion",
@@ -249,84 +250,84 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     school: "Miles College",
     city: "Fairfield",
     state: "Alabama",
-    keywords: ["miles college", "purple marching machine", "siac", "alabama", "pmm", "purple machine", "golden bears"]
+    keywords: ["miles college", "purple marching machine", "siac", "pmm", "purple machine"]
   },
   {
     name: "Tuskegee University Golden Voices",
     school: "Tuskegee University",
     city: "Tuskegee",
     state: "Alabama",
-    keywords: ["tuskegee", "golden voices", "marching crimson pipers", "siac", "alabama", "tu", "marching crimson piper", "mcp", "crimson piper", "golden tigers"]
+    keywords: ["tuskegee", "golden voices", "marching crimson pipers", "siac", "tu", "marching crimson piper", "mcp", "crimson piper", "golden tigers", "tuskegee university"]
   },
   {
     name: "Albany State Marching Rams Show Band",
     school: "Albany State University",
     city: "Albany",
     state: "Georgia",
-    keywords: ["albany state", "marching rams", "siac", "georgia", "asu", "mrsb", "marching rams show band", "golden rams"]
+    keywords: ["albany state", "marching rams", "siac", "asu", "mrsb", "marching rams show band", "golden rams", "albany state university"]
   },
   {
     name: "Benedict College Band of Distinction",
     school: "Benedict College",
     city: "Columbia",
     state: "South Carolina",
-    keywords: ["benedict college", "band of distinction", "siac", "columbia", "tigers"]
+    keywords: ["benedict college", "band of distinction", "siac", "tigers", "benedict college"]
   },
   {
     name: "Fort Valley State Blue Machine",
     school: "Fort Valley State University",
     city: "Fort Valley",
     state: "Georgia",
-    keywords: ["fort valley state", "blue machine", "siac", "georgia", "wildcats"]
+    keywords: ["fort valley state", "blue machine", "siac", "wildcats", "fort valley state university"]
   },
   {
     name: "Savannah State Powerhouse of the South",
     school: "Savannah State University",
     city: "Savannah",
     state: "Georgia",
-    keywords: ["savannah state", "powerhouse of the south", "siac", "georgia", "tigers", "ssu", "marching band"]
+    keywords: ["savannah state", "powerhouse of the south", "siac", "tigers", "ssu", "marching band", "savannah state university"]
   },
   {
     name: "Clark Atlanta Mighty Marching Panthers",
     school: "Clark Atlanta University",
     city: "Atlanta",
     state: "Georgia",
-    keywords: ["clark atlanta", "mighty marching panthers", "siac", "atlanta", "cau", "mighty marching panther band", "panthers"]
+    keywords: ["clark atlanta", "mighty marching panthers", "siac", "atlanta", "cau", "mighty marching panther band", "panthers", "clark atlanta university"]
   },
   {
     name: "Morehouse College House of Funk",
     school: "Morehouse College",
     city: "Atlanta",
     state: "Georgia",
-    keywords: ["morehouse", "house of funk", "siac", "atlanta", "maroon tigers"]
+    keywords: ["morehouse", "house of funk", "siac", "maroon tigers", "morehouse college"]
   },
   {
     name: "Central State Invincible Marching Marauders",
     school: "Central State University",
     city: "Wilberforce",
     state: "Ohio",
-    keywords: ["central state", "invincible marching marauders", "siac", "ohio"]
+    keywords: ["central state", "invincible marching marauders", "siac", "central state university", "marauders"]
   },
   {
     name: "Kentucky State Mighty Marching Thorobreds",
     school: "Kentucky State University",
     city: "Frankfort",
     state: "Kentucky",
-    keywords: ["kentucky state", "mighty marching thorobreds", "siac", "kentucky", "thorobreds"]
+    keywords: ["kentucky state", "mighty marching thorobreds", "siac", "thorobreds", "kentucky state university"]
   },
   {
     name: "Lane College Quiet Storm",
     school: "Lane College",
     city: "Jackson",
     state: "Tennessee",
-    keywords: ["lane college", "quiet storm", "siac", "tennessee", "dragons"]
+    keywords: ["lane college", "quiet storm", "siac", "dragons", "lane college"]
   },
   {
     name: "Edward Waters Triple Threat Marching Band",
     school: "Edward Waters University",
     city: "Jacksonville",
     state: "Florida",
-    keywords: ["edward waters", "triple threat", "siac", "florida", "tigers", "ewu"]
+    keywords: ["edward waters", "triple threat", "siac", "tigers", "ewu"]
   },
 
   // ==========================================
@@ -338,14 +339,14 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     city: "Greensboro",
     state: "North Carolina",
     channelHandle: "@NCATBand",
-    keywords: ["nc a&t", "blue and gold", "marching machine", "caa", "greensboro", "bgmm"]
+    keywords: ["nc a&t", "blue and gold", "marching machine", "caa", "bgmm"]
   },
   {
     name: "Hampton University Marching Force",
     school: "Hampton University",
     city: "Hampton",
     state: "Virginia",
-    keywords: ["hampton university", "marching force", "caa", "virginia", "pirates"]
+    keywords: ["hampton university", "marching force", "caa", "pirates"]
   },
 
   // ==========================================
@@ -356,7 +357,7 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     school: "Tennessee State University",
     city: "Nashville",
     state: "Tennessee",
-    keywords: ["tennessee state", "aristocrat of bands", "ovc", "nashville", "aob", "tsu", "tigers"]
+    keywords: ["tennessee state", "aristocrat of bands", "ovc", "aob", "tsu", "tigers"]
   },
 
   // ==========================================
@@ -367,21 +368,21 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     school: "Talladega College",
     city: "Talladega",
     state: "Alabama",
-    keywords: ["talladega", "great tornado", "marching band", "alabama"]
+    keywords: ["talladega", "great tornado", "marching band"]
   },
   {
     name: "Langston University Marching Pride",
     school: "Langston University",
     city: "Langston",
     state: "Oklahoma",
-    keywords: ["langston", "marching pride", "lump", "oklahoma", "lions"]
+    keywords: ["langston", "marching pride", "lump", "lions"]
   },
   {
     name: "Florida Memorial The Roar",
     school: "Florida Memorial University",
     city: "Miami Gardens",
     state: "Florida",
-    keywords: ["florida memorial", "the roar", "fmu", "miami", "lions"]
+    keywords: ["florida memorial", "the roar", "fmu", "lions"]
   },
   {
     name: "Allen University Band of Gold",
@@ -395,21 +396,21 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     school: "Fisk University",
     city: "Nashville",
     state: "Tennessee",
-    keywords: ["fisk university", "music city sound", "nashville", "bulldogs"]
+    keywords: ["fisk university", "music city sound", "bulldogs"]
   },
   {
     name: "Wiley University Marching Grandioso",
     school: "Wiley University",
     city: "Marshall",
     state: "Texas",
-    keywords: ["wiley", "marching grandioso", "wildcats", "texas"]
+    keywords: ["wiley", "marching grandioso", "wildcats"]
   },
   {
     name: "Saint Augustine's Superior Sound",
     school: "Saint Augustine's University",
     city: "Raleigh",
     state: "North Carolina",
-    keywords: ["saint augustine", "superior sound", "falcons", "raleigh"]
+    keywords: ["saint augustine", "superior sound", "falcons"]
   },
   {
     name: "Rust College Marching Bearcats",
@@ -432,131 +433,9 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     state: "Mississippi",
     keywords: ["tougaloo", "marching band", "jacktown", "mississippi"]
   },
-  // Alcorn State
-{
-  name: 'Sounds of Dyn-O-Mite',
-  school: 'Alcorn State University',
-  city: 'Lorman',
-  state: 'Mississippi',
-  keywords: [
-    'alcorn', 'alcorn state', 'sounds of dynamite', 'sounds of dyn-o-mite',
-    'dyn-o-mite', 'dynomite', 'asu', // Add these ↓
-    'alcorn st', 'alcorn state university'
-  ],
-  // ...
-},
 
-// Mississippi Valley
-{
-  name: 'Mean Green Marching Machine',
-  school: 'Mississippi Valley State University',  
-  city: 'Itta Bena',
-  state: 'Mississippi',
-  keywords: [
-    'mississippi valley', 'mvsu', 'mean green', 'marching machine',
-    'mgmm', // ← THIS IS CRITICAL
-    'mississippi valley state', 'valley state', 'mv state'
-  ],
-  // ...
-},
-
-// Grambling State
-{
-  name: 'World Famed',
-  school: 'Grambling State University',
-  city: 'Grambling',
-  state: 'Louisiana',
-  keywords: [
-    'grambling', 'grambling state', 'world famed', 'tiger marching band',
-    'gsu', // ← Add this
-    'grambling tigers', 'grambling state university'
-  ],
-  // ...
-},
-
-// Jackson State  
-{
-  name: 'Sonic Boom of the South',
-  school: 'Jackson State University',
-  city: 'Jackson',
-  state: 'Mississippi',
-  keywords: [
-    'jackson state', 'sonic boom', 'boom', 'jsu',
-    'sbots', // ← Add this
-    'jackson state university', 'sonic boom of the south'
-  ],
-  // ...
-},
-
-// Alabama State
-{
-  name: 'Mighty Marching Hornets',
-  school: 'Alabama State University',
-  city: 'Montgomery',
-  state: 'Alabama',
-  keywords: [
-    'alabama state', 'mighty marching hornets', 'hornets', 'asu',
-    'mmh', // ← Add this
-    'alabama state university', 'bama state'
-  ],
-  // ...
-},
-
-// Alabama A&M
-{
-  name: 'Marching Maroon and White',
-  school: 'Alabama A&M University',
-  city: 'Huntsville',
-  state: 'Alabama',
-  keywords: [
-    'alabama a&m', 'aamu', 'marching maroon', 'maroon and white',
-    'alabama am', 'alabama a and m', 'alabama agricultural',
-    'aamband' // ← Add this (seen in channel names)
-  ],
-  // ...
-},
-
-// Albany State
-{
-  name: 'Marching Rams Show Band',
-  school: 'Albany State University',
-  city: 'Albany',
-  state: 'Georgia',
-  keywords: [
-    'albany state', 'marching rams', 'asu', 'rams',
-    'mrsb', // ← Add this
-    'albany state university', 'albany ga'
-  ],
-  // ...
-},
-
-// Tuskegee
-{
-  name: 'Marching Crimson Piper',
-  school: 'Tuskegee University',
-  city: 'Tuskegee',
-  state: 'Alabama',
-  keywords: [
-    'tuskegee', 'crimson piper', 'marching crimson', 'tu',
-    'mcp', // ← Add this
-    'tuskegee university', 'tuskegee institute'
-  ],
-  // ...
-},
-
-// North Carolina Central
-{
-  name: 'Sound Machine',
-  school: 'North Carolina Central University',
-  city: 'Durham',
-  state: 'North Carolina',
-  keywords: [
-    'north carolina central', 'nccu', 'sound machine', 'nc central',
-    'ncc university', 'durham eagles'
-  ],
-  // ...
-}
 ];
 
 export const KNOWN_BAND_NAMES = HBCU_BANDS.map(b => b.name);
 export const KNOWN_SCHOOL_NAMES = HBCU_BANDS.map(b => b.school);
+export const KNOWN_KEYWORDS = HBCU_BANDS.map(b => b.keywords).flat();

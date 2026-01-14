@@ -129,59 +129,83 @@ export class CacheStrategyService {
     }
   }
 
-  /**
-   * Get from cache with automatic decompression
-   */
-  async get<T>(key: string, compressed = false): Promise<T | null> {
+/**
+ * Get from cache with automatic decompression
+ */
+async get<T>(key: string, compressed = false): Promise<T | null> {
+  try {
+    const raw = await this.cache.get<string>(key);
+    if (!raw) return null;
+
+    // Parse the envelope
+    let envelope: { compressed: boolean; data: string };
     try {
-      const value = await this.cache.get<string>(key);
-      if (!value) return null;
-
-      // Decompress if needed
-      const decompressed = compressed
-        ? await this.compression.decompress(value)
-        : value;
-
-      return JSON.parse(decompressed) as T;
-    } catch (error) {
-      this.logger.error(`Cache get error for ${key}:`, error);
-      return null;
+      envelope = JSON.parse(raw);
+    } catch {
+      // Fallback: might be old format without envelope
+      this.logger.warn(`Cache key ${key} has old format, will be migrated on next write`);
+      return JSON.parse(raw) as T;
     }
+
+    // Check if we need to decompress
+    const data = envelope.compressed
+      ? await this.compression.decompress(envelope.data)
+      : envelope.data;
+
+    return JSON.parse(data) as T;
+  } catch (error) {
+    this.logger.error(`Cache get error for ${key}:`, error);
+    this.logger.debug(`Cache MISS: ${key}`);
+    return null;
   }
+}
 
   /**
-   * Set in cache with automatic compression
-   */
-  async set(
-    key: string,
-    value: unknown,
-    ttl: number,
-    compress = true,
-  ): Promise<void> {
-    try {
-      const serialized = JSON.stringify(value);
-      const size = Buffer.byteLength(serialized, 'utf8');
+ * Set in cache with automatic compression
+ */
+async set(
+  key: string,
+  value: unknown,
+  ttl: number,
+  compress = true,
+): Promise<void> {
+  try {
+    const serialized = JSON.stringify(value);
+    const size = Buffer.byteLength(serialized, 'utf8');
 
-      // Compress if data is large enough
-      const shouldCompress = compress && size > COMPRESSION_THRESHOLD;
-      const toStore = shouldCompress
-        ? await this.compression.compress(serialized)
-        : serialized;
-
-      await this.cache.set(key, toStore, ttl);
-
-      if (shouldCompress) {
-        const compressedSize = Buffer.byteLength(toStore, 'utf8');
-        const reduction = Math.round((1 - compressedSize / size) * 100);
-        this.logger.debug(
-          `Compressed ${key}: ${size}B -> ${compressedSize}B (${reduction}% reduction)`,
-        );
-      }
-    } catch (error) {
-      this.logger.error(`Cache set error for ${key}:`, error);
-      throw error;
+    // Compress if data is large enough
+    const shouldCompress = compress && size > COMPRESSION_THRESHOLD;
+    
+    if (shouldCompress) {
+      const compressed = await this.compression.compress(serialized);
+      const compressedSize = Buffer.byteLength(compressed, 'utf8');
+      const reduction = Math.round((1 - compressedSize / size) * 100);
+      
+      // Store with metadata indicating it's compressed
+      const envelope = JSON.stringify({
+        compressed: true,
+        data: compressed,
+      });
+      
+      await this.cache.set(key, envelope, ttl);
+      
+      this.logger.debug(
+        `Compressed ${key}: ${size}B -> ${compressedSize}B (${reduction}% reduction)`,
+      );
+    } else {
+      // Store uncompressed with metadata
+      const envelope = JSON.stringify({
+        compressed: false,
+        data: serialized,
+      });
+      
+      await this.cache.set(key, envelope, ttl);
     }
+  } catch (error) {
+    this.logger.error(`Cache set error for ${key}:`, error);
+    throw error;
   }
+}
 
   /**
    * Delete a single cache entry

@@ -2,7 +2,7 @@
   "allStarBands": [
     {
       "name": "Atlanta All-Star Mass Band",
-      "aliases": ["AAMB", "Georgia Mass Band", "GMB", "Atlanta All-Star", "Atlanta Mass Band"],
+      "aliases": ["AAMB", "Georgia Mass Band", "GMB", "Atlanta All-Star", "Atlanta Mass Band", "Georgia All-Star", "GA Mass Band"],
       "region": "Atlanta, GA"
     },
     {
@@ -12,7 +12,7 @@
     },
     {
       "name": "Dallas Legion All-Star Band",
-      "aliases": ["DLASB", "The Legion", "Dallas Legion"],
+      "aliases": ["DLASB", "The Legion", "Dallas Legion", "Dallas All-Star"],
       "region": "Dallas, TX"
     },
     {
@@ -27,27 +27,27 @@
     },
     {
       "name": "Alabama Mass Band",
-      "aliases": ["AMB", "Alabama All-Star"],
+      "aliases": ["AMB", "Alabama All-Star", "Alabama Mass Band"],
       "region": "Alabama"
     },
     {
       "name": "Magic City All-Star Band",
-      "aliases": ["Magic City All-Star", "Magic City"],
+      "aliases": ["Magic City All-Star", "MCA"],
       "region": "Birmingham, AL"
     },
     {
       "name": "Memphis Mass Band",
-      "aliases": ["MMB", "Memphis All-Star"],
+      "aliases": ["MMB", "Memphis All-Star", "Memphis Mass Band"],
       "region": "Memphis, TN"
     },
     {
       "name": "Regulators",
-      "aliases": ["The Regulators"],
+      "aliases": ["The Regulators", "Regulators"],
       "region": "Various"
     },
     {
       "name": "North Carolina Mass Band",
-      "aliases": ["NCMB", "NC Mass Band"],
+      "aliases": ["NCMB", "NC Mass Band", "North Carolina All-Star", "NC All-Star", "North Carolina Mass Band"],
       "region": "North Carolina"
     },
     {
@@ -69,7 +69,7 @@
     },
     {
       "name": "Band of the Year",
-      "aliases": ["BOTY"],
+      "aliases": ["BOTY", "Band of the Yr", "Band of the Year"],
       "type": "COMPETITION"
     },
     {
@@ -96,6 +96,86 @@
       "name": "Battle of the Gulf Coast",
       "aliases": ["BOTGC", "Gulf Coast BOTB"],
       "type": "ALL_STAR_EVENT"
+    },
+    {
+      "name": "MEAC SWAC Challenge",
+      "aliases": ["MEAC SWAC", "MEAC-SWAC Challenge","MEAC/SWAC"],
+      "type": "COMPETITION"
+    },
+    {
+      "name": "Southern Heritage Classic",
+      "aliases": ["SHC", "Southern Heritage"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "State Fair Classic",
+      "aliases": ["SFC", "State Fair"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Turkey Day Classic",
+      "aliases": ["TDC", "Turkey Day"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Bayou Classic",
+      "aliases": ["BC", "Bayou"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Florida Classic",
+      "aliases": ["FC", "Florida"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Atlanta Football Classic",
+      "aliases": ["AFC", "Atlanta Classic"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Red River Classic",
+      "aliases": ["RRC", "Red River"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Crown Classic",
+      "aliases": ["Crown Classic"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Comparative Study",
+      "aliases": ["Comparative Study"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Port City Classic",
+      "aliases": ["Port City", "PCC"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Richmond Co BOTB",
+      "aliases": ["Richmond County Battle of the Bands", "Richmond Co Battle of the Bands"],
+      "type": "COMPETITION"
+    },
+    {
+      "name": "Gulfcoast Challenge",
+      "aliases": ["Gulfcoast Challenge"],
+      "type": "COMPETITION"
+    },
+    {
+      "name": "Soul Bowl",
+      "aliases": ["Soul Bowl", "Soul Bowl Classic"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Black College Football Hall of Fame Classic",
+      "aliases": ["BCFHOF Classic", "Black College Football Hall of Fame"],
+      "type": "HBCU_SHOWCASE"
+    },
+    {
+      "name": "Columbus Battle Of The Bands",
+      "aliases": ["Columbus BOTB", "Columbus Battle of the Bands"],
+      "type": "HBCU_SHOWCASE"
     }
   ],
   "exclusionPatterns": {
@@ -118,7 +198,6 @@
       "season ",
       "episode ",
       " s\\d+e\\d+",
-      "versus",
       "showdown",
       "band head"
     ],

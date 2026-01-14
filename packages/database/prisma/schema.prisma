@@ -728,6 +728,7 @@ model User {
   email                    String                    @unique
   passwordHash             String                    @map("password_hash")
   name                     String
+  role                     UserRole                  @default(USER) // ← Add this line
   avatar                   String?
   bio                      String?
   emailVerified            Boolean                   @default(false) @map("email_verified")
@@ -863,6 +864,12 @@ model YouTubeVideo {
   @@index([syncStatus])
   @@index([viewCount(sort: Desc)])
   @@map("youtube_videos")
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
 }
 
 enum AdminRole {

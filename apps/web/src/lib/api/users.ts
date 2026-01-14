@@ -68,7 +68,7 @@ class UserApiClient {
    */
   async register(data: UserRegistrationData): Promise<{ message: string; user: { id: string; email: string; name: string } }> {
     return this.request(
-      '/api/users/register',
+      '/users/register',
       {
         method: 'POST',
         body: JSON.stringify(data),
@@ -82,7 +82,7 @@ class UserApiClient {
    */
   async login(credentials: UserLoginCredentials): Promise<UserLoginResponse> {
     const response = await this.request<UserLoginResponse>(
-      '/api/users/login',
+      '/users/login',
       {
         method: 'POST',
         body: JSON.stringify(credentials),
@@ -102,7 +102,7 @@ class UserApiClient {
   async logout(): Promise<void> {
     try {
       await this.request<{ message: string }>(
-        '/api/users/logout',
+        '/users/logout',
         {
           method: 'POST',
         }
@@ -119,7 +119,7 @@ class UserApiClient {
   async logoutAll(): Promise<void> {
     try {
       await this.request<{ message: string }>(
-        '/api/users/logout-all',
+        '/users/logout-all',
         {
           method: 'POST',
         }
@@ -134,14 +134,14 @@ class UserApiClient {
    * Get current user profile
    */
   async getProfile(): Promise<UserProfile> {
-    return this.request('/api/users/me');
+    return this.request('/users/me');
   }
 
   /**
    * Update user profile
    */
   async updateProfile(data: UpdateUserProfile): Promise<UserProfile> {
-    return this.request('/api/users/me', {
+    return this.request('/users/me', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -151,7 +151,7 @@ class UserApiClient {
    * Change password
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
-    return this.request('/api/users/change-password', {
+    return this.request('/users/change-password', {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword }),
     });
@@ -161,7 +161,7 @@ class UserApiClient {
    * Delete account
    */
   async deleteAccount(): Promise<{ message: string }> {
-    const response = await this.request<{ message: string }>('/api/users/me', {
+    const response = await this.request<{ message: string }>('/users/me', {
       method: 'DELETE',
     });
     this.setAccessToken(null);
@@ -174,7 +174,7 @@ class UserApiClient {
    */
   async forgotPassword(email: string): Promise<{ message: string }> {
     return this.request(
-      '/api/users/forgot-password',
+      '/users/forgot-password',
       {
         method: 'POST',
         body: JSON.stringify({ email }),
@@ -188,7 +188,7 @@ class UserApiClient {
    */
   async resetPassword(token: string, password: string): Promise<{ message: string }> {
     return this.request(
-      '/api/users/reset-password',
+      '/users/reset-password',
       {
         method: 'POST',
         body: JSON.stringify({ token, password }),
@@ -202,7 +202,7 @@ class UserApiClient {
    */
   async verifyEmail(token: string): Promise<{ message: string }> {
     return this.request(
-      '/api/users/verify-email',
+      '/users/verify-email',
       {
         method: 'POST',
         body: JSON.stringify({ token }),
@@ -215,7 +215,7 @@ class UserApiClient {
    * Resend verification email
    */
   async resendVerification(): Promise<{ message: string }> {
-    return this.request('/api/users/resend-verification', {
+    return this.request('/users/resend-verification', {
       method: 'POST',
     });
   }
@@ -224,14 +224,14 @@ class UserApiClient {
    * Get all user sessions
    */
   async getSessions(): Promise<UserSession[]> {
-    return this.request('/api/users/sessions');
+    return this.request('/users/sessions');
   }
 
   /**
    * Delete a specific session
    */
   async deleteSession(sessionId: string): Promise<{ message: string }> {
-    return this.request(`/api/users/sessions/${sessionId}`, {
+    return this.request(`/users/sessions/${sessionId}`, {
       method: 'DELETE',
     });
   }

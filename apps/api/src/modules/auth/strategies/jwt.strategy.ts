@@ -9,6 +9,7 @@ export interface JwtPayload {
   email: string;
   role: string;
   sessionVersion?: number;
+  userType?: 'user' | 'admin'; // ← Add userType
 }
 
 @Injectable()
@@ -30,27 +31,56 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    const user = await this.prisma.adminUser.findUnique({
-      where: { id: payload.sub },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        sessionVersion: true,
-      },
-    });
+    // Determine which table to query based on userType
+    const userType = payload.userType || 'admin'; // Default to admin for backward compatibility
+    
+    let user: any;
 
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('Invalid or inactive user');
-    }
+    if (userType === 'admin') {
+      // Query AdminUser table
+      user = await this.prisma.adminUser.findUnique({
+        where: { id: payload.sub },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          isActive: true,
+          sessionVersion: true,
+        },
+      });
 
-    // Validate session version to allow invalidation after password reset
-    if (typeof payload.sessionVersion === 'number') {
-      if ((user.sessionVersion ?? 0) !== payload.sessionVersion) {
-        throw new UnauthorizedException('Session invalidated');
+      if (!user || !user.isActive) {
+        throw new UnauthorizedException('Invalid or inactive user');
       }
+
+      // Validate session version for admin users
+      if (typeof payload.sessionVersion === 'number') {
+        if ((user.sessionVersion ?? 0) !== payload.sessionVersion) {
+          throw new UnauthorizedException('Session invalidated');
+        }
+      }
+    } else {
+      // Query User table
+      user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          emailVerified: true,
+        },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      // Optional: Check email verification for regular users
+      // if (!user.emailVerified) {
+      //   throw new UnauthorizedException('Email not verified');
+      // }
     }
 
     return {
@@ -58,6 +88,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       name: user.name,
       role: user.role,
+      userType, // Include userType in request.user
     };
   }
 }

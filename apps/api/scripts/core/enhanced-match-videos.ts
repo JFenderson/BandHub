@@ -22,7 +22,7 @@ import * as dotenv from 'dotenv';
 import { PrismaService } from '@bandhub/database';
 import * as fs from 'fs';
 import * as path from 'path';
-import { HBCU_BANDS } from '../src/config/hbcu-bands';
+import { HBCU_BANDS } from '../../src/config/hbcu-bands';
 
 
 dotenv.config();
@@ -30,7 +30,7 @@ const prisma = new PrismaService();
 
 // Load all-star configuration
 const allStarConfig = JSON.parse(
-  fs.readFileSync(path.resolve('../../allstar-config.json'), 'utf-8')
+  fs.readFileSync(path.resolve('./allstar-config.json'), 'utf-8')
 );
 
 // Parse command line arguments

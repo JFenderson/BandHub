@@ -5,6 +5,7 @@ dotenv.config();
 
 const prisma = new PrismaService();
 
+
 async function main() {
   console.log('🌱 Starting database seed...\n');
 
