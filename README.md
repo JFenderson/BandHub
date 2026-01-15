@@ -322,21 +322,187 @@ pnpm build
 
 ## Testing
 
+The project uses **Jest** for unit and integration tests, with comprehensive coverage requirements.
+
+### Prerequisites
+- Node.js 20+
+- PostgreSQL database (for integration tests)
+- Redis (for caching tests)
+
+### Running Tests
+
+**Unit Tests Only**
 ```bash
-# Run all tests
+cd apps/api
+npx jest --config jest.config.ts --testMatch='**/test/unit/**/*.spec.ts'
+```
+
+**Integration Tests Only**
+```bash
+cd apps/api
+npx jest --config jest.config.ts --testMatch='**/test/integration/**/*.spec.ts'
+```
+
+**All Tests**
+```bash
 pnpm test
-
-# Run tests in watch mode
-pnpm test:watch
-
-# Run e2e tests
-pnpm test:e2e
-
-# Generate coverage report
+# Or with coverage
 pnpm test:cov
 ```
 
-## Linting
+**Watch Mode** (re-run tests on file changes)
+```bash
+pnpm test:watch
+```
+
+**E2E Tests**
+```bash
+pnpm test:e2e
+```
+
+### Coverage Reports
+
+After running tests with `--coverage` flag:
+
+- **HTML Report**: Open `apps/api/test/coverage/index.html` in your browser
+- **Terminal Summary**: Displayed automatically after test run
+- **LCOV Report**: Available at `apps/api/test/coverage/lcov.info`
+
+### Coverage Thresholds
+
+The project enforces **minimum 80% coverage** across all metrics:
+
+| Metric       | Threshold |
+|--------------|-----------|
+| **Branches** | 80%       |
+| **Functions**| 80%       |
+| **Lines**    | 80%       |
+| **Statements**| 80%      |
+
+⚠️ **CI will fail** if coverage drops below these thresholds.
+
+### Test Organization
+
+Tests are organized by type:
+
+- **`test/unit/`**: Unit tests with mocked dependencies
+  - Mock all external services (database, cache, APIs)
+  - Fast execution
+  - Test individual methods and logic
+
+- **`test/integration/`**: Integration tests with real dependencies
+  - Use test database (configure via `DATABASE_URL_TEST`)
+  - Test full request/response cycles
+  - Test controller endpoints with authentication
+
+- **`test/e2e/`**: End-to-end tests
+  - Test complete user flows
+  - Use Playwright for browser automation
+
+### Test Helpers
+
+Test utilities are available in `apps/api/test/helpers/`:
+
+- **`factories.ts`**: Build test data (bands, videos, categories, etc.)
+- **`youtube-mocks.ts`**: Mock YouTube API responses
+- **`auth-helpers.ts`**: Authentication utilities for tests
+
+**Example: Using Test Factories**
+```typescript
+import { buildBand, buildVideo, createMockPagination } from '../helpers/factories';
+
+const band = buildBand({ name: 'Test Band', slug: 'test-band' });
+const video = buildVideo({ title: 'Test Video' });
+const response = createMockPagination([band], 1);
+```
+
+### Writing Tests
+
+**Unit Test Example**
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { BandsService } from './bands.service';
+
+describe('BandsService', () => {
+  let service: BandsService;
+  let mockRepository: jest.Mocked<any>;
+
+  beforeEach(async () => {
+    mockRepository = { findMany: jest.fn() };
+    
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        BandsService,
+        { provide: 'BandsRepository', useValue: mockRepository },
+      ],
+    }).compile();
+
+    service = module.get<BandsService>(BandsService);
+  });
+
+  it('should find all bands', async () => {
+    const bands = [{ id: '1', name: 'Test Band' }];
+    mockRepository.findMany.mockResolvedValue(bands);
+
+    const result = await service.findAll({});
+    expect(result).toEqual(bands);
+  });
+});
+```
+
+**Integration Test Example**
+```typescript
+import request from 'supertest';
+import { INestApplication } from '@nestjs/common';
+import { generateJwtToken } from '../helpers/auth-helpers';
+
+describe('BandsController (Integration)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    // Setup test app
+  });
+
+  it('GET /bands should return paginated bands', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/bands')
+      .expect(200);
+
+    expect(response.body).toHaveProperty('data');
+    expect(response.body).toHaveProperty('meta');
+  });
+
+  it('POST /bands should require authentication', async () => {
+    await request(app.getHttpServer())
+      .post('/bands')
+      .send({ name: 'New Band' })
+      .expect(401);
+  });
+});
+```
+
+### Continuous Integration
+
+Tests run automatically on:
+- Every push to `main` branch
+- Every pull request
+
+**GitHub Actions Workflow** (`.github/workflows/tests.yml`):
+- Installs dependencies
+- Builds shared packages
+- Runs all tests with coverage
+- Uploads coverage reports
+- Comments PR with coverage changes
+- **Fails if coverage drops below 80%**
+
+### Coverage Reports in PRs
+
+Coverage reports are automatically posted as PR comments, showing:
+- Coverage % for each file changed
+- Overall coverage change (increase/decrease)
+- Link to detailed coverage report
+
+## Building for Production
 
 ```bash
 pnpm lint
