@@ -6,7 +6,7 @@ import { PrismaService } from '@bandhub/database';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
-  let prisma: jest.Mocked<PrismaService>;
+  let prisma: any;
   let configService: jest.Mocked<ConfigService>;
 
   const mockUser = {
@@ -21,7 +21,7 @@ describe('JwtStrategy', () => {
   beforeEach(async () => {
     const mockPrisma = {
       adminUser: {
-        findUnique: jest.fn(),
+        findUnique: jest.fn().mockResolvedValue(null),
       },
     };
 
@@ -49,7 +49,7 @@ describe('JwtStrategy', () => {
     }).compile();
 
     strategy = module.get<JwtStrategy>(JwtStrategy);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
+    prisma = module.get(PrismaService);
     configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
 
     jest.clearAllMocks();
