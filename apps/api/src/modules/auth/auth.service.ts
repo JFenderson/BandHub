@@ -230,62 +230,77 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // CHECK 1: Account active status
-    if (!user.isActive) {
-      this.logger.warn(`Login attempt for inactive account: ${user.email}`);
-      throw new UnauthorizedException('Invalid credentials'); // Don't reveal account is disabled
-    }
+// Only check admin-specific security fields for AdminUser
+if (userType === 'admin') {
+  const adminUser = user as any; // Cast since we know it's AdminUser
+  
+  // CHECK 1: Account active status (AdminUser only)
+  if (adminUser.isActive === false) {
+    this.logger.warn(`Login attempt for inactive admin account: ${user.email}`);
+    throw new UnauthorizedException('Invalid credentials');
+  }
 
-    // CHECK 2: Account lockout
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
-      const minutesLeft = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
-      this.logger.warn(`Login attempt for locked account: ${user.email}`);
-      throw new UnauthorizedException(
-        `Account is temporarily locked. Please try again in ${minutesLeft} minutes.`
-      );
-    }
+  // CHECK 2: Account lockout (AdminUser only)
+  if (adminUser.lockedUntil && adminUser.lockedUntil > new Date()) {
+    const minutesLeft = Math.ceil((adminUser.lockedUntil.getTime() - Date.now()) / 60000);
+    this.logger.warn(`Login attempt for locked admin account: ${user.email}`);
+    throw new UnauthorizedException(
+      `Account is temporarily locked. Please try again in ${minutesLeft} minutes.`
+    );
+  }
+}
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
     
-    if (!isPasswordValid) {
-      // INCREMENT failed attempts
-      const newFailedAttempts = user.failedLoginAttempts + 1;
-      const maxAttempts = 5;
-      
-      const updateData: {
-        failedLoginAttempts: number;
-        lockedUntil?: Date;
-      } = {
-        failedLoginAttempts: newFailedAttempts,
-      };
-      
-      // Lock account if max attempts reached
-      if (newFailedAttempts >= maxAttempts) {
-        const lockoutMinutes = 15;
-        updateData.lockedUntil = new Date(Date.now() + lockoutMinutes * 60000);
-        this.logger.warn(`Account locked due to failed attempts: ${user.email}`);
-      }
-      
-      await this.prisma.adminUser.update({
-        where: { id: user.id },
-        data: updateData,
-      });
-      
-      throw new UnauthorizedException('Invalid credentials');
-    }
 
-    // SUCCESS: Update user state
+if (!isPasswordValid) {
+  // Only track failed attempts for AdminUser
+  if (userType === 'admin') {
+    const adminUser = user as any;
+    const newFailedAttempts = (adminUser.failedLoginAttempts || 0) + 1;
+    const maxAttempts = 5;
+    
+    const updateData: any = {
+      failedLoginAttempts: newFailedAttempts,
+    };
+    
+    if (newFailedAttempts >= maxAttempts) {
+      const lockoutMinutes = 15;
+      updateData.lockedUntil = new Date(Date. now() + lockoutMinutes * 60000);
+      this.logger.warn(`Admin account locked due to failed attempts: ${user.email}`);
+    }
+    
     await this.prisma.adminUser.update({
       where: { id: user.id },
-      data: {
-        lastLoginAt: new Date(),
-        lastLoginIp: data.ipAddress || null,
-        failedLoginAttempts: 0, // Reset counter
-        lockedUntil: null, // Clear any lockout
-      },
+      data: updateData,
     });
+  }
+  
+  throw new UnauthorizedException('Invalid credentials');
+}
 
+
+    // SUCCESS: Update user state
+if (userType === 'admin') {
+  await this.prisma.adminUser.update({
+    where: { id:  user.id },
+    data: {
+      lastLoginAt: new Date(),
+      lastLoginIp: data.ipAddress || null,
+      failedLoginAttempts: 0,
+      lockedUntil:  null,
+    },
+  });
+} else {
+  // For regular users, just update lastSeenAt
+  await this.prisma.user.update({
+    where: { id: user.id },
+    data: {
+      lastSeenAt: new Date(),
+    },
+  });
+}
     // Generate tokens with correct userType
     const accessToken = await this.generateAccessToken(
       user.id,

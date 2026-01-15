@@ -15,7 +15,7 @@ function slugify(text: string): string {
     .trim();
 }
 
-async function main() {
+async function seedAllStarBands(prisma: PrismaClient) {
   console.log('🎺 Seeding all-star bands from extraction...');
 
   // Load the extracted template
@@ -76,7 +76,7 @@ async function main() {
   console.log(`   Total: ${created + updated}`);
 }
 
-main()
+seedAllStarBands()
   .catch((error) => {
     console.error('❌ Error:', error);
     process.exit(1);

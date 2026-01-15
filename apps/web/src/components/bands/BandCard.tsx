@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Band } from '@/types/api';
+import { getFullImageUrl } from '@/lib/utils/image-url';
 
 interface BandCardProps {
   band: Band;
@@ -8,9 +9,11 @@ interface BandCardProps {
 
 export function BandCard({ band }: BandCardProps) {
   // Get display text - use city/state if available
-  const locationText = band.city && band.state 
-    ? `${band.city}, ${band.state}` 
+  const locationText = band.city && band.state
+    ? `${band.city}, ${band.state}`
     : band.state || '';
+
+  const imageUrl = getFullImageUrl(band.logoUrl);
 
   return (
     <Link
@@ -19,9 +22,9 @@ export function BandCard({ band }: BandCardProps) {
     >
       {/* Band Image */}
       <div className="relative aspect-video bg-gradient-to-br from-primary-100 to-secondary-100">
-        {band.logoUrl ? (
+        {imageUrl ? (
           <Image
-            src={band.logoUrl}
+            src={imageUrl}
             alt={band.name}
             fill
             className="object-cover"

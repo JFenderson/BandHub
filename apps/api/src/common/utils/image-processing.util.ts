@@ -1,10 +1,29 @@
 import sharp from 'sharp';
-import { unlink } from 'fs/promises';
+import { unlink, rename } from 'fs/promises';
 
 export interface ImageProcessingOptions {
   width: number;
   height: number;
   quality?: number;
+}
+
+/**
+ * Helper to safely delete a file with retries (Windows file locking workaround)
+ */
+async function safeUnlink(filePath: string, retries = 3, delay = 100): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await unlink(filePath);
+      return;
+    } catch (error: any) {
+      if (error.code === 'EBUSY' && i < retries - 1) {
+        // Wait a bit for file handles to be released
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
 }
 
 /**
@@ -18,26 +37,28 @@ export async function processUploadedImage(
   options: ImageProcessingOptions
 ): Promise<void> {
   const { width, height, quality = 90 } = options;
-  const processedPath = filePath + '.tmp';
+  const processedPath = filePath + '.processed';
 
   try {
-    // Process image with sharp
-    await sharp(filePath)
+    // Process image with sharp - use toBuffer then write to avoid file handle issues
+    const processedBuffer = await sharp(filePath)
       .resize(width, height, {
         fit: 'cover',
         position: 'center',
       })
       .webp({ quality })
-      .toFile(processedPath);
+      .toBuffer();
 
-    // Replace original with processed
-    await unlink(filePath);
-    await sharp(processedPath).toFile(filePath);
-    await unlink(processedPath);
+    // Write the processed buffer directly to the final location
+    await sharp(processedBuffer).toFile(processedPath);
+
+    // Delete original and rename processed to original
+    await safeUnlink(filePath);
+    await rename(processedPath, filePath);
   } catch (error) {
     // Clean up temporary file if it exists
     try {
-      await unlink(processedPath);
+      await safeUnlink(processedPath);
     } catch (e) {
       // Ignore cleanup errors
     }

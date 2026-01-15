@@ -101,8 +101,14 @@ export default function BandFormModal({
     e.preventDefault();
     setError('');
 
-    if (!formData.name || !formData.school) {
-      setError('Band name and school are required');
+    // When creating a new band, name and school are required
+    // When editing, only name is required (other fields keep existing values if not changed)
+    if (!band && (!formData.name || !formData.school)) {
+      setError('Band name and school are required for new bands');
+      return;
+    }
+    if (band && !formData.name) {
+      setError('Band name is required');
       return;
     }
 
@@ -222,7 +228,7 @@ export default function BandFormModal({
 
               <div>
                 <label htmlFor="school" className="block text-sm font-medium text-gray-700">
-                  School Name <span className="text-red-500">*</span>
+                  School Name {!band && <span className="text-red-500">*</span>}
                 </label>
                 <input
                   type="text"
@@ -230,7 +236,7 @@ export default function BandFormModal({
                   name="school"
                   value={formData.school || ''}
                   onChange={handleChange}
-                  required
+                  required={!band}
                   disabled={isLoading}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
                 />
@@ -241,7 +247,7 @@ export default function BandFormModal({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                  City <span className="text-red-500">*</span>
+                  City
                 </label>
                 <input
                   type="text"
@@ -249,7 +255,6 @@ export default function BandFormModal({
                   name="city"
                   value={formData.city || ''}
                   onChange={handleChange}
-                  required
                   disabled={isLoading}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
                 />
@@ -257,7 +262,7 @@ export default function BandFormModal({
 
               <div>
                 <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                  State <span className="text-red-500">*</span>
+                  State
                 </label>
                 <input
                   type="text"
@@ -265,7 +270,6 @@ export default function BandFormModal({
                   name="state"
                   value={formData.state || ''}
                   onChange={handleChange}
-                  required
                   disabled={isLoading}
                   placeholder="e.g., AL"
                   maxLength={2}

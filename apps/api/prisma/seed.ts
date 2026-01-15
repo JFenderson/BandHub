@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import { PrismaService } from '@bandhub/database';
-import { seedCategories, seedBands, seedCreators, seedAllStarBands } from './seeders';
+import { seedCategories, seedBands, seedCreators, seedAllStarBands, seedAdmin } from './seeders';
 dotenv.config();
 
 const prisma = new PrismaService();
@@ -14,7 +14,7 @@ async function main() {
     await seedCategories(prisma);
     await seedBands(prisma);
     await seedCreators(prisma);
-    await seedAllStarBands(prisma);
+    await seedAdmin(prisma);
     // Optional: Trigger initial sync for bands with YouTube channel IDs
     if (process.env.SEED_WITH_SYNC === 'true') {
       console.log('\n📺 SEED_WITH_SYNC enabled - Initial video sync would be triggered');

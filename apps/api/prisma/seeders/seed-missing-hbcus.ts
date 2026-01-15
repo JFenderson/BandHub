@@ -8,7 +8,7 @@ const bandsToCreate = JSON.parse(
   fs.readFileSync('./bands-to-create.json', 'utf-8')
 );
 
-async function main() {
+async function seedMissingHbcus() {
   console.log(`Creating ${bandsToCreate.length} missing HBCU bands...\n`);
   
   for (const band of bandsToCreate) {
@@ -41,6 +41,6 @@ async function main() {
   console.log('\n✅ All bands created!');
 }
 
-main()
+seedMissingHbcus()
   .catch(console.error)
   .finally(() => prisma.$disconnect());

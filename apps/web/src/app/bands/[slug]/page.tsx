@@ -40,12 +40,13 @@ export default async function BandPage({ params }: BandPageProps) {
           <div className="flex flex-col md:flex-row items-start gap-6">
             {/* Logo */}
             {band.logoUrl && (
-              <div className="w-32 h-32 rounded-lg bg-white p-4 flex-shrink-0">
-                  <BandLogo
-            logoUrl={band.logoUrl}
-            bandName={band.name}
-            size="xl"
-          />
+              <div className="flex-shrink-0">
+                <BandLogo
+                  logoUrl={band.logoUrl}
+                  bandName={band.name}
+                  size="xl"
+                  className="bg-white p-2"
+                />
               </div>
             )}
 

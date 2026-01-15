@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import Image from 'next/image';
+import { getFullImageUrl } from '@/lib/utils/image-url';
 
 interface LogoUploadProps {
   currentLogoUrl?: string | null;
@@ -66,13 +67,6 @@ export default function LogoUpload({
   };
 
   const displayUrl = previewUrl || currentLogoUrl;
-  
-  const getFullImageUrl = (url: string | null | undefined): string | null => {
-    if (!url) return null;
-    if (url.startsWith('http')) return url;
-    return `${process.env.NEXT_PUBLIC_API_URL}${url}`;
-  };
-  
   const fullImageUrl = getFullImageUrl(displayUrl);
 
   return (

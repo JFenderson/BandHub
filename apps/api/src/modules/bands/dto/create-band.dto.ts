@@ -105,7 +105,7 @@ export class CreateBandDto {
   // Fields that may be sent from frontend but are not in the Prisma schema
   // Marked as optional to accept them without validation errors
 
-  @ApiPropertyOptional({ description: 'Band nickname' })
+  @ApiPropertyOptional({ description: 'Band nickname (not persisted)' })
   @SanitizeText()
   @IsOptional()
   @IsString()
@@ -115,4 +115,19 @@ export class CreateBandDto {
   @IsOptional()
   @IsString()
   division?: string;
+
+  @ApiPropertyOptional({ description: 'Founded year alias (not persisted)' })
+  @IsOptional()
+  @IsNumber()
+  founded?: number;
+
+  @ApiPropertyOptional({ description: 'Band colors (not persisted)' })
+  @IsOptional()
+  @IsString()
+  colors?: string;
+
+  @ApiPropertyOptional({ description: 'Website URL (not persisted)' })
+  @IsOptional()
+  @IsString()
+  website?: string;
 }

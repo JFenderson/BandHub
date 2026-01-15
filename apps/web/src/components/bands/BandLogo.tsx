@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { getFullImageUrl } from '@/lib/utils/image-url';
 
 interface BandLogoProps {
   logoUrl?: string | null;
@@ -41,10 +42,7 @@ export default function BandLogo({
     );
   }
 
-  // Build full URL for API-served images
-  const imageUrl = logoUrl.startsWith('http')
-    ? logoUrl
-    : `${process.env.NEXT_PUBLIC_API_URL}${logoUrl}`;
+  const imageUrl = getFullImageUrl(logoUrl)!;
 
   return (
     <div

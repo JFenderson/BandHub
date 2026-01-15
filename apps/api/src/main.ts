@@ -138,7 +138,14 @@ Endpoints accepting files use \`multipart/form-data\`. Ensure your client sets t
     )
     .build();
 
-  app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
+  // Serve static uploads
+  // Use __dirname to reliably find the uploads folder relative to the compiled main.js
+  // main.js compiles to apps/api/dist/main.js, so go up 1 level to apps/api, then uploads
+  const uploadsPath = join(__dirname, '..', 'uploads');
+
+  console.log(`📁 Static uploads path: ${uploadsPath}`);
+
+  app.useStaticAssets(uploadsPath, {
     prefix: '/uploads/',
   });
 

@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-async function seedAdmin() {
+export async function seedAdmin(prisma: PrismaClient) {
   const email = 'admin@bandhub.com';
   const password = 'SecurePass123!';
   
@@ -34,7 +34,7 @@ async function seedAdmin() {
   console.log('\nYou can now login at /admin/login');
 }
 
-seedAdmin()
+seedAdmin(prisma)
   .catch((error) => {
     console.error('❌ Error seeding admin user:', error);
     process.exit(1);

@@ -102,12 +102,23 @@ export class BandsService {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
 
-    // Prepare band data with bandType (defaults to HBCU for backwards compatibility)
+    // Transform DTO fields to match Prisma schema
+    // The frontend sends 'school' but Prisma expects 'schoolName'
+    // Strip out fields that don't exist in Prisma schema (nickname, division, colors, website, founded)
     const bandData = {
-      ...data,
+      name: data.name,
       slug,
-      schoolName: data.schoolName || data.name, // Use name as fallback
-      bandType: data.bandType || BandType.HBCU, // NEW: Default to HBCU bandType
+      schoolName: data.schoolName || data.school || data.name, // Use school or name as fallback
+      bandType: data.bandType || BandType.HBCU,
+      city: data.city || null,
+      state: data.state || '',
+      conference: data.conference || null,
+      description: data.description || null,
+      foundedYear: data.foundedYear || data.founded || null,
+      youtubeChannelId: data.youtubeChannelId || null,
+      youtubePlaylistIds: data.youtubePlaylistIds || [],
+      isActive: data.isActive ?? true,
+      isFeatured: data.isFeatured ?? false,
     };
 
     const band = await this.bandsRepository.create(bandData);
@@ -131,7 +142,29 @@ export class BandsService {
       throw new NotFoundException(`Band with ID ${id} not found`);
     }
 
-    const band = await this.bandsRepository.update(id, data);
+    // Transform DTO fields to match Prisma schema
+    // The frontend sends 'school' but Prisma expects 'schoolName'
+    // Also strip out fields that don't exist in Prisma schema
+    const prismaData = {
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.schoolName !== undefined && { schoolName: data.schoolName }),
+      ...((data.school !== undefined && data.schoolName === undefined) && { schoolName: data.school }),
+      ...(data.city !== undefined && { city: data.city || null }),
+      ...(data.state !== undefined && { state: data.state }),
+      ...(data.conference !== undefined && { conference: data.conference || null }),
+      ...(data.logoUrl !== undefined && { logoUrl: data.logoUrl || null }),
+      ...(data.bannerUrl !== undefined && { bannerUrl: data.bannerUrl || null }),
+      ...(data.description !== undefined && { description: data.description || null }),
+      ...(data.foundedYear !== undefined && { foundedYear: data.foundedYear || null }),
+      ...(data.youtubeChannelId !== undefined && { youtubeChannelId: data.youtubeChannelId || null }),
+      ...(data.youtubePlaylistIds !== undefined && { youtubePlaylistIds: data.youtubePlaylistIds }),
+      ...(data.isActive !== undefined && { isActive: data.isActive }),
+      ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
+      ...(data.type !== undefined && { bandType: data.type }),
+      ...(data.slug !== undefined && { slug: data.slug }),
+    };
+
+    const band = await this.bandsRepository.update(id, prismaData);
 
     // Invalidate this band's caches
     await this.cacheStrategy.invalidateBandCaches(id);
