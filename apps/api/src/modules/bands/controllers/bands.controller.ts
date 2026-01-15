@@ -40,7 +40,7 @@ import { RateLimitType } from '../../../common/interfaces/rate-limit.interface';
 
 // Import AdminRole from generated Prisma client
 import { AdminRole } from '@prisma/client';
-import { ApiErrorDto } from 'src/common/dto/api-error.dto';
+import { ApiErrorDto } from '../../../common/dto/api-error.dto';
 
 @ApiTags('Bands')
 @Controller('bands')

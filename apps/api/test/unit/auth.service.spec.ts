@@ -282,10 +282,10 @@ describe('AuthService (comprehensive unit tests)', () => {
     it('should throw UnauthorizedException for invalid email', async () => {
       prisma.adminUser.findUnique.mockResolvedValue(null);
 
-      await expect(service.login(loginDto, '192.168.1.1')).rejects.toThrow(
+      await expect(service.login(loginDto)).rejects.toThrow(
         UnauthorizedException
       );
-      await expect(service.login(loginDto, '192.168.1.1')).rejects.toThrow(
+      await expect(service.login(loginDto)).rejects.toThrow(
         'Invalid credentials'
       );
     });
@@ -294,7 +294,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       prisma.adminUser.findUnique.mockResolvedValue(mockUser);
       mockedBcrypt.compare.mockResolvedValue(false as never);
 
-      await expect(service.login(loginDto, '192.168.1.1')).rejects.toThrow(
+      await expect(service.login(loginDto)).rejects.toThrow(
         UnauthorizedException
       );
     });
@@ -353,10 +353,10 @@ describe('AuthService (comprehensive unit tests)', () => {
       
       prisma.adminUser.findUnique.mockResolvedValue(lockedUser);
 
-      await expect(service.login(loginDto, '192.168.1.1')).rejects.toThrow(
+      await expect(service.login(loginDto)).rejects.toThrow(
         UnauthorizedException
       );
-      await expect(service.login(loginDto, '192.168.1.1')).rejects.toThrow(
+      await expect(service.login(loginDto)).rejects.toThrow(
         /Account is locked/
       );
     });
@@ -366,10 +366,10 @@ describe('AuthService (comprehensive unit tests)', () => {
       
       prisma.adminUser.findUnique.mockResolvedValue(inactiveUser);
 
-      await expect(service.login(loginDto, '192.168.1.1')).rejects.toThrow(
+      await expect(service.login(loginDto)).rejects.toThrow(
         UnauthorizedException
       );
-      await expect(service.login(loginDto, '192.168.1.1')).rejects.toThrow(
+      await expect(service.login(loginDto)).rejects.toThrow(
         /Account is deactivated/
       );
     });
@@ -869,7 +869,7 @@ describe('AuthService (comprehensive unit tests)', () => {
     });
   });
 
-  describe('resetAdminPassword', () => {
+  describe('resetPassword', () => {
     const token = 'plain-reset-token';
     const hashedToken = 'hashed-reset-token';
     const newPassword = 'NewSecurePass123!';
@@ -895,7 +895,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       
       mockedBcrypt.hash.mockResolvedValue('new-hashed-password' as never);
 
-      await service.resetAdminPassword(token, newPassword);
+      await service.resetPassword(token, newPassword);
 
       expect(prisma.adminUser.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -911,10 +911,10 @@ describe('AuthService (comprehensive unit tests)', () => {
     it('should throw BadRequestException for invalid token', async () => {
       prisma.adminPasswordResetToken.findUnique.mockResolvedValue(null);
 
-      await expect(service.resetAdminPassword(token, newPassword)).rejects.toThrow(
+      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
         BadRequestException
       );
-      await expect(service.resetAdminPassword(token, newPassword)).rejects.toThrow(
+      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
         'Invalid or expired reset token'
       );
     });
@@ -930,7 +930,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       
       prisma.adminPasswordResetToken.findUnique.mockResolvedValue(expiredToken);
 
-      await expect(service.resetAdminPassword(token, newPassword)).rejects.toThrow(
+      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
         BadRequestException
       );
     });
@@ -946,7 +946,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       
       prisma.adminPasswordResetToken.findUnique.mockResolvedValue(usedToken);
 
-      await expect(service.resetAdminPassword(token, newPassword)).rejects.toThrow(
+      await expect(service.resetPassword(token, newPassword)).rejects.toThrow(
         BadRequestException
       );
     });
@@ -970,7 +970,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       prisma.adminPasswordResetToken.update.mockResolvedValue({});
       prisma.refreshToken.updateMany.mockResolvedValue({ count: 3 });
 
-      await service.resetAdminPassword(token, newPassword);
+      await service.resetPassword(token, newPassword);
 
       expect(prisma.adminUser.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1000,7 +1000,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       prisma.adminPasswordResetToken.update.mockResolvedValue({});
       prisma.refreshToken.updateMany.mockResolvedValue({ count: 3 });
 
-      await service.resetAdminPassword(token, newPassword);
+      await service.resetPassword(token, newPassword);
 
       expect(prisma.adminPasswordResetToken.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1029,7 +1029,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       prisma.adminPasswordResetToken.update.mockResolvedValue({});
       prisma.adminSession.updateMany.mockResolvedValue({ count: 1 });
 
-      await service.resetAdminPassword(token, newPassword);
+      await service.resetPassword(token, newPassword);
 
       // Should call $transaction with 3 operations
       expect(prisma.$transaction).toHaveBeenCalled();
@@ -1081,9 +1081,9 @@ describe('AuthService (comprehensive unit tests)', () => {
 
       // Simulate concurrent login attempts
       const results = await Promise.all([
-        service.login(loginDto, '192.168.1.1'),
-        service.login(loginDto, '192.168.1.2'),
-        service.login(loginDto, '192.168.1.3'),
+        service.login(loginDto),
+        service.login(loginDto),
+        service.login(loginDto),
       ]);
 
       expect(results).toHaveLength(3);
@@ -1112,7 +1112,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       mockedBcrypt.compare.mockResolvedValue(false as never);
       prisma.adminUser.update.mockResolvedValue({});
 
-      await expect(service.login(loginDto, '192.168.1.1')).rejects.toThrow(
+      await expect(service.login(loginDto)).rejects.toThrow(
         UnauthorizedException
       );
     });
@@ -1122,7 +1122,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       
       prisma.refreshToken.findUnique.mockResolvedValue(null);
 
-      await expect(service.refreshToken(longToken, '192.168.1.1')).rejects.toThrow(
+      await expect(service.refreshToken(longToken)).rejects.toThrow(
         UnauthorizedException
       );
     });
