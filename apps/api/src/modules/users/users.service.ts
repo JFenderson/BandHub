@@ -16,6 +16,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateSocialLinksDto } from './dto/update-social-links.dto';
+import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import { PrismaService} from '@bandhub/database';
 
 @Injectable()
@@ -216,22 +218,44 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
+    // Check username uniqueness if updating
+    if (updateDto.username && updateDto.username !== user.username) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { username: updateDto.username },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('Username is already taken');
+      }
+    }
+
     // Build update data
     const updateData: {
       name?: string;
+      username?: string;
       avatar?: string | null;
       bio?: string | null;
+      socialLinks?: object;
       preferences?: object;
     } = {};
 
     if (updateDto.name) {
       updateData.name = updateDto.name;
     }
+    if (updateDto.username !== undefined) {
+      updateData.username = updateDto.username;
+    }
     if (updateDto.avatar !== undefined) {
       updateData.avatar = updateDto.avatar;
     }
     if (updateDto.bio !== undefined) {
       updateData.bio = updateDto.bio;
+    }
+    if (updateDto.socialLinks) {
+      updateData.socialLinks = {
+        ...(user.socialLinks as object || {}),
+        ...updateDto.socialLinks,
+      };
     }
     if (updateDto.preferences) {
       updateData.preferences = {
@@ -247,8 +271,10 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
+        username: true,
         avatar: true,
         bio: true,
+        socialLinks: true,
         emailVerified: true,
         preferences: true,
         updatedAt: true,
@@ -504,6 +530,294 @@ export class UsersService {
   }
 
   /**
+   * Update social media links
+   */
+  async updateSocialLinks(userId: string, dto: UpdateSocialLinksDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const currentLinks = (user.socialLinks as Record<string, string>) || {};
+    const updatedLinks = { ...currentLinks, ...dto };
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { socialLinks: updatedLinks },
+      select: {
+        id: true,
+        socialLinks: true,
+        updatedAt: true,
+      },
+    });
+
+    return updatedUser;
+  }
+
+  /**
+   * Check if username is available
+   */
+  async checkUsernameAvailability(username: string): Promise<{ available: boolean }> {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { username },
+    });
+
+    return { available: !existingUser };
+  }
+
+  /**
+   * Update username
+   */
+  async updateUsername(userId: string, username: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.username === username) {
+      throw new BadRequestException('This is already your username');
+    }
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Username is already taken');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { username },
+      select: {
+        id: true,
+        username: true,
+        updatedAt: true,
+      },
+    });
+
+    return updatedUser;
+  }
+
+  /**
+   * Update user preferences
+   */
+  async updateUserPreferences(userId: string, dto: UpdatePreferencesDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const currentPreferences = (user.preferences as Record<string, any>) || {};
+    
+    // Deep merge email notifications if provided
+    const updatedPreferences = { ...currentPreferences };
+    
+    if (dto.theme !== undefined) {
+      updatedPreferences.theme = dto.theme;
+    }
+    if (dto.language !== undefined) {
+      updatedPreferences.language = dto.language;
+    }
+    if (dto.autoplay !== undefined) {
+      updatedPreferences.autoplay = dto.autoplay;
+    }
+    if (dto.videoQuality !== undefined) {
+      updatedPreferences.videoQuality = dto.videoQuality;
+    }
+    if (dto.emailNotifications) {
+      updatedPreferences.emailNotifications = {
+        ...(currentPreferences.emailNotifications || {}),
+        ...dto.emailNotifications,
+      };
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { preferences: updatedPreferences },
+      select: {
+        id: true,
+        preferences: true,
+        updatedAt: true,
+      },
+    });
+
+    return updatedUser;
+  }
+
+  /**
+   * Export user data
+   */
+  async exportUserData(userId: string, format: 'json' | 'csv' = 'json') {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        playlists: {
+          include: {
+            playlistVideos: true,
+          },
+        },
+        favoriteVideos: {
+          include: {
+            video: true,
+          },
+        },
+        favoriteBands: true,
+        comments: true,
+        reviews: true,
+        watchHistory: {
+          include: {
+            video: true,
+          },
+        },
+        watchLater: {
+          include: {
+            video: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const exportData = {
+      profile: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        username: user.username,
+        avatar: user.avatar,
+        bio: user.bio,
+        socialLinks: user.socialLinks,
+        preferences: user.preferences,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      playlists: user.playlists,
+      favoriteVideos: user.favoriteVideos,
+      favoriteBands: user.favoriteBands,
+      comments: user.comments,
+      reviews: user.reviews,
+      watchHistory: user.watchHistory,
+      watchLater: user.watchLater,
+    };
+
+    if (format === 'csv') {
+      return this.convertToCSV(exportData);
+    }
+
+    return exportData;
+  }
+
+  /**
+   * Deactivate user account
+   */
+  async deactivateAccount(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Update user preferences to mark as inactive and logout all sessions
+    const currentPreferences = (user.preferences as Record<string, any>) || {};
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          preferences: {
+            ...currentPreferences,
+            accountActive: false,
+            deactivatedAt: new Date().toISOString(),
+          },
+        },
+      }),
+      this.prisma.userSession.deleteMany({
+        where: { userId },
+      }),
+    ]);
+
+    // Send account deactivated email
+    await this.emailService.sendAccountDeletedEmail(user.email, user.name);
+  }
+
+  /**
+   * Reactivate user account
+   */
+  async reactivateAccount(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const currentPreferences = (user.preferences as Record<string, any>) || {};
+    
+    if (currentPreferences.accountActive !== false) {
+      throw new BadRequestException('Account is already active');
+    }
+
+    // Remove deactivation flags
+    delete currentPreferences.accountActive;
+    delete currentPreferences.deactivatedAt;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { preferences: currentPreferences },
+    });
+
+    // Send welcome back email
+    await this.emailService.sendWelcomeEmail(user.email, user.name);
+  }
+
+  /**
+   * Get user by username
+   */
+  async getUserByUsername(username: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        avatar: true,
+        bio: true,
+        socialLinks: true,
+        createdAt: true,
+        _count: {
+          select: {
+            playlists: true,
+            favoriteVideos: true,
+            followers: true,
+            following: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  /**
    * Validate session token
    */
   async validateSession(token: string) {
@@ -683,5 +997,60 @@ export class UsersService {
       verification: verification.count,
       reset: reset.count,
     };
+  }
+
+  /**
+   * Convert data to CSV format
+   */
+  private convertToCSV(data: any): string {
+    const sections = [];
+
+    // Profile section
+    sections.push('PROFILE');
+    sections.push(Object.keys(data.profile).join(','));
+    sections.push(Object.values(data.profile).map(v => JSON.stringify(v)).join(','));
+    sections.push('');
+
+    // Playlists section
+    if (data.playlists.length > 0) {
+      sections.push('PLAYLISTS');
+      sections.push('id,name,description,createdAt');
+      data.playlists.forEach((playlist: any) => {
+        sections.push(`${playlist.id},${playlist.name || ''},${playlist.description || ''},${playlist.createdAt}`);
+      });
+      sections.push('');
+    }
+
+    // Favorite Videos section
+    if (data.favoriteVideos.length > 0) {
+      sections.push('FAVORITE VIDEOS');
+      sections.push('videoId,videoTitle,addedAt');
+      data.favoriteVideos.forEach((fav: any) => {
+        sections.push(`${fav.videoId},${fav.video?.title || ''},${fav.createdAt}`);
+      });
+      sections.push('');
+    }
+
+    // Comments section
+    if (data.comments.length > 0) {
+      sections.push('COMMENTS');
+      sections.push('id,content,createdAt');
+      data.comments.forEach((comment: any) => {
+        sections.push(`${comment.id},"${comment.content}",${comment.createdAt}`);
+      });
+      sections.push('');
+    }
+
+    // Reviews section
+    if (data.reviews.length > 0) {
+      sections.push('REVIEWS');
+      sections.push('id,rating,content,createdAt');
+      data.reviews.forEach((review: any) => {
+        sections.push(`${review.id},${review.rating},"${review.content || ''}",${review.createdAt}`);
+      });
+      sections.push('');
+    }
+
+    return sections.join('\n');
   }
 }

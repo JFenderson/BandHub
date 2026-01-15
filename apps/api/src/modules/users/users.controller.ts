@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   Headers,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
@@ -22,6 +23,10 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateSocialLinksDto } from './dto/update-social-links.dto';
+import { CheckUsernameDto } from './dto/check-username.dto';
+import { UpdatePreferencesDto } from './dto/update-preferences.dto';
+import { ExportDataDto } from './dto/export-data.dto';
 import { UserAuthGuard } from './guards/user-auth.guard';
 import { CurrentUser, CurrentUserData } from './decorators/current-user.decorator';
 import { ApiErrorDto } from '../../common/dto/api-error.dto';
@@ -234,5 +239,118 @@ export class UsersController {
   ) {
     await this.usersService.deleteSession(user.userId, sessionId);
     return { message: 'Session deleted' };
+  }
+
+  /**
+   * Update social media links
+   */
+  @Patch('me/social-links')
+  @UseGuards(UserAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update social media links' })
+  @ApiResponse({ status: 200, description: 'Social links updated' })
+  async updateSocialLinks(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: UpdateSocialLinksDto,
+  ) {
+    return this.usersService.updateSocialLinks(user.userId, dto);
+  }
+
+  /**
+   * Check username availability
+   */
+  @Get('username/:username/available')
+  @SkipThrottle()
+  @ApiOperation({ summary: 'Check if username is available' })
+  @ApiResponse({ status: 200, description: 'Username availability checked' })
+  async checkUsernameAvailability(@Param('username') username: string) {
+    return this.usersService.checkUsernameAvailability(username);
+  }
+
+  /**
+   * Update username
+   */
+  @Patch('me/username')
+  @UseGuards(UserAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update username' })
+  @ApiResponse({ status: 200, description: 'Username updated' })
+  @ApiResponse({ status: 409, description: 'Username already taken' })
+  async updateUsername(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: CheckUsernameDto,
+  ) {
+    return this.usersService.updateUsername(user.userId, dto.username);
+  }
+
+  /**
+   * Update user preferences
+   */
+  @Patch('me/preferences')
+  @UseGuards(UserAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user preferences' })
+  @ApiResponse({ status: 200, description: 'Preferences updated' })
+  async updatePreferences(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: UpdatePreferencesDto,
+  ) {
+    return this.usersService.updateUserPreferences(user.userId, dto);
+  }
+
+  /**
+   * Export user data
+   */
+  @Get('me/export')
+  @UseGuards(UserAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Export all user data' })
+  @ApiResponse({ status: 200, description: 'User data exported' })
+  async exportUserData(
+    @CurrentUser() user: CurrentUserData,
+    @Query() query: ExportDataDto,
+  ) {
+    const format = query.format || 'json';
+    return this.usersService.exportUserData(user.userId, format);
+  }
+
+  /**
+   * Deactivate account
+   */
+  @Post('me/deactivate')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(UserAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Deactivate user account' })
+  @ApiResponse({ status: 200, description: 'Account deactivated' })
+  async deactivateAccount(@CurrentUser() user: CurrentUserData) {
+    await this.usersService.deactivateAccount(user.userId);
+    return { message: 'Account deactivated successfully' };
+  }
+
+  /**
+   * Reactivate account
+   */
+  @Post('me/reactivate')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(UserAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reactivate user account' })
+  @ApiResponse({ status: 200, description: 'Account reactivated' })
+  async reactivateAccount(@CurrentUser() user: CurrentUserData) {
+    await this.usersService.reactivateAccount(user.userId);
+    return { message: 'Account reactivated successfully' };
+  }
+
+  /**
+   * Get user by username
+   */
+  @Get(':username')
+  @SkipThrottle()
+  @ApiOperation({ summary: 'Get user profile by username' })
+  @ApiResponse({ status: 200, description: 'User profile' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUserByUsername(@Param('username') username: string) {
+    return this.usersService.getUserByUsername(username);
   }
 }
