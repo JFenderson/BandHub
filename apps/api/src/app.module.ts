@@ -14,6 +14,7 @@ import { EmailModule } from './modules/email/email.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PlaylistsModule } from './modules/playlists/playlists.module';
+import { CommentsModule } from './modules/comments/comments.module';
 import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { SyncModule } from './modules/sync/sync.module';
@@ -85,6 +86,7 @@ import { CacheModule } from '@bandhub/cache'; // From shared package
     FavoritesModule,
     NotificationsModule,
     PlaylistsModule,
+    CommentsModule,
     SyncModule,
     YoutubeModule,
     CreatorsModule,
