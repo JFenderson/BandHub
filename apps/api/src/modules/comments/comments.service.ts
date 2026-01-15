@@ -279,19 +279,27 @@ export class CommentsService {
         // Update comment counts
         if (isLike) {
           // Changed from dislike to like
+          const currentComment = await tx.comment.findUnique({
+            where: { id: commentId },
+            select: { dislikeCount: true },
+          });
           await tx.comment.update({
             where: { id: commentId },
             data: {
               likeCount: { increment: 1 },
-              dislikeCount: { decrement: 1 },
+              dislikeCount: Math.max(0, (currentComment?.dislikeCount || 0) - 1),
             },
           });
         } else {
           // Changed from like to dislike
+          const currentComment = await tx.comment.findUnique({
+            where: { id: commentId },
+            select: { likeCount: true },
+          });
           await tx.comment.update({
             where: { id: commentId },
             data: {
-              likeCount: { decrement: 1 },
+              likeCount: Math.max(0, (currentComment?.likeCount || 0) - 1),
               dislikeCount: { increment: 1 },
             },
           });
@@ -366,16 +374,21 @@ export class CommentsService {
         },
       });
 
-      // Update comment counts
+      // Get current counts and update safely
+      const currentComment = await tx.comment.findUnique({
+        where: { id: commentId },
+        select: { likeCount: true, dislikeCount: true },
+      });
+
       if (existingLike.isLike) {
         await tx.comment.update({
           where: { id: commentId },
-          data: { likeCount: { decrement: 1 } },
+          data: { likeCount: Math.max(0, (currentComment?.likeCount || 0) - 1) },
         });
       } else {
         await tx.comment.update({
           where: { id: commentId },
-          data: { dislikeCount: { decrement: 1 } },
+          data: { dislikeCount: Math.max(0, (currentComment?.dislikeCount || 0) - 1) },
         });
       }
     });
