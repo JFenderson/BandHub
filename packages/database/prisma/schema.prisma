@@ -226,6 +226,8 @@ model Band {
   opponentVideos            Video[]             @relation("videos_opponent_band_idTobands")
   youtubeVideos             YouTubeVideo[]      @relation("youtube_videos_band")
   opponentYoutubeVideos     YouTubeVideo[]      @relation("youtube_videos_opponent")
+  reviews                   Review[]
+  contentShares             ContentShare[]
 
   @@index([slug])
   @@index([schoolName])
@@ -728,9 +730,11 @@ model User {
   email                    String                    @unique
   passwordHash             String                    @map("password_hash")
   name                     String
-  role                     UserRole                  @default(USER) // ← Add this line
+  username                 String?                   @unique
+  role                     UserRole                  @default(USER)
   avatar                   String?
   bio                      String?
+  socialLinks              Json?                     @map("social_links")
   emailVerified            Boolean                   @default(false) @map("email_verified")
   preferences              Json                      @default("{}") 
   lastSeenAt               DateTime?                 @map("last_seen_at")
@@ -744,8 +748,18 @@ model User {
   passwordResetTokens      PasswordResetToken[]
   userSessions             UserSession[]
   watchLater               WatchLater[]
+  playlists                Playlist[]
+  comments                 Comment[]
+  commentLikes             CommentLike[]
+  reviews                  Review[]
+  reviewVotes              ReviewVote[]
+  followers                UserFollower[]            @relation("UserFollowing")
+  following                UserFollower[]            @relation("UserFollowers")
+  watchHistory             WatchHistory[]
+  contentShares            ContentShare[]
 
   @@index([email])
+  @@index([username])
   @@map("users")
 }
 
@@ -778,6 +792,10 @@ model Video {
   contentCreator     ContentCreator?     @relation(fields: [creatorId], references: [id])
   opponentBand       Band?               @relation("videos_opponent_band_idTobands", fields: [opponentBandId], references: [id])
   watchLater         WatchLater[]
+  playlistVideos     PlaylistVideo[]
+  comments           Comment[]
+  watchHistory       WatchHistory[]
+  contentShares      ContentShare[]
 
   @@index([bandId, categoryId])
   @@index([bandId, categoryId, isHidden])
@@ -864,6 +882,166 @@ model YouTubeVideo {
   @@index([syncStatus])
   @@index([viewCount(sort: Desc)])
   @@map("youtube_videos")
+}
+
+model Playlist {
+  id             String          @id @default(cuid())
+  userId         String          @map("user_id")
+  name           String
+  description    String?
+  coverImageUrl  String?         @map("cover_image_url")
+  isPublic       Boolean         @default(true) @map("is_public")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playlistVideos PlaylistVideo[]
+  contentShares  ContentShare[]
+
+  @@index([userId])
+  @@index([isPublic])
+  @@index([createdAt])
+  @@map("playlists")
+}
+
+model PlaylistVideo {
+  id         String   @id @default(cuid())
+  playlistId String   @map("playlist_id")
+  videoId    String   @map("video_id")
+  position   Int
+  addedAt    DateTime @default(now()) @map("added_at")
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, videoId])
+  @@index([playlistId, position])
+  @@index([videoId])
+  @@map("playlist_videos")
+}
+
+model Comment {
+  id           String    @id @default(cuid())
+  videoId      String    @map("video_id")
+  userId       String    @map("user_id")
+  parentId     String?   @map("parent_id")
+  content      String
+  likeCount    Int       @default(0) @map("like_count")
+  dislikeCount Int       @default(0) @map("dislike_count")
+  isEdited     Boolean   @default(false) @map("is_edited")
+  isDeleted    Boolean   @default(false) @map("is_deleted")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  video        Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent       Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[] @relation("CommentReplies")
+  likes        CommentLike[]
+
+  @@index([videoId, createdAt])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  commentId String   @map("comment_id")
+  userId    String   @map("user_id")
+  isLike    Boolean  @map("is_like")
+  createdAt DateTime @default(now()) @map("created_at")
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("comment_likes")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  bandId    String   @map("band_id")
+  userId    String   @map("user_id")
+  rating    Int
+  title     String?
+  content   String
+  helpful   Int      @default(0)
+  notHelpful Int     @default(0) @map("not_helpful")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  band      Band     @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes     ReviewVote[]
+
+  @@unique([bandId, userId])
+  @@index([bandId, createdAt])
+  @@index([userId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+model ReviewVote {
+  id        String   @id @default(cuid())
+  reviewId  String   @map("review_id")
+  userId    String   @map("user_id")
+  isHelpful Boolean  @map("is_helpful")
+  createdAt DateTime @default(now()) @map("created_at")
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@index([userId])
+  @@map("review_votes")
+}
+
+model UserFollower {
+  id          String   @id @default(cuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  follower    User     @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("user_followers")
+}
+
+model WatchHistory {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  videoId        String   @map("video_id")
+  watchedAt      DateTime @default(now()) @map("watched_at")
+  watchDuration  Int?     @map("watch_duration")
+  completed      Boolean  @default(false)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video          Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([userId, watchedAt])
+  @@index([videoId])
+  @@map("watch_history")
+}
+
+model ContentShare {
+  id         String   @id @default(cuid())
+  userId     String?  @map("user_id")
+  videoId    String?  @map("video_id")
+  bandId     String?  @map("band_id")
+  playlistId String?  @map("playlist_id")
+  platform   String
+  sharedAt   DateTime @default(now()) @map("shared_at")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  video      Video?   @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  band       Band?    @relation(fields: [bandId], references: [id], onDelete: Cascade)
+  playlist   Playlist? @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([videoId])
+  @@index([bandId])
+  @@index([playlistId])
+  @@index([sharedAt])
+  @@map("content_shares")
 }
 
 enum UserRole {
