@@ -129,10 +129,10 @@ export function createMockJwtPayload(
 
 /**
  * Helper to extract role hierarchy for testing
- * SUPER_ADMIN > ADMIN > MODERATOR > VIEWER
+ * SUPER_ADMIN > ADMIN > MODERATOR
  */
 export function getRoleHierarchy(): AdminRole[] {
-  return [AdminRole.SUPER_ADMIN, AdminRole.ADMIN, AdminRole.MODERATOR, AdminRole.VIEWER];
+  return [AdminRole.SUPER_ADMIN, AdminRole.ADMIN, AdminRole.MODERATOR];
 }
 
 /**
