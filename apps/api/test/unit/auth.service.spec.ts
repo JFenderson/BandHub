@@ -1135,13 +1135,13 @@ describe('AuthService (comprehensive unit tests)', () => {
 
       const start1 = Date.now();
       try {
-        await service.refreshToken(token1, '192.168.1.1');
+        await service.refreshToken(token1);
       } catch (e) {}
       const time1 = Date.now() - start1;
 
       const start2 = Date.now();
       try {
-        await service.refreshToken(token2, '192.168.1.1');
+        await service.refreshToken(token2);
       } catch (e) {}
       const time2 = Date.now() - start2;
 

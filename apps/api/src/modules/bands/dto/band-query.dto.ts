@@ -1,7 +1,7 @@
 import { IsOptional, IsString, IsBoolean, IsInt, IsEnum, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { SanitizeSearch } from 'src/common';
+import { SanitizeSearch } from '../../../common';
 import { BandType } from '@prisma/client';
 
 export class BandQueryDto {
