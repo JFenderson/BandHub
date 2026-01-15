@@ -31,18 +31,18 @@ describe('PasswordPolicyService', () => {
   beforeEach(async () => {
     const mockPrisma = {
       passwordPolicy: {
-        findFirst: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue(mockPolicy),
+        create: jest.fn().mockResolvedValue(mockPolicy),
+        update: jest.fn().mockResolvedValue(mockPolicy),
       },
       adminUser: {
-        findUnique: jest.fn(),
-        update: jest.fn(),
+        findUnique: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockResolvedValue(null),
       },
       passwordHistory: {
-        findMany: jest.fn(),
-        create: jest.fn(),
-        deleteMany: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+        create: jest.fn().mockResolvedValue({}),
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
     };
 

@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, Min, Max } from 'class-validator';
-import { SanitizeSearch, SanitizeText } from 'src/common';
+import { SanitizeSearch, SanitizeText } from '../../../common';
 
 export class VideoQueryDto {
   @ApiPropertyOptional({ description: 'Filter by band ID' })

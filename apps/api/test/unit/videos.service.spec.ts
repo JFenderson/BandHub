@@ -1,7 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { VideosService } from '../../src/modules/videos/videos.service';
 import { VideosRepository } from '../../src/modules/videos/videos.repository';
-import { CacheService } from '../../src/cache/cache.service';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../../src/database/database.service';
 import { buildVideo, createMockPagination } from '../helpers/factories';
@@ -59,7 +58,7 @@ const createMocks = () => {
     }),
   };
 
-  const databaseService = {
+  const prismaService = {
     video: {
       findUnique: jest.fn(),
       update: jest.fn(),
@@ -71,10 +70,10 @@ const createMocks = () => {
     videosRepository as any,
     cacheService as any,
     configService as any,
-    databaseService,
+    prismaService,
   );
 
-  return { service, videosRepository, cacheService, configService, databaseService };
+  return { service, videosRepository, cacheService, configService, prismaService };
 };
 
 describe('VideosService (comprehensive unit tests)', () => {
@@ -82,7 +81,7 @@ describe('VideosService (comprehensive unit tests)', () => {
   let videosRepository: any;
   let cacheService: any;
   let configService: any;
-  let databaseService: any;
+  let prismaService: any;
 
   beforeEach(() => {
     const mocks = createMocks();
@@ -90,7 +89,7 @@ describe('VideosService (comprehensive unit tests)', () => {
     videosRepository = mocks.videosRepository;
     cacheService = mocks.cacheService;
     configService = mocks.configService;
-    databaseService = mocks.databaseService;
+    prismaService = mocks.prismaService;
     jest.clearAllMocks();
   });
 

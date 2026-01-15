@@ -4,6 +4,7 @@ import request from 'supertest';
 import { AuthController } from '../../../src/modules/auth/auth.controller';
 import { AuthService } from '../../../src/modules/auth/auth.service';
 import { JwtAuthGuard } from '../../../src/modules/auth/guards/jwt-auth.guard';
+import { UserRole } from '@prisma/client';
 
 /**
  * Comprehensive Integration Tests for AuthController
@@ -19,7 +20,7 @@ describe('AuthController (Integration)', () => {
     id: 'user-123',
     email: 'test@example.com',
     name: 'Test User',
-    role: 'ADMIN',
+    role: UserRole.ADMIN,
     isActive: true,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -102,7 +103,7 @@ describe('AuthController (Integration)', () => {
         id: 'new-user-id',
         email: validRegisterDto.email,
         name: validRegisterDto.name,
-        role: 'MODERATOR',
+        role: UserRole.MODERATOR,
       });
 
       const response = await request(app.getHttpServer())
@@ -114,7 +115,7 @@ describe('AuthController (Integration)', () => {
         id: 'new-user-id',
         email: validRegisterDto.email,
         name: validRegisterDto.name,
-        role: 'MODERATOR',
+        role: UserRole.MODERATOR,
       });
 
       expect(authService.register).toHaveBeenCalledWith(validRegisterDto);

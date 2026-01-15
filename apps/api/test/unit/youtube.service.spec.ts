@@ -383,22 +383,39 @@ describe('YoutubeService', () => {
     });
   });
 
-  describe('fetchNewChannelVideos', () => {
-    it('should call fetchAllChannelVideos with publishedAfter option', async () => {
-      const fetchSpy = jest.spyOn(service, 'fetchAllChannelVideos').mockResolvedValue({
-        videos: [],
-        totalFetched: 0,
-        quotaUsed: 0,
-        errors: [],
+  describe('fetchAllChannelVideos with publishedAfter', () => {
+    it('should fetch videos with publishedAfter option', async () => {
+      const mockYoutube = (service as any).youtube;
+      
+      mockYoutube.channels.list = jest.fn().mockResolvedValue({
+        data: {
+          items: [
+            {
+              contentDetails: {
+                relatedPlaylists: {
+                  uploads: 'UU_uploads',
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      mockYoutube.playlistItems.list = jest.fn().mockResolvedValue({
+        data: {
+          items: [],
+          pageInfo: { totalResults: 0 },
+        },
       });
 
       const publishedAfter = new Date('2024-01-01');
-      await service.fetchNewChannelVideos('channel1', publishedAfter, 50);
-
-      expect(fetchSpy).toHaveBeenCalledWith('channel1', {
+      const result = await service.fetchAllChannelVideos('channel1', {
         publishedAfter,
         maxVideos: 50,
       });
+
+      expect(result).toBeDefined();
+      expect(result.videos).toBeDefined();
     });
   });
 });

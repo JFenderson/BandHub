@@ -31,16 +31,17 @@ describe('SessionService', () => {
   beforeEach(async () => {
     const mockPrisma = {
       adminSession: {
-        create: jest.fn(),
-        findUnique: jest.fn(),
-        findMany: jest.fn(),
-        update: jest.fn(),
-        updateMany: jest.fn(),
-        delete: jest.fn(),
-        count: jest.fn(),
+        create: jest.fn().mockResolvedValue(mockSession),
+        findUnique: jest.fn().mockResolvedValue(mockSession),
+        findMany: jest.fn().mockResolvedValue([mockSession]),
+        update: jest.fn().mockResolvedValue(mockSession),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        delete: jest.fn().mockResolvedValue(mockSession),
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+        count: jest.fn().mockResolvedValue(1),
       },
       adminUser: {
-        findUnique: jest.fn(),
+        findUnique: jest.fn().mockResolvedValue(null),
       },
     };
 

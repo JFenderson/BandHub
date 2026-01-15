@@ -6,9 +6,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import request from 'supertest';
-import { BandsController } from '../../src/modules/bands/bands.controller';
-import { BandsService } from '../../src/modules/bands/bands.service';
-import { FeaturedRecommendationsService } from '../../src/modules/bands/featured-recommendations.service';
+import { BandsController } from '../../src/modules/bands/controllers/bands.controller';
+import { BandsService } from '../../src/modules/bands/services/bands.service';
+import { FeaturedRecommendationsService } from '../../src/modules/bands/services/featured-recommendations.service';
 import { JwtAuthGuard } from '../../src/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../src/common/guards/roles.guard';
 import { AdminRole } from '@prisma/client';
