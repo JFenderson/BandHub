@@ -1,0 +1,338 @@
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '@bandhub/database';
+import {
+  TrackWatchDto,
+  GetWatchHistoryQueryDto,
+  WatchHistoryFilter,
+  WatchHistorySortBy,
+} from './dto';
+
+@Injectable()
+export class WatchHistoryService {
+  constructor(private prisma: PrismaService) {}
+
+  async trackWatch(userId: string, dto: TrackWatchDto) {
+    const { videoId, watchDuration, completed } = dto;
+
+    // Verify video exists
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+    });
+
+    if (!video) {
+      throw new NotFoundException('Video not found');
+    }
+
+    // Check if video was already watched today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const existingToday = await this.prisma.watchHistory.findFirst({
+      where: {
+        userId,
+        videoId,
+        watchedAt: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+    });
+
+    // Check if this is the first time watching this video ever
+    const isFirstWatch = !existingToday && !(await this.prisma.watchHistory.findFirst({
+      where: {
+        userId,
+        videoId,
+      },
+    }));
+
+    // Use transaction to update watch history and video view count
+    const result = await this.prisma.$transaction(async (tx) => {
+      let watchHistory;
+
+      if (existingToday) {
+        // Update existing entry for today
+        watchHistory = await tx.watchHistory.update({
+          where: { id: existingToday.id },
+          data: {
+            watchDuration,
+            completed,
+            watchedAt: new Date(), // Update timestamp to now
+          },
+          include: {
+            video: {
+              include: {
+                band: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    logoUrl: true,
+                  },
+                },
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      } else {
+        // Create new watch history entry
+        watchHistory = await tx.watchHistory.create({
+          data: {
+            userId,
+            videoId,
+            watchDuration,
+            completed,
+          },
+          include: {
+            video: {
+              include: {
+                band: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    logoUrl: true,
+                  },
+                },
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      // Increment view count if first time watching this video
+      if (isFirstWatch) {
+        await tx.video.update({
+          where: { id: videoId },
+          data: {
+            viewCount: {
+              increment: 1,
+            },
+          },
+        });
+      }
+
+      return watchHistory;
+    });
+
+    return result;
+  }
+
+  async getHistory(userId: string, query: GetWatchHistoryQueryDto) {
+    const { page = 1, limit = 20, filter, sortBy } = query;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: Record<string, unknown> = { userId };
+    switch (filter) {
+      case WatchHistoryFilter.COMPLETED:
+        where.completed = true;
+        break;
+      case WatchHistoryFilter.INCOMPLETE:
+        where.completed = false;
+        break;
+    }
+
+    // Build order by
+    let orderBy: Record<string, unknown> = {};
+    switch (sortBy) {
+      case WatchHistorySortBy.OLDEST:
+        orderBy = { watchedAt: 'asc' };
+        break;
+      case WatchHistorySortBy.MOST_VIEWED:
+        orderBy = { video: { viewCount: 'desc' } };
+        break;
+      case WatchHistorySortBy.LONGEST_DURATION:
+        orderBy = { watchDuration: 'desc' };
+        break;
+      case WatchHistorySortBy.RECENTLY_WATCHED:
+      default:
+        orderBy = { watchedAt: 'desc' };
+    }
+
+    const [history, total] = await Promise.all([
+      this.prisma.watchHistory.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        include: {
+          video: {
+            include: {
+              band: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  logoUrl: true,
+                },
+              },
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.watchHistory.count({ where }),
+    ]);
+
+    return {
+      data: history,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async clearHistory(userId: string, videoId?: string) {
+    if (videoId) {
+      // Clear specific video from history
+      const result = await this.prisma.watchHistory.deleteMany({
+        where: {
+          userId,
+          videoId,
+        },
+      });
+
+      if (result.count === 0) {
+        throw new NotFoundException('Video not found in watch history');
+      }
+
+      return { message: 'Video removed from watch history', count: result.count };
+    } else {
+      // Clear all history
+      const result = await this.prisma.watchHistory.deleteMany({
+        where: { userId },
+      });
+
+      return { message: 'Watch history cleared', count: result.count };
+    }
+  }
+
+  async getRecentlyWatched(userId: string, limit: number = 10) {
+    const history = await this.prisma.watchHistory.findMany({
+      where: { userId },
+      orderBy: { watchedAt: 'desc' },
+      take: limit,
+      distinct: ['videoId'], // Get unique videos only
+      include: {
+        video: {
+          include: {
+            band: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                logoUrl: true,
+              },
+            },
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return history;
+  }
+
+  async getContinueWatching(userId: string, limit: number = 10) {
+    const incompleteVideos = await this.prisma.watchHistory.findMany({
+      where: {
+        userId,
+        completed: false,
+      },
+      orderBy: { watchedAt: 'desc' },
+      take: limit,
+      distinct: ['videoId'], // Get unique videos only
+      include: {
+        video: {
+          include: {
+            band: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                logoUrl: true,
+              },
+            },
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return incompleteVideos;
+  }
+
+  async getWatchStats(userId: string) {
+    const [totalWatchTime, videosWatched, completedVideos] = await Promise.all([
+      // Total watch time in seconds
+      this.prisma.watchHistory.aggregate({
+        where: { userId },
+        _sum: {
+          watchDuration: true,
+        },
+      }),
+      // Unique videos watched
+      this.prisma.watchHistory.findMany({
+        where: { userId },
+        distinct: ['videoId'],
+        select: { videoId: true },
+      }),
+      // Videos completed
+      this.prisma.watchHistory.count({
+        where: {
+          userId,
+          completed: true,
+        },
+      }),
+    ]);
+
+    return {
+      totalWatchTimeSeconds: totalWatchTime._sum.watchDuration || 0,
+      totalWatchTimeMinutes: Math.floor((totalWatchTime._sum.watchDuration || 0) / 60),
+      totalWatchTimeHours: Math.floor((totalWatchTime._sum.watchDuration || 0) / 3600),
+      videosWatched: videosWatched.length,
+      videosCompleted: completedVideos,
+    };
+  }
+}
