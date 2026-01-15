@@ -62,7 +62,11 @@ export class CommentsService {
           },
         },
         _count: {
-          select: { replies: true },
+          select: { 
+            replies: {
+              where: { isDeleted: false },
+            },
+          },
         },
       },
     });
@@ -119,7 +123,11 @@ export class CommentsService {
             },
           },
           _count: {
-            select: { replies: true },
+            select: { 
+              replies: {
+                where: { isDeleted: false },
+              },
+            },
           },
         },
       }),
@@ -176,7 +184,11 @@ export class CommentsService {
           },
         },
         _count: {
-          select: { replies: true },
+          select: { 
+            replies: {
+              where: { isDeleted: false },
+            },
+          },
         },
       },
     });
@@ -246,9 +258,9 @@ export class CommentsService {
     });
 
     if (existingLike) {
-      // If same action, do nothing (already liked/disliked)
+      // If same action, return success for idempotency
       if (existingLike.isLike === isLike) {
-        return { message: 'Already liked/disliked' };
+        return { message: isLike ? 'Comment liked' : 'Comment disliked' };
       }
 
       // If different action, update the like/dislike
@@ -416,7 +428,11 @@ export class CommentsService {
             },
           },
           _count: {
-            select: { replies: true },
+            select: { 
+              replies: {
+                where: { isDeleted: false },
+              },
+            },
           },
         },
       }),
