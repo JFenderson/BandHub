@@ -26,30 +26,33 @@ export class WatchHistoryService {
       throw new NotFoundException('Video not found');
     }
 
-    // Check if video was already watched today
+    // Check for existing watch history
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const existingToday = await this.prisma.watchHistory.findFirst({
-      where: {
-        userId,
-        videoId,
-        watchedAt: {
-          gte: today,
-          lt: tomorrow,
+    const [existingToday, existingAny] = await Promise.all([
+      this.prisma.watchHistory.findFirst({
+        where: {
+          userId,
+          videoId,
+          watchedAt: {
+            gte: today,
+            lt: tomorrow,
+          },
         },
-      },
-    });
+      }),
+      this.prisma.watchHistory.findFirst({
+        where: {
+          userId,
+          videoId,
+        },
+      }),
+    ]);
 
-    // Check if this is the first time watching this video ever
-    const isFirstWatch = !existingToday && !(await this.prisma.watchHistory.findFirst({
-      where: {
-        userId,
-        videoId,
-      },
-    }));
+    // First watch if no history exists at all
+    const isFirstWatch = !existingAny;
 
     // Use transaction to update watch history and video view count
     const result = await this.prisma.$transaction(async (tx) => {
@@ -237,11 +240,28 @@ export class WatchHistoryService {
   }
 
   async getRecentlyWatched(userId: string, limit: number = 10) {
+    // Use a more efficient approach: get latest watch per video using raw SQL
+    // This avoids the performance issues with distinct on large datasets
+    const latestWatches = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT DISTINCT ON ("video_id") id
+      FROM watch_history
+      WHERE user_id = ${userId}
+      ORDER BY "video_id", watched_at DESC
+      LIMIT ${limit}
+    `;
+
+    if (latestWatches.length === 0) {
+      return [];
+    }
+
+    // Fetch full watch history records with relations
     const history = await this.prisma.watchHistory.findMany({
-      where: { userId },
+      where: {
+        id: {
+          in: latestWatches.map(w => w.id),
+        },
+      },
       orderBy: { watchedAt: 'desc' },
-      take: limit,
-      distinct: ['videoId'], // Get unique videos only
       include: {
         video: {
           include: {
@@ -269,14 +289,27 @@ export class WatchHistoryService {
   }
 
   async getContinueWatching(userId: string, limit: number = 10) {
+    // Use a more efficient approach: get latest incomplete watch per video using raw SQL
+    const latestIncompleteWatches = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT DISTINCT ON ("video_id") id
+      FROM watch_history
+      WHERE user_id = ${userId} AND completed = false
+      ORDER BY "video_id", watched_at DESC
+      LIMIT ${limit}
+    `;
+
+    if (latestIncompleteWatches.length === 0) {
+      return [];
+    }
+
+    // Fetch full watch history records with relations
     const incompleteVideos = await this.prisma.watchHistory.findMany({
       where: {
-        userId,
-        completed: false,
+        id: {
+          in: latestIncompleteWatches.map(w => w.id),
+        },
       },
       orderBy: { watchedAt: 'desc' },
-      take: limit,
-      distinct: ['videoId'], // Get unique videos only
       include: {
         video: {
           include: {
@@ -304,7 +337,7 @@ export class WatchHistoryService {
   }
 
   async getWatchStats(userId: string) {
-    const [totalWatchTime, videosWatched, completedVideos] = await Promise.all([
+    const [totalWatchTime, uniqueVideosCount, completedVideos] = await Promise.all([
       // Total watch time in seconds
       this.prisma.watchHistory.aggregate({
         where: { userId },
@@ -312,12 +345,12 @@ export class WatchHistoryService {
           watchDuration: true,
         },
       }),
-      // Unique videos watched
-      this.prisma.watchHistory.findMany({
-        where: { userId },
-        distinct: ['videoId'],
-        select: { videoId: true },
-      }),
+      // Unique videos watched - more efficient count using raw SQL
+      this.prisma.$queryRaw<Array<{ count: bigint }>>`
+        SELECT COUNT(DISTINCT video_id) as count
+        FROM watch_history
+        WHERE user_id = ${userId}
+      `,
       // Videos completed
       this.prisma.watchHistory.count({
         where: {
@@ -327,11 +360,13 @@ export class WatchHistoryService {
       }),
     ]);
 
+    const videosWatched = Number(uniqueVideosCount[0]?.count || 0);
+
     return {
       totalWatchTimeSeconds: totalWatchTime._sum.watchDuration || 0,
       totalWatchTimeMinutes: Math.floor((totalWatchTime._sum.watchDuration || 0) / 60),
       totalWatchTimeHours: Math.floor((totalWatchTime._sum.watchDuration || 0) / 3600),
-      videosWatched: videosWatched.length,
+      videosWatched,
       videosCompleted: completedVideos,
     };
   }
