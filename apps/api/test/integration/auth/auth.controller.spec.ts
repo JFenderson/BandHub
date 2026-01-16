@@ -192,6 +192,7 @@ describe('AuthController (Integration)', () => {
       authService.login.mockResolvedValue({
         accessToken: mockTokens.accessToken,
         refreshToken: mockTokens.refreshToken,
+        expiresIn: 900,
         user: mockUser,
       });
 
@@ -202,6 +203,7 @@ describe('AuthController (Integration)', () => {
 
       expect(response.body).toEqual({
         accessToken: mockTokens.accessToken,
+        expiresIn: 900,
         refreshToken: mockTokens.refreshToken,
         user: expect.objectContaining({
           id: mockUser.id,
@@ -264,9 +266,8 @@ describe('AuthController (Integration)', () => {
     };
 
     it('should refresh tokens successfully', async () => {
-      authService.refreshTokens.mockResolvedValue({
+      authService.refreshToken.mockResolvedValue({
         accessToken: 'new-access-token',
-        refreshToken: 'new-refresh-token',
       });
 
       const response = await request(app.getHttpServer())
@@ -279,7 +280,7 @@ describe('AuthController (Integration)', () => {
         refreshToken: 'new-refresh-token',
       });
 
-      expect(authService.refreshTokens).toHaveBeenCalledWith(
+      expect(authService.refreshToken).toHaveBeenCalledWith(
         validRefreshDto.refreshToken
       );
     });
@@ -290,11 +291,11 @@ describe('AuthController (Integration)', () => {
         .send({})
         .expect(400);
 
-      expect(authService.refreshTokens).not.toHaveBeenCalled();
+      expect(authService.refreshToken).not.toHaveBeenCalled();
     });
 
     it('should reject refresh with invalid token', async () => {
-      authService.refreshTokens.mockRejectedValue(
+      authService.refreshToken.mockRejectedValue(
         new Error('Invalid refresh token')
       );
 
@@ -310,7 +311,7 @@ describe('AuthController (Integration)', () => {
         .send({ refreshToken: '' })
         .expect(400);
 
-      expect(authService.refreshTokens).not.toHaveBeenCalled();
+      expect(authService.refreshToken).not.toHaveBeenCalled();
     });
   });
 
@@ -338,9 +339,8 @@ describe('AuthController (Integration)', () => {
 
   describe('POST /auth/logout-all', () => {
     it('should logout from all devices successfully', async () => {
-      authService.logoutAll.mockResolvedValue({ 
+      authService.logoutAll.mockResolvedValue({
         message: 'Logged out from all devices',
-        sessionsRevoked: 3,
       });
 
       const response = await request(app.getHttpServer())
@@ -350,7 +350,6 @@ describe('AuthController (Integration)', () => {
 
       expect(response.body).toEqual({
         message: 'Logged out from all devices',
-        sessionsRevoked: 3,
       });
       expect(authService.logoutAll).toHaveBeenCalled();
     });
@@ -362,7 +361,7 @@ describe('AuthController (Integration)', () => {
     };
 
     it('should initiate password reset successfully', async () => {
-      authService.forgotPassword.mockResolvedValue({
+      authService.sendPasswordReset.mockResolvedValue({
         message: 'Password reset email sent',
       });
 
@@ -375,7 +374,7 @@ describe('AuthController (Integration)', () => {
         message: 'Password reset email sent',
       });
 
-      expect(authService.forgotPassword).toHaveBeenCalledWith(
+      expect(authService.sendPasswordReset).toHaveBeenCalledWith(
         validForgotPasswordDto.email
       );
     });
@@ -386,7 +385,7 @@ describe('AuthController (Integration)', () => {
         .send({ email: 'invalid-email' })
         .expect(400);
 
-      expect(authService.forgotPassword).not.toHaveBeenCalled();
+      expect(authService.sendPasswordReset).not.toHaveBeenCalled();
     });
 
     it('should reject with missing email', async () => {
@@ -395,12 +394,12 @@ describe('AuthController (Integration)', () => {
         .send({})
         .expect(400);
 
-      expect(authService.forgotPassword).not.toHaveBeenCalled();
+      expect(authService.sendPasswordReset).not.toHaveBeenCalled();
     });
 
     it('should return success even for non-existent email (security)', async () => {
       // Should not reveal if email exists
-      authService.forgotPassword.mockResolvedValue({
+      authService.sendPasswordReset.mockResolvedValue({
         message: 'Password reset email sent',
       });
 
@@ -545,6 +544,7 @@ describe('AuthController (Integration)', () => {
       authService.login.mockResolvedValue({
         accessToken: mockTokens.accessToken,
         refreshToken: mockTokens.refreshToken,
+        expiresIn: 900,
         user: mockUser,
       });
 
@@ -574,6 +574,7 @@ describe('AuthController (Integration)', () => {
     it('should accept application/json', async () => {
       authService.login.mockResolvedValue({
         accessToken: mockTokens.accessToken,
+        expiresIn: 900,
         refreshToken: mockTokens.refreshToken,
         user: mockUser,
       });

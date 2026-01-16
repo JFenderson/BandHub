@@ -19,7 +19,7 @@ import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import { RateLimitType } from '../../common/interfaces/rate-limit.interface';
-import { ApiErrorDto } from 'src/common/dto/api-error.dto';
+import { ApiErrorDto } from '../../common/dto/api-error.dto';
 
 /**
  * AuthController
