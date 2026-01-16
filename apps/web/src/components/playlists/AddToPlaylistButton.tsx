@@ -19,7 +19,7 @@ export function AddToPlaylistButton({
   className = '',
 }: AddToPlaylistButtonProps) {
   const { isAuthenticated } = useUser();
-  const { playlists, addVideoToPlaylist, isLoading: playlistsLoading } = usePlaylists();
+  const { playlists, addVideoToPlaylist, isLoading: playlistsLoading, fetchPlaylists } = usePlaylists(false);
   const [isOpen, setIsOpen] = useState(false);
   const [addedPlaylists, setAddedPlaylists] = useState<Set<string>>(new Set());
   const [loadingPlaylistId, setLoadingPlaylistId] = useState<string | null>(null);
@@ -55,6 +55,11 @@ export function AddToPlaylistButton({
     if (!isAuthenticated) {
       setToast({ type: 'error', message: 'Please log in to add to playlist' });
       return;
+    }
+
+    // Fetch playlists when opening dropdown
+    if (!isOpen && playlists.length === 0) {
+      fetchPlaylists();
     }
 
     setIsOpen(!isOpen);

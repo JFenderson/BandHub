@@ -206,12 +206,7 @@ export class PlaylistsApiClient {
 }
 
 // Export singleton instance with token provider
-let playlistsApiClientInstance: PlaylistsApiClient | null = null;
-
 export function getPlaylistsApiClient(tokenProvider: () => string | null): PlaylistsApiClient {
-  if (!playlistsApiClientInstance) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-    playlistsApiClientInstance = new PlaylistsApiClient(apiUrl, tokenProvider);
-  }
-  return playlistsApiClientInstance;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+  return new PlaylistsApiClient(apiUrl, tokenProvider);
 }
