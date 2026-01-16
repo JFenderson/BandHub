@@ -3,31 +3,20 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { GripVertical, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { PlaylistVideo } from '@/lib/api/playlists';
 
 interface PlaylistVideoItemProps {
   playlistVideo: PlaylistVideo;
   onRemove?: (videoId: string) => void;
-  draggable?: boolean;
-  onDragStart?: (e: React.DragEvent, videoId: string) => void;
-  onDragEnd?: (e: React.DragEvent) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent, targetVideoId: string) => void;
 }
 
 export function PlaylistVideoItem({
   playlistVideo,
   onRemove,
-  draggable = false,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDrop,
 }: PlaylistVideoItemProps) {
   const [isRemoving, setIsRemoving] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
   const video = playlistVideo.video;
 
@@ -50,42 +39,10 @@ export function PlaylistVideoItem({
     }
   };
 
-  const handleDragStart = (e: React.DragEvent) => {
-    setIsDragging(true);
-    onDragStart?.(e, playlistVideo.videoId);
-  };
-
-  const handleDragEnd = (e: React.DragEvent) => {
-    setIsDragging(false);
-    onDragEnd?.(e);
-  };
-
   return (
     <div
-      className={`
-        group relative flex items-center gap-3 p-3 
-        bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700
-        hover:shadow-md transition-all
-        ${isDragging ? 'opacity-50' : ''}
-      `}
-      draggable={draggable}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragOver={(e) => {
-        e.preventDefault();
-        onDragOver?.(e);
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        onDrop?.(e, playlistVideo.videoId);
-      }}
+      className="group relative flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all"
     >
-      {/* Drag handle */}
-      {draggable && (
-        <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-          <GripVertical className="w-5 h-5" aria-label="Drag to reorder" />
-        </div>
-      )}
 
       {/* Thumbnail */}
       <Link
