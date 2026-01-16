@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { followingApiClient } from '@/lib/api/following';
 import { getAuthTokens } from '@/lib/utils/cookies';
-import type { FollowUser, FollowCounts, PaginatedFollowResponse } from '@/lib/api/following';
+import type { FollowCounts, PaginatedFollowResponse } from '@/lib/api/following';
 
 export function useFollowing() {
   const [isLoading, setIsLoading] = useState(false);
