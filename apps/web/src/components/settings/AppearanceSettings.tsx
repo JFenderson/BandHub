@@ -29,8 +29,6 @@ export function AppearanceSettings() {
     },
   });
 
-
-
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 5000);
