@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getPlaylistsApiClient, type Playlist, type CreatePlaylistDto, type UpdatePlaylistDto, type GetPlaylistsParams } from '@/lib/api/playlists';
 import { useUser } from '@/contexts/UserContext';
 import { getAuthTokens } from '@/lib/utils/cookies';
@@ -16,7 +16,10 @@ export function usePlaylists(autoFetch = true) {
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const apiClient = getPlaylistsApiClient(() => getAuthTokens().accessToken);
+  const apiClient = useMemo(
+    () => getPlaylistsApiClient(() => getAuthTokens().accessToken),
+    []
+  );
 
   /**
    * Fetch user's playlists
