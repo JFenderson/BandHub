@@ -748,53 +748,10 @@ describe('AuthService (comprehensive unit tests)', () => {
   });
 
   // ========================================
-  // validateUser() Tests - SKIPPED (method doesn't exist)
+  // validateUser() Tests - REMOVED (method doesn't exist in AuthService)
+  // The validateUser method was removed from AuthService
+  // Use getUserById instead for user validation
   // ========================================
-  describe.skip('validateUser', () => {
-    const userId = 'user-1';
-
-    it('should successfully validate active user', async () => {
-      const mockUser = {
-        id: userId,
-        email: 'user@example.com',
-        name: 'Test User',
-        role: 'MODERATOR',
-        isActive: true,
-      };
-      
-      prisma.adminUser.findUnique.mockResolvedValue(mockUser);
-
-      const result = await service.validateUser(userId);
-
-      expect(result).toEqual(mockUser);
-    });
-
-    it('should throw UnauthorizedException for non-existent user', async () => {
-      prisma.adminUser.findUnique.mockResolvedValue(null);
-
-      await expect(service.validateUser(userId)).rejects.toThrow(UnauthorizedException);
-      await expect(service.validateUser(userId)).rejects.toThrow(
-        'User not found or inactive'
-      );
-    });
-
-    it('should throw UnauthorizedException for inactive user', async () => {
-      const inactiveUser = {
-        id: userId,
-        email: 'user@example.com',
-        name: 'Test User',
-        role: 'MODERATOR',
-        isActive: false,
-      };
-      
-      prisma.adminUser.findUnique.mockResolvedValue(inactiveUser);
-
-      await expect(service.validateUser(userId)).rejects.toThrow(UnauthorizedException);
-      await expect(service.validateUser(userId)).rejects.toThrow(
-        'User not found or inactive'
-      );
-    });
-  });
 
   // ========================================
   // Password Reset Tests
