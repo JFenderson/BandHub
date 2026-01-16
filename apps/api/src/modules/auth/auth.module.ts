@@ -23,6 +23,7 @@ import { SessionController } from './controllers/session.controller';
 import { MfaController } from './controllers/mfa.controller';
 import { PasswordController } from './controllers/password.controller';
 import { MagicLinkController } from './controllers/magic-link.controller';
+import { OAuthController } from './controllers/oauth.controller';
 import { EmailModule } from '../email/email.module';
 import { RolesGuard, ApiKeyGuard } from 'src/common';
 import { OptionalAuthGuard } from 'src/common/guards/optional-auth.guard';
@@ -65,6 +66,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     MfaController,
     PasswordController,
     MagicLinkController,
+    OAuthController,
   ],
   providers: [
     AuthService,

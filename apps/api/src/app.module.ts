@@ -29,6 +29,8 @@ import { ObservabilityModule } from './observability/observability.module';
 import { CreatorsModule } from './modules/creators/creators.module';
 import { SecretsModule } from './modules/secrets-manager/secrets.module';
 import { AppConfigModule } from './modules/config/config.module';
+import { SharingModule } from './modules/sharing/sharing.module';
+import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { RateLimitingGuard } from './common/guards/rate-limiting.guard';
@@ -96,6 +98,8 @@ import { CacheModule } from '@bandhub/cache'; // From shared package
     SyncModule,
     YoutubeModule,
     CreatorsModule,
+    SharingModule,
+    RecommendationsModule,
     
     // Utilities
     HealthModule,

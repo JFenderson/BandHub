@@ -625,4 +625,45 @@ if (userType === 'admin') {
       throw new UnauthorizedException('Invalid or expired reset token');
     }
   }
+
+  /**
+   * Login with an existing user object (for OAuth)
+   */
+  async loginWithUser(user: any, userType: UserType) {
+    // Generate tokens
+    const accessToken = await this.generateAccessToken(
+      user.id,
+      user.email,
+      user.role,
+      userType,
+    );
+    const refreshToken = await this.generateRefreshToken(user.id, userType);
+
+    // Cache user session
+    const sessionKey = CacheKeyBuilder.userSession(user.id);
+    await this.cacheStrategy.set(
+      sessionKey,
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        userType,
+      },
+      CACHE_TTL.USER_SESSION,
+      false
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: 900,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    };
+  }
 }
