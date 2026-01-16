@@ -17,6 +17,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@hbcu-band-hub/observability": "*",
     "@hbcu-band-hub/shared-types": "*",
+    "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-table": "^8.21.3",
     "clsx": "^2.1.1",
     "date-fns": "^3.0.0",
@@ -25,8 +26,10 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-dropzone": "^14.3.8",
+    "react-hook-form": "^7.71.1",
     "recharts": "^3.5.0",
-    "swiper": "^11.2.10"
+    "swiper": "^11.2.10",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
