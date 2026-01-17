@@ -81,10 +81,13 @@ export class UsersService {
     });
 
     // Create email verification token
-    const verificationToken = await this.createVerificationToken(user.id);
+      const verificationToken = await this.jwtService.signAsync(
+    { email: user.email, type: 'email-verification' },
+    { expiresIn: '24h' }
+  );
 
     // Send verification email
-    await this.emailService.sendVerificationEmail(user.email, user.name, verificationToken);
+    await this.emailService.sendVerificationEmail(user.email, verificationToken);
 
     // Send welcome email
     await this.emailService.sendWelcomeEmail(user.email, user.name);
@@ -380,7 +383,7 @@ export class UsersService {
     });
 
     // Send reset email
-    await this.emailService.sendPasswordResetEmail(user.email, user.name, token);
+    await this.emailService. sendPasswordResetEmail(user. email, token);
   }
 
   /**
@@ -485,7 +488,7 @@ export class UsersService {
     const verificationToken = await this.createVerificationToken(user.id);
 
     // Send verification email
-    await this.emailService.sendVerificationEmail(user.email, user.name, verificationToken);
+    await this.emailService.sendVerificationEmail(user.email, verificationToken);
   }
 
   /**

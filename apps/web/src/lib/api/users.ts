@@ -197,19 +197,28 @@ class UserApiClient {
     );
   }
 
-  /**
-   * Verify email with token
-   */
-  async verifyEmail(token: string): Promise<{ message: string }> {
-    return this.request(
-      '/users/verify-email',
-      {
-        method: 'POST',
-        body: JSON.stringify({ token }),
-      },
-      true
-    );
+/**
+ * Verify email with token
+ */
+async verifyEmail(token: string): Promise<{ message:  string; user?:  any }> {
+  const url = `${this.baseUrl}/auth/verify-email/${token}`;
+  
+  const response = await fetch(url, {
+    method:  'GET',
+    headers:  {
+      'Content-Type':  'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      message: 'Verification failed',
+    }));
+    throw new Error(error.message || `HTTP ${response.status}`);
   }
+
+  return response.json();
+}
 
   /**
    * Resend verification email

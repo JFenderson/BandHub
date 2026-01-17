@@ -9,6 +9,7 @@ import {
   Req,
   Delete,
   Ip,
+  Param
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
@@ -69,6 +70,17 @@ export class AuthController {
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
+
+  /**
+ * Verify email with token
+ */
+@Get('verify-email/:token')
+@ApiOperation({ summary: 'Verify email address' })
+@ApiResponse({ status: 200, description: 'Email verified successfully' })
+@ApiResponse({ status: 400, description: 'Invalid or expired token' })
+async verifyEmail(@Param('token') token: string) {
+  return this.authService.verifyEmail(token);
+}
 
   /**
    * Register new admin user (AdminUser table)

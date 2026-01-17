@@ -8,6 +8,7 @@ import { CacheKeyBuilder } from '@bandhub/cache';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AdminRole, UserRole } from '@prisma/client';
+import { EmailService } from '../email/email.service';
 
 /**
  * User type discriminator for JWT tokens
@@ -47,82 +48,67 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly cacheStrategy: CacheStrategyService,
+    private emailService: EmailService, 
   ) {}
 
   /**
-   * Register new user (regular User table)
-   */
-  async register(data: RegisterDto): Promise<any> {
-    // Check if user already exists in User table
-    const existing = await this.prisma.user.findUnique({
-      where: { email: data.email },
-    });
+ * Register new user (regular User table)
+ */
+async register(data: RegisterDto): Promise<any> {
+  // Check if user already exists in User table
+  const existing = await this.prisma.user.findUnique({
+    where: { email: data.email },
+  });
 
-    if (existing) {
-      throw new UnauthorizedException('User with this email already exists');
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-
-    // Default role for regular users
-    const role = (data.role as UserRole) || UserRole.USER;
-
-    // Create user in User table
-    const user = await this.prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash: hashedPassword,
-        name: data.name,
-        role: role,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    this.logger.log(`New user registered: ${user.email}`);
-
-    // Generate tokens with userType
-    const accessToken = await this.generateAccessToken(
-      user.id,
-      user.email,
-      user.role,
-      'user', // Regular user type
-    );
-    const refreshToken = await this.generateRefreshToken(user.id, 'user');
-
-    // Cache user session
-    const sessionKey = CacheKeyBuilder.userSession(user.id);
-    await this.cacheStrategy.set(
-      sessionKey,
-      {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        userType: 'user',
-      },
-      CACHE_TTL.USER_SESSION,
-      false
-    );
-
-    return {
-      accessToken,
-      refreshToken,
-      expiresIn: 900,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
-    };
+  if (existing) {
+    throw new UnauthorizedException('User with this email already exists');
   }
+
+  // Hash password
+  const hashedPassword = await bcrypt.hash(data. password, 10);
+
+  // Default role for regular users
+  const role = (data.role as UserRole) || UserRole.USER;
+
+  // Generate verification token BEFORE creating user
+  const verificationToken = await this.jwtService.signAsync(
+    { email: data.email, type: 'email-verification' },
+    { expiresIn: '24h' }
+  );
+
+  // Create user in User table
+  const user = await this.prisma.user.create({
+    data: {
+      email: data.email,
+      passwordHash: hashedPassword,
+      name: data.name,
+      role: role,
+      emailVerified: false, // Add this field
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role:  true,
+      createdAt: true,
+    },
+  });
+
+  this.logger.log(`New user registered: ${user.email}`);
+
+  // Send verification email (only 2 parameters)
+  await this.emailService.sendVerificationEmail(user.email, verificationToken);
+
+  // DON'T return tokens yet - user must verify email first
+  return {
+    message: 'Registration successful. Please check your email to verify your account.',
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+    },
+  };
+}
 
   /**
    * Register new admin user (AdminUser table)
@@ -198,6 +184,8 @@ export class AuthService {
       },
     };
   }
+
+  
 
   /**
    * Login user (checks both User and AdminUser tables)
@@ -276,6 +264,13 @@ if (!isPasswordValid) {
       data: updateData,
     });
   }
+
+  // ADD THIS CHECK - only for regular users
+if (userType === 'user' && !(user as any).emailVerified) {
+  throw new UnauthorizedException(
+    'Please verify your email before logging in.  Check your inbox for the verification link.'
+  );
+}
   
   throw new UnauthorizedException('Invalid credentials');
 }
@@ -339,6 +334,55 @@ if (userType === 'admin') {
       },
     };
   }
+
+
+  /**
+ * Verify email with token
+ */
+async verifyEmail(token: string) {
+  try {
+    const payload = await this.jwtService. verifyAsync(token);
+
+    if (payload.type !== 'email-verification') {
+      throw new UnauthorizedException('Invalid verification token');
+    }
+
+    // Find user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email: payload.email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (user.emailVerified) {
+      return { message: 'Email already verified.  You can now log in.' };
+    }
+
+    // Mark email as verified
+    await this.prisma.user.update({
+      where: { id:  user.id },
+      data: { emailVerified: true },
+    });
+
+    // Send welcome email
+    await this.emailService.sendWelcomeEmail(user.email, user.name);
+
+    this.logger.log(`Email verified for user: ${user.email}`);
+
+    return {
+      message: 'Email verified successfully!  You can now log in.',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+    };
+  } catch (error) {
+    throw new UnauthorizedException('Invalid or expired verification token');
+  }
+}
 
   /**
    * Logout user
