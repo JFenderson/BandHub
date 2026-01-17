@@ -16,6 +16,8 @@ out
 .env.development
 .env.staging
 .env.production
+.env.doppler
+.env.emergency
 
 # But keep .env.example files
 !.env.example
@@ -53,6 +55,13 @@ uploads/**/*
 
 # Docker secrets (never commit!)
 secrets/
+
+# Doppler
+.doppler/
+
+# Secrets
+*.secret
+*.key
 
 # Backups
 backups/prometheus-*.tar.gz

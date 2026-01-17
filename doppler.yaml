@@ -1,0 +1,13 @@
+# ========================================
+# Doppler Configuration
+# ========================================
+# This file configures the default Doppler project and config
+# for this repository. When developers run `doppler setup`,
+# these values will be pre-selected.
+#
+# For more information, see docs/DOPPLER_SETUP.md
+# ========================================
+
+setup:
+  project: bandhub
+  config: dev
