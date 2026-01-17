@@ -199,18 +199,6 @@ groups:
           summary: "API 4xx error rate elevated"
           description: "Client error rate is {{ $value | humanizePercentage }}. Review API usage patterns and client integrations."
       
-      - alert: DatabaseBackupStatus
-        expr: time() - bandhub_last_backup_timestamp_seconds > 86400
-        for: 1h
-        labels:
-          severity: info
-          priority: P3
-          channel: email
-        annotations:
-          summary: "Database backup is overdue"
-          description: "Last successful database backup was more than 24 hours ago."
-          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/backup-failure.md"
-      
       - alert: HighAuthenticationFailureRate
         expr: (sum(rate(bandhub_auth_events_total{type="failed"}[10m])) / sum(rate(bandhub_auth_events_total[10m]))) > 0.30
         for: 30m

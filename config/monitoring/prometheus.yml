@@ -7,7 +7,7 @@ global:
 
 # Load alerting rules
 rule_files:
-  - '../../alerting-rules.yml'
+  - 'alerting-rules.yml'
 
 # Alert manager configuration
 alerting:

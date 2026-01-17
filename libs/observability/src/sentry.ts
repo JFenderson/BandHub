@@ -12,9 +12,11 @@ export const initSentry = (serviceName: string) => {
       Sentry.prismaIntegration?.(),
       Sentry.redisIntegration?.(),
     ],
-    // Performance monitoring - capture 100% of transactions in production
+    // Performance monitoring - capture 100% of transactions in production for initial rollout
+    // TODO: Reduce to 0.1 (10%) after baseline is established
     tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 1.0),
-    // Profiling - capture 100% of profiles for performance analysis
+    // Profiling - capture 100% of profiles for detailed performance analysis during initial rollout
+    // TODO: Reduce to 0.01 (1%) after baseline is established  
     profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 1.0),
     
     // Custom error grouping and enrichment
@@ -32,22 +34,22 @@ export const initSentry = (serviceName: string) => {
         const exception = event.exception.values[0];
         
         // Group database errors by query type, not specific values
-        if (exception.type?.includes('Prisma') || exception.value?.includes('prisma')) {
+        if (exception.type?.toLowerCase().includes('prisma') || exception.value?.toLowerCase().includes('prisma')) {
           event.fingerprint = ['{{ default }}', 'database-error', exception.type || 'unknown'];
         }
         
         // Group rate limit errors together
-        if (exception.value?.includes('rate limit') || exception.value?.includes('too many requests')) {
+        if (exception.value?.toLowerCase().includes('rate limit') || exception.value?.toLowerCase().includes('too many requests')) {
           event.fingerprint = ['rate-limit-exceeded'];
         }
         
         // Group validation errors by field name
-        if (exception.type?.includes('Validation') || exception.value?.includes('validation')) {
+        if (exception.type?.toLowerCase().includes('validation') || exception.value?.toLowerCase().includes('validation')) {
           event.fingerprint = ['{{ default }}', 'validation-error'];
         }
         
         // Group external API errors by service
-        if (exception.value?.includes('YouTube') || exception.value?.includes('googleapis')) {
+        if (exception.value?.toLowerCase().includes('youtube') || exception.value?.toLowerCase().includes('googleapis')) {
           event.fingerprint = ['external-api-error', 'youtube'];
         }
       }
