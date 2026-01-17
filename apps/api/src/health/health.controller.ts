@@ -20,12 +20,20 @@ export class HealthController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Check API health status (summary)' })
+  @ApiOperation({ summary: 'Check API health status (comprehensive)' })
   @ApiResponse({ status: 200, description: 'Health check successful' })
   async checkHealth() {
-    // Keep a simple summary for backward compatibility
-    const ready = await this.healthService.readiness();
-    return { api: 'ok', readiness: ready };
+    const readinessResult = await this.healthService.readiness();
+    const dbCheck = await this.healthService.checkDatabaseDetailed();
+    const redisCheck = await this.healthService.checkRedisDetailed();
+    
+    return {
+      status: readinessResult.status === 'ready' ? 'healthy' : 'unhealthy',
+      database: dbCheck.status === 'ok' ? 'connected' : 'disconnected',
+      redis: redisCheck.status === 'ok' ? 'connected' : 'disconnected',
+      timestamp: new Date().toISOString(),
+      details: readinessResult.details,
+    };
   }
 
   @Get('database')

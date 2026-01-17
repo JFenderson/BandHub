@@ -55,4 +55,5 @@ uploads/**/*
 secrets/
 
 # Backups
-backups/
+backups/prometheus-*.tar.gz
+prometheus-*/

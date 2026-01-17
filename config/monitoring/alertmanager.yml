@@ -1,0 +1,182 @@
+global:
+  resolve_timeout: 5m
+  # Slack webhook URL - replace with your actual webhook
+  slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+  # PagerDuty API endpoint
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+# Templates for alert messages
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Alert routing configuration
+route:
+  # Default grouping - group alerts by alertname, cluster, and service
+  group_by: ['alertname', 'cluster', 'service']
+  
+  # Wait time before sending initial notification for a group of alerts
+  group_wait: 10s
+  
+  # Wait time before sending notification about new alerts added to a group
+  group_interval: 10s
+  
+  # Minimum time between two notifications for the same group
+  repeat_interval: 12h
+  
+  # Default receiver if no specific route matches
+  receiver: 'default'
+  
+  # Child routes
+  routes:
+    # Critical alerts go to PagerDuty (P1)
+    - match:
+        severity: critical
+        priority: P1
+      receiver: 'pagerduty-critical'
+      continue: true
+      group_wait: 10s
+      repeat_interval: 5m
+    
+    # Warning alerts go to Slack (P2)
+    - match:
+        severity: warning
+        priority: P2
+      receiver: 'slack-warnings'
+      group_wait: 30s
+      repeat_interval: 3h
+    
+    # Info alerts go to email (P3)
+    - match:
+        severity: info
+        priority: P3
+      receiver: 'email-info'
+      group_wait: 5m
+      repeat_interval: 24h
+
+# Alert receivers
+receivers:
+  # Default receiver - goes to Slack monitoring channel
+  - name: 'default'
+    slack_configs:
+      - channel: '#monitoring'
+        title: 'BandHub Alert'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Labels.alertname }}
+          *Summary:* {{ .Annotations.summary }}
+          {{ end }}
+        send_resolved: true
+
+  # PagerDuty for critical alerts
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - routing_key: 'YOUR_PAGERDUTY_INTEGRATION_KEY'
+        severity: '{{ .GroupLabels.severity }}'
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          resolved: '{{ .Alerts.Resolved | len }}'
+          description: '{{ .CommonAnnotations.description }}'
+          runbook_url: '{{ .CommonAnnotations.runbook_url }}'
+        client: 'BandHub Prometheus'
+        client_url: 'http://prometheus:9090'
+
+  # Slack for warning alerts
+  - name: 'slack-warnings'
+    slack_configs:
+      - channel: '#alerts'
+        username: 'BandHub Monitor'
+        icon_emoji: ':warning:'
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+        title: '{{ if eq .Status "firing" }}⚠️ {{ else }}✅ {{ end }}{{ .GroupLabels.alertname }}'
+        text: |
+          *Priority:* {{ .GroupLabels.priority }}
+          *Severity:* {{ .GroupLabels.severity }}
+          *Status:* {{ .Status }}
+          
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          {{ if .CommonAnnotations.runbook_url }}
+          *Runbook:* {{ .CommonAnnotations.runbook_url }}
+          {{ end }}
+          
+          *Firing Alerts:* {{ .Alerts.Firing | len }}
+          *Resolved Alerts:* {{ .Alerts.Resolved | len }}
+        send_resolved: true
+        actions:
+          - type: button
+            text: 'View in Grafana'
+            url: 'http://grafana:3000'
+          - type: button
+            text: 'View in Prometheus'
+            url: 'http://prometheus:9090'
+
+  # Email for info alerts
+  - name: 'email-info'
+    email_configs:
+      - to: 'ops@hbcubandhub.com'
+        from: 'alerts@hbcubandhub.com'
+        smarthost: 'smtp.gmail.com:587'
+        auth_username: 'alerts@hbcubandhub.com'
+        auth_password: 'YOUR_EMAIL_APP_PASSWORD'
+        require_tls: true
+        headers:
+          Subject: '[BandHub {{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>{{ .GroupLabels.alertname }}</h2>
+          <p><strong>Priority:</strong> {{ .GroupLabels.priority }}</p>
+          <p><strong>Severity:</strong> {{ .GroupLabels.severity }}</p>
+          <p><strong>Status:</strong> {{ .Status }}</p>
+          <hr>
+          <p><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .CommonAnnotations.description }}</p>
+          {{ if .CommonAnnotations.runbook_url }}
+          <p><strong>Runbook:</strong> <a href="{{ .CommonAnnotations.runbook_url }}">{{ .CommonAnnotations.runbook_url }}</a></p>
+          {{ end }}
+          <hr>
+          <p><strong>Firing Alerts:</strong> {{ .Alerts.Firing | len }}</p>
+          <p><strong>Resolved Alerts:</strong> {{ .Alerts.Resolved | len }}</p>
+          {{ range .Alerts }}
+          <h3>{{ .Labels.alertname }}</h3>
+          <p>{{ .Annotations.description }}</p>
+          {{ end }}
+        send_resolved: true
+
+# Inhibition rules - suppress alerts when certain conditions are met
+inhibit_rules:
+  # If all health checks are failing, suppress individual component alerts
+  - source_match:
+      alertname: 'AllHealthChecksFailing'
+    target_match_re:
+      alertname: '(DatabaseConnectionFailure|RedisConnectionFailure)'
+    equal: ['cluster']
+  
+  # If critical error rate is high, suppress performance degradation alerts
+  - source_match:
+      alertname: 'ApiHighErrorRate'
+    target_match_re:
+      alertname: '(ApiLatencyP95High|ApiLatencyP99High|ApiResponseTimeP95Degraded)'
+    equal: ['cluster']
+  
+  # If database connection fails, suppress slow query alerts
+  - source_match:
+      alertname: 'DatabaseConnectionFailure'
+    target_match_re:
+      alertname: '(DatabaseSlowQueries|DatabaseQueryLatencyHigh)'
+    equal: ['cluster']
+  
+  # If memory is critical, suppress high memory warnings
+  - source_match:
+      alertname: 'MemoryCritical'
+    target_match:
+      alertname: 'HighMemoryUsage'
+    equal: ['cluster']
+
+# Mute time intervals (optional - for maintenance windows)
+# time_intervals:
+#   - name: 'maintenance-window'
+#     time_intervals:
+#       - weekdays: ['saturday', 'sunday']
+#         times:
+#           - start_time: '00:00'
+#             end_time: '06:00'

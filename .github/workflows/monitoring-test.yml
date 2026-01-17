@@ -1,0 +1,420 @@
+name: Monitoring Configuration Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'alerting-rules.yml'
+      - 'grafana/dashboards/*.json'
+      - 'prometheus.yml'
+      - 'apps/api/src/health/**'
+      - '.github/workflows/monitoring-test.yml'
+  pull_request:
+    paths:
+      - 'alerting-rules.yml'
+      - 'grafana/dashboards/*.json'
+      - 'prometheus.yml'
+      - 'apps/api/src/health/**'
+      - '.github/workflows/monitoring-test.yml'
+
+jobs:
+  validate-prometheus-rules:
+    name: Validate Prometheus Alert Rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Prometheus
+        run: |
+          wget https://github.com/prometheus/prometheus/releases/download/v2.48.0/prometheus-2.48.0.linux-amd64.tar.gz
+          tar xzf prometheus-2.48.0.linux-amd64.tar.gz
+          sudo mv prometheus-2.48.0.linux-amd64/promtool /usr/local/bin/
+
+      - name: Validate alert rules syntax
+        run: |
+          echo "Validating Prometheus alert rules..."
+          promtool check rules alerting-rules.yml
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Alert rules validation passed"
+          else
+            echo "❌ Alert rules validation failed"
+            exit 1
+          fi
+
+      - name: Check for duplicate alerts
+        run: |
+          echo "Checking for duplicate alert names..."
+          duplicates=$(grep -E "^\s+- alert:" alerting-rules.yml | sort | uniq -d)
+          if [ -n "$duplicates" ]; then
+            echo "❌ Duplicate alert names found:"
+            echo "$duplicates"
+            exit 1
+          else
+            echo "✅ No duplicate alert names"
+          fi
+
+      - name: Validate alert annotations
+        run: |
+          echo "Checking that all alerts have required annotations..."
+          python3 << 'EOF'
+          import yaml
+          import sys
+          
+          with open('alerting-rules.yml', 'r') as f:
+              data = yaml.safe_load(f)
+          
+          required_annotations = ['summary', 'description']
+          required_labels = ['severity', 'priority', 'channel']
+          errors = []
+          
+          for group in data.get('groups', []):
+              for rule in group.get('rules', []):
+                  alert_name = rule.get('alert', 'Unknown')
+                  
+                  # Check annotations
+                  annotations = rule.get('annotations', {})
+                  for req in required_annotations:
+                      if req not in annotations:
+                          errors.append(f"Alert '{alert_name}' missing required annotation: {req}")
+                  
+                  # Check labels
+                  labels = rule.get('labels', {})
+                  for req in required_labels:
+                      if req not in labels:
+                          errors.append(f"Alert '{alert_name}' missing required label: {req}")
+          
+          if errors:
+              print("❌ Alert validation errors:")
+              for error in errors:
+                  print(f"  - {error}")
+              sys.exit(1)
+          else:
+              print("✅ All alerts have required annotations and labels")
+          EOF
+
+  validate-grafana-dashboards:
+    name: Validate Grafana Dashboards
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate dashboard JSON structure
+        run: |
+          echo "Validating Grafana dashboard JSON files..."
+          python3 << 'EOF'
+          import json
+          import sys
+          from pathlib import Path
+          
+          dashboard_dir = Path('grafana/dashboards')
+          errors = []
+          
+          if not dashboard_dir.exists():
+              print("❌ Dashboard directory not found")
+              sys.exit(1)
+          
+          json_files = list(dashboard_dir.glob('*.json'))
+          
+          if not json_files:
+              print("⚠️  No dashboard files found")
+              sys.exit(0)
+          
+          for file_path in json_files:
+              try:
+                  with open(file_path, 'r') as f:
+                      data = json.load(f)
+                  
+                  # Validate required fields
+                  if 'dashboard' not in data:
+                      errors.append(f"{file_path.name}: Missing 'dashboard' key")
+                      continue
+                  
+                  dashboard = data['dashboard']
+                  required_fields = ['title', 'panels']
+                  
+                  for field in required_fields:
+                      if field not in dashboard:
+                          errors.append(f"{file_path.name}: Missing required field '{field}'")
+                  
+                  # Validate panels
+                  if 'panels' in dashboard:
+                      for i, panel in enumerate(dashboard['panels']):
+                          if 'title' not in panel:
+                              errors.append(f"{file_path.name}: Panel {i} missing title")
+                          if 'targets' not in panel:
+                              errors.append(f"{file_path.name}: Panel '{panel.get('title', i)}' missing targets")
+                  
+                  print(f"✅ {file_path.name} - Valid")
+                  
+              except json.JSONDecodeError as e:
+                  errors.append(f"{file_path.name}: Invalid JSON - {str(e)}")
+              except Exception as e:
+                  errors.append(f"{file_path.name}: Error - {str(e)}")
+          
+          if errors:
+              print("\n❌ Dashboard validation errors:")
+              for error in errors:
+                  print(f"  - {error}")
+              sys.exit(1)
+          else:
+              print("\n✅ All dashboards validated successfully")
+          EOF
+
+      - name: Check for required dashboards
+        run: |
+          echo "Checking for required dashboard files..."
+          required_dashboards=(
+            "api-performance.json"
+            "database-metrics.json"
+            "cache-metrics.json"
+            "worker-metrics.json"
+            "business-metrics.json"
+          )
+          
+          missing=()
+          for dashboard in "${required_dashboards[@]}"; do
+            if [ ! -f "grafana/dashboards/$dashboard" ]; then
+              missing+=("$dashboard")
+            fi
+          done
+          
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Missing required dashboards:"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          else
+            echo "✅ All required dashboards present"
+          fi
+
+      - name: Validate Prometheus queries in dashboards
+        run: |
+          echo "Validating Prometheus query syntax in dashboards..."
+          python3 << 'EOF'
+          import json
+          import re
+          from pathlib import Path
+          
+          dashboard_dir = Path('grafana/dashboards')
+          errors = []
+          warnings = []
+          
+          # Common Prometheus query patterns
+          metric_pattern = re.compile(r'^[a-zA-Z_:][a-zA-Z0-9_:]*$')
+          
+          for file_path in dashboard_dir.glob('*.json'):
+              with open(file_path, 'r') as f:
+                  data = json.load(f)
+              
+              dashboard = data.get('dashboard', {})
+              panels = dashboard.get('panels', [])
+              
+              for panel in panels:
+                  targets = panel.get('targets', [])
+                  for target in targets:
+                      expr = target.get('expr', '')
+                      if expr:
+                          # Check for common issues
+                          if 'bandhub_' not in expr and 'up' not in expr:
+                              warnings.append(f"{file_path.name}: Panel '{panel.get('title')}' query doesn't use bandhub_ prefix")
+                          
+                          # Check for syntax issues
+                          if expr.count('(') != expr.count(')'):
+                              errors.append(f"{file_path.name}: Panel '{panel.get('title')}' has mismatched parentheses")
+          
+          if errors:
+              print("❌ Query validation errors:")
+              for error in errors:
+                  print(f"  - {error}")
+              exit(1)
+          
+          if warnings:
+              print("⚠️  Query validation warnings:")
+              for warning in warnings:
+                  print(f"  - {warning}")
+          
+          print("✅ All queries validated")
+          EOF
+
+  test-health-endpoints:
+    name: Test Health Check Endpoints
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: bandhub_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build:shared
+          npm run build --workspace=@bandhub/database
+          npm run build --workspace=@bandhub/cache
+          npm run build --workspace=@hbcu-band-hub/observability
+
+      - name: Generate Prisma Client
+        run: |
+          cd packages/database
+          npx prisma generate
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/bandhub_test
+        run: |
+          cd packages/database
+          npx prisma migrate deploy || echo "Migrations may not exist yet"
+
+      - name: Build API
+        run: |
+          cd apps/api
+          npm run build
+
+      - name: Start API server
+        env:
+          DATABASE_URL: postgresql://postgres:test_password@localhost:5432/bandhub_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test_jwt_secret_key_for_testing
+          API_PORT: 3001
+        run: |
+          cd apps/api
+          npm run start:prod &
+          
+          # Wait for server to start
+          echo "Waiting for API server to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:3001/api/health > /dev/null; then
+              echo "✅ Server started successfully"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ Server failed to start"
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Test health endpoints
+        run: |
+          echo "Testing /api/health endpoint..."
+          response=$(curl -s -w "\n%{http_code}" http://localhost:3001/api/health)
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+          
+          echo "Response: $body"
+          echo "Status: $status"
+          
+          if [ "$status" != "200" ]; then
+            echo "❌ Health check failed with status $status"
+            exit 1
+          fi
+          
+          # Verify JSON structure
+          if ! echo "$body" | jq -e '.status' > /dev/null; then
+            echo "❌ Health check response missing 'status' field"
+            exit 1
+          fi
+          
+          if ! echo "$body" | jq -e '.timestamp' > /dev/null; then
+            echo "❌ Health check response missing 'timestamp' field"
+            exit 1
+          fi
+          
+          echo "✅ Health endpoint test passed"
+
+      - name: Test readiness endpoint
+        run: |
+          echo "Testing /api/health/ready endpoint..."
+          response=$(curl -s http://localhost:3001/api/health/ready)
+          echo "Response: $response"
+          
+          if ! echo "$response" | jq -e '.status' > /dev/null; then
+            echo "❌ Readiness check response invalid"
+            exit 1
+          fi
+          
+          echo "✅ Readiness endpoint test passed"
+
+      - name: Test liveness endpoint
+        run: |
+          echo "Testing /api/health/live endpoint..."
+          response=$(curl -s http://localhost:3001/api/health/live)
+          echo "Response: $response"
+          
+          if ! echo "$response" | jq -e '.status' > /dev/null; then
+            echo "❌ Liveness check response invalid"
+            exit 1
+          fi
+          
+          echo "✅ Liveness endpoint test passed"
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-prometheus-rules, validate-grafana-dashboards, test-health-endpoints]
+    if: always()
+    steps:
+      - name: Check validation results
+        run: |
+          echo "## Monitoring Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.validate-prometheus-rules.result }}" == "success" ]; then
+            echo "✅ Prometheus alert rules validated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Prometheus alert rules validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.validate-grafana-dashboards.result }}" == "success" ]; then
+            echo "✅ Grafana dashboards validated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Grafana dashboards validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.test-health-endpoints.result }}" == "success" ]; then
+            echo "✅ Health check endpoints tested" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Health check endpoints test failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Fail if any job failed
+          if [ "${{ needs.validate-prometheus-rules.result }}" != "success" ] || \
+             [ "${{ needs.validate-grafana-dashboards.result }}" != "success" ] || \
+             [ "${{ needs.test-health-endpoints.result }}" != "success" ]; then
+            exit 1
+          fi
