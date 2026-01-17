@@ -18,7 +18,7 @@ export const initSentry = (serviceName: string) => {
     profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 1.0),
     
     // Custom error grouping and enrichment
-    beforeSend(event, hint) {
+    beforeSend(event, _hint) {
       const correlationId = getCorrelationId();
       if (correlationId) {
         event.tags = { ...event.tags, correlationId };
