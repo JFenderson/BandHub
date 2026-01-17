@@ -1,0 +1,250 @@
+groups:
+  # CRITICAL ALERTS - Page Immediately via PagerDuty
+  - name: bandhub-critical
+    rules:
+      - alert: DatabaseConnectionFailure
+        expr: bandhub_health_check_status{check_type="database"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          priority: P1
+          channel: pagerduty
+        annotations:
+          summary: "Database connection failure detected"
+          description: "The API cannot connect to the PostgreSQL database. This is a critical failure affecting all functionality."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/database-failure.md"
+      
+      - alert: ApiHighErrorRate
+        expr: (sum(rate(bandhub_api_requests_total{status_code=~"5.."}[5m])) / sum(rate(bandhub_api_requests_total[5m]))) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          priority: P1
+          channel: pagerduty
+        annotations:
+          summary: "API 5xx error rate exceeds 5%"
+          description: "The API is experiencing a high rate of server errors ({{ $value | humanizePercentage }}). This indicates a systemic issue."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/high-error-rate.md"
+      
+      - alert: AllHealthChecksFailing
+        expr: sum(bandhub_health_check_status) == 0
+        for: 2m
+        labels:
+          severity: critical
+          priority: P1
+          channel: pagerduty
+        annotations:
+          summary: "All health checks are failing"
+          description: "All system health checks are reporting failure. The platform is likely down."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/total-outage.md"
+      
+      - alert: MemoryCritical
+        expr: bandhub_memory_usage_percent > 95
+        for: 5m
+        labels:
+          severity: critical
+          priority: P1
+          channel: pagerduty
+        annotations:
+          summary: "Memory usage exceeds 95%"
+          description: "Memory usage is critically high at {{ $value }}%. The application may crash or experience severe performance degradation."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/memory-critical.md"
+      
+      - alert: RedisConnectionFailure
+        expr: bandhub_health_check_status{check_type="redis"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          priority: P1
+          channel: pagerduty
+        annotations:
+          summary: "Redis connection failure detected"
+          description: "The API cannot connect to Redis. Caching and session management are impacted."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/redis-failure.md"
+
+  # WARNING ALERTS - Slack Notification
+  - name: bandhub-warning
+    rules:
+      - alert: DatabaseSlowQueries
+        expr: sum(rate(bandhub_db_slow_queries_total[5m])) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "Slow database queries detected (>5s)"
+          description: "{{ $value }} slow queries per second detected. Review query performance and indexing."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/slow-queries.md"
+      
+      - alert: HighMemoryUsage
+        expr: bandhub_memory_usage_percent > 85
+        for: 10m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "Memory usage exceeds 85%"
+          description: "Memory usage is high at {{ $value }}%. Monitor for potential issues and consider scaling."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/high-memory.md"
+      
+      - alert: CacheHitRateLow
+        expr: (sum(rate(bandhub_redis_hits_total[5m])) / (sum(rate(bandhub_redis_hits_total[5m])) + sum(rate(bandhub_redis_misses_total[5m])))) < 0.70
+        for: 15m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "Cache hit rate below 70%"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}. Review caching strategy and TTLs."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/low-cache-hit-rate.md"
+      
+      - alert: QueueDepthHigh
+        expr: sum(bandhub_queue_depth{state="waiting"}) > 100
+        for: 10m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "Queue depth exceeds 100 jobs"
+          description: "{{ $value }} jobs are waiting in queues. Consider scaling workers or investigating job failures."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/high-queue-depth.md"
+      
+      - alert: ApiLatencyP95High
+        expr: histogram_quantile(0.95, sum(rate(bandhub_api_latency_seconds_bucket[5m])) by (le)) > 3
+        for: 10m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "API p95 latency exceeds 3 seconds"
+          description: "95th percentile API response time is {{ $value }}s. Review slow endpoints and optimize performance."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/high-latency.md"
+      
+      - alert: ApiLatencyP99High
+        expr: histogram_quantile(0.99, sum(rate(bandhub_api_latency_seconds_bucket[5m])) by (le)) > 5
+        for: 10m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "API p99 latency exceeds 5 seconds"
+          description: "99th percentile API response time is {{ $value }}s. Some users experiencing significant delays."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/high-latency.md"
+      
+      - alert: DatabaseConnectionPoolUtilization
+        expr: (bandhub_db_connection_pool_size{state="active"} / (bandhub_db_connection_pool_size{state="active"} + bandhub_db_connection_pool_size{state="idle"})) > 0.80
+        for: 10m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "Database connection pool utilization exceeds 80%"
+          description: "Connection pool is {{ $value | humanizePercentage }} utilized. Consider increasing pool size."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/db-pool-exhaustion.md"
+      
+      - alert: WorkerJobFailureRate
+        expr: (sum(rate(bandhub_video_sync_results_total{result="failure"}[10m])) / sum(rate(bandhub_video_sync_results_total[10m]))) > 0.10
+        for: 15m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "Worker job failure rate exceeds 10%"
+          description: "{{ $value | humanizePercentage }} of worker jobs are failing. Review worker logs and job configurations."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/job-failures.md"
+      
+      - alert: RedisEvictionRateHigh
+        expr: rate(bandhub_redis_evicted_keys_total[5m]) > 100
+        for: 10m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "High Redis key eviction rate"
+          description: "{{ $value }} keys per second are being evicted. Consider increasing Redis memory or reviewing TTL settings."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/redis-evictions.md"
+
+  # INFO ALERTS - Email Digest
+  - name: bandhub-info
+    rules:
+      - alert: YouTubeQuotaHigh
+        expr: (bandhub_youtube_quota_used / (bandhub_youtube_quota_used + bandhub_youtube_quota_remaining)) > 0.80
+        for: 30m
+        labels:
+          severity: info
+          priority: P3
+          channel: email
+        annotations:
+          summary: "YouTube API quota usage exceeds 80%"
+          description: "YouTube API quota is {{ $value | humanizePercentage }} consumed. Monitor usage to avoid quota exhaustion."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/youtube-quota.md"
+      
+      - alert: ApiErrorRateElevated
+        expr: (sum(rate(bandhub_api_requests_total{status_code=~"4.."}[15m])) / sum(rate(bandhub_api_requests_total[15m]))) > 0.10
+        for: 30m
+        labels:
+          severity: info
+          priority: P3
+          channel: email
+        annotations:
+          summary: "API 4xx error rate elevated"
+          description: "Client error rate is {{ $value | humanizePercentage }}. Review API usage patterns and client integrations."
+      
+      - alert: DatabaseBackupStatus
+        expr: time() - bandhub_last_backup_timestamp_seconds > 86400
+        for: 1h
+        labels:
+          severity: info
+          priority: P3
+          channel: email
+        annotations:
+          summary: "Database backup is overdue"
+          description: "Last successful database backup was more than 24 hours ago."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/backup-failure.md"
+      
+      - alert: HighAuthenticationFailureRate
+        expr: (sum(rate(bandhub_auth_events_total{type="failed"}[10m])) / sum(rate(bandhub_auth_events_total[10m]))) > 0.30
+        for: 30m
+        labels:
+          severity: info
+          priority: P3
+          channel: email
+        annotations:
+          summary: "Authentication failure rate elevated"
+          description: "{{ $value | humanizePercentage }} of authentication attempts are failing. Monitor for potential security issues."
+
+  # PERFORMANCE MONITORING
+  - name: bandhub-performance
+    rules:
+      - alert: ApiResponseTimeP95Degraded
+        expr: histogram_quantile(0.95, sum(rate(bandhub_api_latency_seconds_bucket[5m])) by (le)) > 2
+        for: 15m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "API performance degraded - p95 response time > 2s"
+          description: "95th percentile response time is {{ $value }}s, exceeding the 2s SLO."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/performance-degradation.md"
+      
+      - alert: DatabaseQueryLatencyHigh
+        expr: histogram_quantile(0.95, sum(rate(bandhub_db_query_seconds_bucket[5m])) by (le)) > 1
+        for: 10m
+        labels:
+          severity: warning
+          priority: P2
+          channel: slack
+        annotations:
+          summary: "Database query latency high"
+          description: "95th percentile database query time is {{ $value }}s. Review query performance."
+          runbook_url: "https://github.com/JFenderson/BandHub/docs/runbooks/db-performance.md"

@@ -1,0 +1,237 @@
+{
+  "dashboard": {
+    "title": "HBCU Band Hub - Database Metrics",
+    "tags": ["bandhub", "database", "postgresql"],
+    "timezone": "browser",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+      {
+        "title": "Database Queries per Second",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_db_queries_total[5m]))",
+            "legendFormat": "Total QPS",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(bandhub_db_queries_total{status=\"success\"}[5m]))",
+            "legendFormat": "Successful",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(rate(bandhub_db_queries_total{status=\"error\"}[5m]))",
+            "legendFormat": "Errors",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "qps",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "Database Connection Pool Status",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "bandhub_db_connection_pool_size{state=\"active\"}",
+            "legendFormat": "Active Connections",
+            "refId": "A"
+          },
+          {
+            "expr": "bandhub_db_connection_pool_size{state=\"idle\"}",
+            "legendFormat": "Idle Connections",
+            "refId": "B"
+          },
+          {
+            "expr": "bandhub_db_connection_pool_size{state=\"active\"} + bandhub_db_connection_pool_size{state=\"idle\"}",
+            "legendFormat": "Total Connections",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" },
+                { "value": 8, "color": "yellow" },
+                { "value": 12, "color": "red" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Database Query Latency (p50, p95, p99)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(bandhub_db_query_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(bandhub_db_query_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(bandhub_db_query_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" },
+                { "value": 0.5, "color": "yellow" },
+                { "value": 1, "color": "red" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Slow Queries (>5s)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_db_slow_queries_total[5m])) by (operation)",
+            "legendFormat": "{{operation}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "qps",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "Queries by Operation Type",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_db_queries_total[5m])) by (operation)",
+            "legendFormat": "{{operation}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "qps",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "Queries by Table",
+        "type": "bargauge",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+        "targets": [
+          {
+            "expr": "topk(10, sum(rate(bandhub_db_queries_total[5m])) by (table))",
+            "legendFormat": "{{table}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "qps",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" },
+                { "value": 50, "color": "yellow" },
+                { "value": 100, "color": "red" }
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient"
+        }
+      },
+      {
+        "title": "Connection Pool Utilization %",
+        "type": "gauge",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+        "targets": [
+          {
+            "expr": "(bandhub_db_connection_pool_size{state=\"active\"} / (bandhub_db_connection_pool_size{state=\"active\"} + bandhub_db_connection_pool_size{state=\"idle\"})) * 100",
+            "legendFormat": "Pool Utilization",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" },
+                { "value": 70, "color": "yellow" },
+                { "value": 80, "color": "red" }
+              ]
+            },
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "title": "Average Query Duration by Table",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_db_query_seconds_sum[5m])) by (table) / sum(rate(bandhub_db_query_seconds_count[5m])) by (table)",
+            "legendFormat": "{{table}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 38,
+    "style": "dark",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "version": 1,
+    "weekStart": ""
+  }
+}

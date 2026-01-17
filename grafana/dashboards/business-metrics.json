@@ -1,0 +1,293 @@
+{
+  "dashboard": {
+    "title": "HBCU Band Hub - Business Metrics",
+    "tags": ["bandhub", "business", "kpis"],
+    "timezone": "browser",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+      {
+        "title": "Videos Synced (Total)",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(bandhub_videos_synced_total)",
+            "legendFormat": "Total Videos",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Active User Sessions",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
+        "targets": [
+          {
+            "expr": "bandhub_active_sessions",
+            "legendFormat": "Active Sessions",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Total Search Queries",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(bandhub_search_queries_total)",
+            "legendFormat": "Total Searches",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Featured Band Clicks",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(bandhub_featured_band_clicks_total)",
+            "legendFormat": "Total Clicks",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Video Sync Rate (per minute)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_videos_synced_total[5m])) * 60",
+            "legendFormat": "Videos/min",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(bandhub_videos_synced_total{source=\"youtube\"}[5m])) * 60",
+            "legendFormat": "YouTube Videos/min",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "User Activity Events",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_user_activity_total[5m])) by (activity_type)",
+            "legendFormat": "{{activity_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "Authentication Events",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_auth_events_total[5m])) by (type)",
+            "legendFormat": "{{type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "Search Queries by Type",
+        "type": "piechart",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_search_queries_total[5m])) by (search_type)",
+            "legendFormat": "{{search_type}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "values": ["value", "percent"]
+          }
+        }
+      },
+      {
+        "title": "Featured Band Click-Through Rate",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_featured_band_clicks_total[5m])) by (band_id)",
+            "legendFormat": "Band {{band_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "Videos Synced by Band",
+        "type": "bargauge",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+        "targets": [
+          {
+            "expr": "topk(10, sum(rate(bandhub_videos_synced_total[1h])) by (band_id))",
+            "legendFormat": "Band {{band_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" },
+                { "value": 10, "color": "yellow" },
+                { "value": 50, "color": "red" }
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient"
+        }
+      },
+      {
+        "title": "API Usage Patterns (Requests/Hour)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_api_requests_total[1h])) * 3600",
+            "legendFormat": "Total Requests/Hour",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "User Activity by Type",
+        "type": "bargauge",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_user_activity_total[1h])) by (activity_type)",
+            "legendFormat": "{{activity_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" }
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient"
+        }
+      }
+    ],
+    "refresh": "1m",
+    "schemaVersion": 38,
+    "style": "dark",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "version": 1,
+    "weekStart": ""
+  }
+}

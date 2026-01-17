@@ -1,0 +1,247 @@
+{
+  "dashboard": {
+    "title": "HBCU Band Hub - Cache Metrics",
+    "tags": ["bandhub", "cache", "redis"],
+    "timezone": "browser",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+      {
+        "title": "Cache Hit Rate %",
+        "type": "gauge",
+        "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "(sum(rate(bandhub_redis_hits_total[5m])) / (sum(rate(bandhub_redis_hits_total[5m])) + sum(rate(bandhub_redis_misses_total[5m])))) * 100",
+            "legendFormat": "Hit Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "red" },
+                { "value": 70, "color": "yellow" },
+                { "value": 85, "color": "green" }
+              ]
+            },
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "title": "Redis Memory Usage",
+        "type": "gauge",
+        "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+        "targets": [
+          {
+            "expr": "bandhub_redis_memory_bytes / 1024 / 1024",
+            "legendFormat": "Memory MB",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decmbytes",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" },
+                { "value": 80, "color": "yellow" },
+                { "value": 100, "color": "red" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Connected Redis Clients",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+        "targets": [
+          {
+            "expr": "bandhub_redis_connected_clients",
+            "legendFormat": "Clients",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "green" },
+                { "value": 50, "color": "yellow" },
+                { "value": 100, "color": "red" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Cache Hits vs Misses",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_redis_hits_total[5m]))",
+            "legendFormat": "Cache Hits",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(bandhub_redis_misses_total[5m]))",
+            "legendFormat": "Cache Misses",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "Cache Hit Rate Over Time",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "(sum(rate(bandhub_redis_hits_total[5m])) / (sum(rate(bandhub_redis_hits_total[5m])) + sum(rate(bandhub_redis_misses_total[5m])))) * 100",
+            "legendFormat": "Hit Rate %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "red" },
+                { "value": 70, "color": "yellow" },
+                { "value": 85, "color": "green" }
+              ]
+            },
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "title": "Cache Operations by Name",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "targets": [
+          {
+            "expr": "sum(rate(bandhub_redis_hits_total[5m])) by (cache_name)",
+            "legendFormat": "{{cache_name}} - Hits",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(bandhub_redis_misses_total[5m])) by (cache_name)",
+            "legendFormat": "{{cache_name}} - Misses",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "Redis Evicted Keys",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+        "targets": [
+          {
+            "expr": "rate(bandhub_redis_evicted_keys_total[5m])",
+            "legendFormat": "Evictions per second",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      },
+      {
+        "title": "Cache Hit Rate by Cache Name",
+        "type": "bargauge",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+        "targets": [
+          {
+            "expr": "(sum(rate(bandhub_redis_hits_total[5m])) by (cache_name) / (sum(rate(bandhub_redis_hits_total[5m])) by (cache_name) + sum(rate(bandhub_redis_misses_total[5m])) by (cache_name))) * 100",
+            "legendFormat": "{{cache_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "red" },
+                { "value": 70, "color": "yellow" },
+                { "value": 85, "color": "green" }
+              ]
+            },
+            "min": 0,
+            "max": 100
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient"
+        }
+      },
+      {
+        "title": "Redis Memory Trend",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+        "targets": [
+          {
+            "expr": "bandhub_redis_memory_bytes / 1024 / 1024",
+            "legendFormat": "Memory Usage (MB)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decmbytes",
+            "color": { "mode": "palette-classic" }
+          }
+        }
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 38,
+    "style": "dark",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "version": 1,
+    "weekStart": ""
+  }
+}
