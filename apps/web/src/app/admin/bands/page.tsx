@@ -308,14 +308,25 @@ export default function AdminBandsPage() {
             >
               <option value="">All States</option>
               <option value="AL">Alabama</option>
+              <option value="AR">Arkansas</option>
+              <option value="DE">Delaware</option>
+              <option value="DC">District of Columbia</option>
               <option value="FL">Florida</option>
               <option value="GA">Georgia</option>
+              <option value="KY">Kentucky</option>
+              <option value="LA">Louisiana</option>
+              <option value="MD">Maryland</option>
               <option value="MS">Mississippi</option>
+              <option value="MO">Missouri</option>
               <option value="NC">North Carolina</option>
+              <option value="OH">Ohio</option>
+              <option value="OK">Oklahoma</option>
+              <option value="PA">Pennsylvania</option>
               <option value="SC">South Carolina</option>
               <option value="TN">Tennessee</option>
               <option value="TX">Texas</option>
               <option value="VA">Virginia</option>
+              <option value="WV">West Virginia</option>
             </select>
           </div>
           <div>
@@ -355,6 +366,7 @@ export default function AdminBandsPage() {
           onEdit={handleEditBand}
           onDelete={handleDeleteBand}
           onSync={handleSyncBand}
+          onToggleFeatured={handleToggleFeatured}
           loading={loading}
         />
 

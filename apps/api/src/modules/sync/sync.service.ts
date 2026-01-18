@@ -22,41 +22,216 @@ export class SyncService {
    * Utility: Detect bands in video title/description using band list
    */
   private static BAND_LIST = [
-    { id: 'alabama-am-maroon-white', name: 'Marching Maroon and White', schoolName: 'Alabama A&M University', abbreviations: ['AAMU', 'Maroon & White'] },
-    { id: 'mighty-marching-hornets', name: 'Mighty Marching Hornets', schoolName: 'Alabama State University', abbreviations: ['ASU', 'Hornets'] },
-    { id: 'purple-marching-machine', name: 'Purple Marching Machine', schoolName: 'Miles College', abbreviations: ['Miles', 'PMM'] },
-    { id: 'marching-crimson-piper', name: 'Marching Crimson Piper', schoolName: 'Tuskegee University', abbreviations: ['Tuskegee', 'Crimson Piper'] },
-    { id: 'uapb-marching-musical-machine', name: 'Marching Musical Machine', schoolName: 'University of Arkansas at Pine Bluff', abbreviations: ['UAPB', 'Musical Machine'] },
-    { id: 'approaching-storm', name: 'Approaching Storm', schoolName: 'Delaware State University', abbreviations: ['DSU', 'Approaching Storm'] },
-    { id: 'showtime-marching-band', name: 'Showtime Marching Band', schoolName: 'Howard University', abbreviations: ['Howard', 'Showtime'] },
-    { id: 'marching-wildcats', name: 'Marching Wildcats', schoolName: 'Bethune-Cookman University', abbreviations: ['BCU', 'Wildcats'] },
-    { id: 'marching-100', name: 'Marching 100', schoolName: 'Florida A&M University', abbreviations: ['FAMU', 'Marching 100'] },
-    { id: 'albany-state-marching-rams', name: 'Marching Rams', schoolName: 'Albany State University', abbreviations: ['ASU', 'Rams'] },
-    { id: 'mighty-marching-panther-band', name: 'Mighty Marching Panther Band', schoolName: 'Clark Atlanta University', abbreviations: ['CAU', 'Panther Band'] },
-    { id: 'blue-machine', name: 'Blue Machine', schoolName: 'Fort Valley State University', abbreviations: ['FVSU', 'Blue Machine'] },
-    { id: 'house-of-funk', name: 'House of Funk', schoolName: 'Morehouse College', abbreviations: ['Morehouse', 'House of Funk'] },
-    { id: 'powerhouse-of-the-south', name: 'Powerhouse of the South', schoolName: 'Savannah State University', abbreviations: ['SSU', 'Powerhouse'] },
-    { id: 'world-famed', name: 'World Famed', schoolName: 'Grambling State University', abbreviations: ['GSU', 'World Famed'] },
-    { id: 'human-jukebox', name: 'Human Jukebox', schoolName: 'Southern University', abbreviations: ['SU', 'Human Jukebox'] },
-    { id: 'bowie-state-marching-bulldogs', name: 'Marching Bulldogs', schoolName: 'Bowie State University', abbreviations: ['BSU', 'Bulldogs'] },
-    { id: 'magnificent-marching-machine', name: 'Magnificent Marching Machine', schoolName: 'Morgan State University', abbreviations: ['MSU', 'MMM'] },
-    { id: 'sounds-of-dyn-o-mite', name: 'Sounds of Dyn-O-Mite', schoolName: 'Alcorn State University', abbreviations: ['ASU', 'Dyn-O-Mite'] },
-    { id: 'sonic-boom-of-the-south', name: 'Sonic Boom of the South', schoolName: 'Jackson State University', abbreviations: ['JSU', 'Sonic Boom'] },
-    { id: 'mean-green-marching-machine', name: 'Mean Green Marching Machine', schoolName: 'Mississippi Valley State University', abbreviations: ['MVSU', 'Mean Green'] },
-    { id: 'sound-of-class', name: 'Sound of Class', schoolName: 'Elizabeth City State University', abbreviations: ['ECSU', 'Sound of Class'] },
-    { id: 'blue-and-white-machine', name: 'Blue and White Machine', schoolName: 'Fayetteville State University', abbreviations: ['FSU', 'Blue & White'] },
-    { id: 'blue-and-gold-marching-machine', name: 'Blue and Gold Marching Machine', schoolName: 'North Carolina A&T State University', abbreviations: ['NCAT', 'BGMM'] },
-    { id: 'sound-machine', name: 'Sound Machine', schoolName: 'North Carolina Central University', abbreviations: ['NCCU', 'Sound Machine'] },
-    { id: 'red-sea-of-sound', name: 'Red Sea of Sound', schoolName: 'Winston-Salem State University', abbreviations: ['WSSU', 'Red Sea'] },
-    { id: 'marching-marauders', name: 'Marching Marauders', schoolName: 'Central State University', abbreviations: ['CSU', 'Marauders'] },
-    { id: 'marching-pride', name: 'Marching Pride', schoolName: 'Langston University', abbreviations: ['LU', 'Pride'] },
-    { id: '101-band', name: '101', schoolName: 'South Carolina State University', abbreviations: ['SCSU', '101'] },
-    { id: 'aristocrat-of-bands', name: 'Aristocrat of Bands', schoolName: 'Tennessee State University', abbreviations: ['TSU', 'Aristocrat'] },
-    { id: 'marching-storm', name: 'Marching Storm', schoolName: 'Prairie View A&M University', abbreviations: ['PVAMU', 'Storm'] },
-    { id: 'ocean-of-soul', name: 'Ocean of Soul', schoolName: 'Texas Southern University', abbreviations: ['TSU', 'Ocean of Soul'] },
-    { id: 'the-force', name: 'Force', schoolName: 'Hampton University', abbreviations: ['HU', 'Force'] },
-    { id: 'spartan-legion', name: 'Spartan Legion', schoolName: 'Norfolk State University', abbreviations: ['NSU', 'Spartan Legion'] },
-    { id: 'trojan-explosion', name: 'Trojan Explosion', schoolName: 'Virginia State University', abbreviations: ['VSU', 'Trojan Explosion'] },
+    {
+      id: 'alabama-am-maroon-white',
+      name: 'Marching Maroon and White',
+      schoolName: 'Alabama A&M University',
+      abbreviations: ['AAMU', 'Maroon & White'],
+    },
+    {
+      id: 'mighty-marching-hornets',
+      name: 'Mighty Marching Hornets',
+      schoolName: 'Alabama State University',
+      abbreviations: ['ASU', 'Hornets'],
+    },
+    {
+      id: 'purple-marching-machine',
+      name: 'Purple Marching Machine',
+      schoolName: 'Miles College',
+      abbreviations: ['Miles', 'PMM'],
+    },
+    {
+      id: 'marching-crimson-piper',
+      name: 'Marching Crimson Piper',
+      schoolName: 'Tuskegee University',
+      abbreviations: ['Tuskegee', 'Crimson Piper'],
+    },
+    {
+      id: 'uapb-marching-musical-machine',
+      name: 'Marching Musical Machine',
+      schoolName: 'University of Arkansas at Pine Bluff',
+      abbreviations: ['UAPB', 'Musical Machine'],
+    },
+    {
+      id: 'approaching-storm',
+      name: 'Approaching Storm',
+      schoolName: 'Delaware State University',
+      abbreviations: ['DSU', 'Approaching Storm'],
+    },
+    {
+      id: 'showtime-marching-band',
+      name: 'Showtime Marching Band',
+      schoolName: 'Howard University',
+      abbreviations: ['Howard', 'Showtime'],
+    },
+    {
+      id: 'marching-wildcats',
+      name: 'Marching Wildcats',
+      schoolName: 'Bethune-Cookman University',
+      abbreviations: ['BCU', 'Wildcats'],
+    },
+    {
+      id: 'marching-100',
+      name: 'Marching 100',
+      schoolName: 'Florida A&M University',
+      abbreviations: ['FAMU', 'Marching 100'],
+    },
+    {
+      id: 'albany-state-marching-rams',
+      name: 'Marching Rams',
+      schoolName: 'Albany State University',
+      abbreviations: ['ASU', 'Rams'],
+    },
+    {
+      id: 'mighty-marching-panther-band',
+      name: 'Mighty Marching Panther Band',
+      schoolName: 'Clark Atlanta University',
+      abbreviations: ['CAU', 'Panther Band'],
+    },
+    {
+      id: 'blue-machine',
+      name: 'Blue Machine',
+      schoolName: 'Fort Valley State University',
+      abbreviations: ['FVSU', 'Blue Machine'],
+    },
+    {
+      id: 'house-of-funk',
+      name: 'House of Funk',
+      schoolName: 'Morehouse College',
+      abbreviations: ['Morehouse', 'House of Funk'],
+    },
+    {
+      id: 'powerhouse-of-the-south',
+      name: 'Powerhouse of the South',
+      schoolName: 'Savannah State University',
+      abbreviations: ['SSU', 'Powerhouse'],
+    },
+    {
+      id: 'world-famed',
+      name: 'World Famed',
+      schoolName: 'Grambling State University',
+      abbreviations: ['GSU', 'World Famed'],
+    },
+    {
+      id: 'human-jukebox',
+      name: 'Human Jukebox',
+      schoolName: 'Southern University',
+      abbreviations: ['SU', 'Human Jukebox'],
+    },
+    {
+      id: 'bowie-state-marching-bulldogs',
+      name: 'Marching Bulldogs',
+      schoolName: 'Bowie State University',
+      abbreviations: ['BSU', 'Bulldogs'],
+    },
+    {
+      id: 'magnificent-marching-machine',
+      name: 'Magnificent Marching Machine',
+      schoolName: 'Morgan State University',
+      abbreviations: ['MSU', 'MMM'],
+    },
+    {
+      id: 'sounds-of-dyn-o-mite',
+      name: 'Sounds of Dyn-O-Mite',
+      schoolName: 'Alcorn State University',
+      abbreviations: ['ASU', 'Dyn-O-Mite'],
+    },
+    {
+      id: 'sonic-boom-of-the-south',
+      name: 'Sonic Boom of the South',
+      schoolName: 'Jackson State University',
+      abbreviations: ['JSU', 'Sonic Boom'],
+    },
+    {
+      id: 'mean-green-marching-machine',
+      name: 'Mean Green Marching Machine',
+      schoolName: 'Mississippi Valley State University',
+      abbreviations: ['MVSU', 'Mean Green'],
+    },
+    {
+      id: 'sound-of-class',
+      name: 'Sound of Class',
+      schoolName: 'Elizabeth City State University',
+      abbreviations: ['ECSU', 'Sound of Class'],
+    },
+    {
+      id: 'blue-and-white-machine',
+      name: 'Blue and White Machine',
+      schoolName: 'Fayetteville State University',
+      abbreviations: ['FSU', 'Blue & White'],
+    },
+    {
+      id: 'blue-and-gold-marching-machine',
+      name: 'Blue and Gold Marching Machine',
+      schoolName: 'North Carolina A&T State University',
+      abbreviations: ['NCAT', 'BGMM'],
+    },
+    {
+      id: 'sound-machine',
+      name: 'Sound Machine',
+      schoolName: 'North Carolina Central University',
+      abbreviations: ['NCCU', 'Sound Machine'],
+    },
+    {
+      id: 'red-sea-of-sound',
+      name: 'Red Sea of Sound',
+      schoolName: 'Winston-Salem State University',
+      abbreviations: ['WSSU', 'Red Sea'],
+    },
+    {
+      id: 'marching-marauders',
+      name: 'Marching Marauders',
+      schoolName: 'Central State University',
+      abbreviations: ['CSU', 'Marauders'],
+    },
+    {
+      id: 'marching-pride',
+      name: 'Marching Pride',
+      schoolName: 'Langston University',
+      abbreviations: ['LU', 'Pride'],
+    },
+    {
+      id: '101-band',
+      name: 'Marching 101',
+      schoolName: 'South Carolina State University',
+      abbreviations: ['SCSU', '101'],
+    },
+    {
+      id: 'aristocrat-of-bands',
+      name: 'Aristocrat of Bands',
+      schoolName: 'Tennessee State University',
+      abbreviations: ['TSU', 'Aristocrat'],
+    },
+    {
+      id: 'marching-storm',
+      name: 'Marching Storm',
+      schoolName: 'Prairie View A&M University',
+      abbreviations: ['PVAMU', 'Storm'],
+    },
+    {
+      id: 'ocean-of-soul',
+      name: 'Ocean of Soul',
+      schoolName: 'Texas Southern University',
+      abbreviations: ['TSU', 'Ocean of Soul'],
+    },
+    {
+      id: 'the-force',
+      name: 'Force',
+      schoolName: 'Hampton University',
+      abbreviations: ['HU', 'Force'],
+    },
+    {
+      id: 'spartan-legion',
+      name: 'Spartan Legion',
+      schoolName: 'Norfolk State University',
+      abbreviations: ['NSU', 'Spartan Legion'],
+    },
+    {
+      id: 'trojan-explosion',
+      name: 'Trojan Explosion',
+      schoolName: 'Virginia State University',
+      abbreviations: ['VSU', 'Trojan Explosion'],
+    },
   ];
 
   /**
@@ -104,100 +279,101 @@ export class SyncService {
   /**
    * Sync all videos from a content creator's channel
    */
-  async syncCreatorChannel(creatorId: string, options?: {
-  fullSync?: boolean;
-  publishedAfter?: Date;
-  publishedBefore?: Date;
-  maxVideos?: number;
-}) {
-  const creator = await this.prisma.contentCreator.findUnique({ 
-    where: { id: creatorId } 
-  });
-  
-  if (!creator) {
-    throw new Error(`Content creator not found: ${creatorId}`);
-  }
+  async syncCreatorChannel(
+    creatorId: string,
+    options?: {
+      fullSync?: boolean;
+      publishedAfter?: Date;
+      publishedBefore?: Date;
+      maxVideos?: number;
+    },
+  ) {
+    const creator = await this.prisma.contentCreator.findUnique({
+      where: { id: creatorId },
+    });
 
-  this.logger.log(`Syncing videos from creator: ${creator.name}`);
+    if (!creator) {
+      throw new Error(`Content creator not found: ${creatorId}`);
+    }
 
-  // Fetch videos from YouTube channel
-    const videos = await this. youtubeService.getChannelVideos(
+    this.logger.log(`Syncing videos from creator: ${creator.name}`);
+
+    // Fetch videos from YouTube channel
+    const videos = await this.youtubeService.getChannelVideos(
       creator.youtubeChannelId,
-      options?. maxVideos || 50
+      options?.maxVideos || 50,
     );
 
-  let added = 0;
-  let updated = 0;
-  const errors: any[] = [];
+    let added = 0;
+    let updated = 0;
+    const errors: any[] = [];
 
-  for (const video of videos) {
-    try {
-      // Detect which HBCU bands appear in this video
-      const detection = SyncService.detectBands(
-        `${video.title} ${video.description || ''}`
-      );
+    for (const video of videos) {
+      try {
+        // Detect which HBCU bands appear in this video
+        const detection = SyncService.detectBands(`${video.title} ${video.description || ''}`);
 
-      // Save video with creator attribution
-      const existing = await this.prisma.video.findUnique({
-        where: { youtubeId: video.youtubeId },
-      });
-
-      if (existing) {
-        // Update existing video
-        await this.prisma.video.update({
-          where: { id: existing.id },
-          data: {
-            viewCount: video.viewCount,
-            title: video.title,
-            description: video.description,
-            thumbnailUrl: video.thumbnailUrl,
-            creatorId: creatorId,
-          },
+        // Save video with creator attribution
+        const existing = await this.prisma.video.findUnique({
+          where: { youtubeId: video.youtubeId },
         });
-        updated++;
-      } else {
-        // Create new video
-        await this.prisma.video.create({
-          data: {
-            youtubeId: video.youtubeId,
-            title: video.title,
-            description: video.description || '',
-            thumbnailUrl: video.thumbnailUrl,
-            publishedAt: video.publishedAt,
-            duration: video.duration,
-            viewCount: video.viewCount,
-            creatorId: creatorId,
-            bandId: detection.bandId,
-            opponentBandId: detection.opponentBandId,
-          },
-        });
-        added++;
+
+        if (existing) {
+          // Update existing video
+          await this.prisma.video.update({
+            where: { id: existing.id },
+            data: {
+              viewCount: video.viewCount,
+              title: video.title,
+              description: video.description,
+              thumbnailUrl: video.thumbnailUrl,
+              creatorId: creatorId,
+            },
+          });
+          updated++;
+        } else {
+          // Create new video
+          await this.prisma.video.create({
+            data: {
+              youtubeId: video.youtubeId,
+              title: video.title,
+              description: video.description || '',
+              thumbnailUrl: video.thumbnailUrl,
+              publishedAt: video.publishedAt,
+              duration: video.duration,
+              viewCount: video.viewCount,
+              creatorId: creatorId,
+              bandId: detection.bandId,
+              opponentBandId: detection.opponentBandId,
+            },
+          });
+          added++;
+        }
+      } catch (err: any) {
+        this.logger.error(`Error processing video ${video.youtubeId}: ${err.message}`);
+        errors.push({ videoId: video.youtubeId, error: err.message });
       }
-    } catch (err: any) {
-      this.logger.error(`Error processing video ${video.youtubeId}: ${err.message}`);
-      errors.push({ videoId: video.youtubeId, error: err.message });
     }
+
+    // Update creator stats
+    await this.prisma.contentCreator.update({
+      where: { id: creatorId },
+      data: {
+        lastSyncedAt: new Date(),
+        videosInOurDb: { increment: added },
+      },
+    });
+
+    return {
+      creatorId,
+      creatorName: creator.name,
+      videosProcessed: videos.length,
+      added,
+      updated,
+      errors,
+      message: `Synced ${added} new and ${updated} updated videos from ${creator.name}`,
+    };
   }
-
-  // Update creator stats
-  await this.prisma.contentCreator.update({
-    where: { id: creatorId },
-    data: {
-      lastSyncedAt: new Date(),
-      videosInOurDb: { increment: added },
-    },
-  });
-
-  return {
-    creatorId,
-    creatorName: creator.name,
-    videosProcessed: videos.length,
-    added,
-    updated,
-    errors,
-    message: `Synced ${added} new and ${updated} updated videos from ${creator.name}`,
-  };
-}
 
   /**
    * Sync all featured/verified creators (scheduled job)
@@ -220,11 +396,26 @@ export class SyncService {
   /**
    * Save video with creator attribution
    */
-  async upsertVideoWithCreator(videoData: any, bandId: string | null, creatorId: string, opponentBandId?: string | null) {
-    return { message: 'Upsert video with creator not yet implemented.', videoData, bandId, creatorId, opponentBandId };
+  async upsertVideoWithCreator(
+    videoData: any,
+    bandId: string | null,
+    creatorId: string,
+    opponentBandId?: string | null,
+  ) {
+    return {
+      message: 'Upsert video with creator not yet implemented.',
+      videoData,
+      bandId,
+      creatorId,
+      opponentBandId,
+    };
   }
 
-  async triggerBandSync(bandId: string, syncType: 'channel' | 'playlist' | 'search', forceSync = false) {
+  async triggerBandSync(
+    bandId: string,
+    syncType: 'channel' | 'playlist' | 'search',
+    forceSync = false,
+  ) {
     const jobSyncType = forceSync ? 'full' : 'incremental';
     const job = await this.queueService.addSyncBandJob({
       bandId,
@@ -261,7 +452,13 @@ export class SyncService {
   }
 
   async getSyncJobs(filterDto: SyncJobFilterDto): Promise<SyncJobListResponseDto> {
-    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc', ...filters } = filterDto;
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      ...filters
+    } = filterDto;
     const skip = (page - 1) * limit;
 
     const where: Prisma.SyncJobWhereInput = {};
@@ -304,7 +501,7 @@ export class SyncService {
       },
     });
 
-    const data: SyncJobDetailDto[] = syncJobs.map(job => {
+    const data: SyncJobDetailDto[] = syncJobs.map((job) => {
       const dto: SyncJobDetailDto = {
         id: job.id,
         bandId: job.bandId || undefined,
@@ -422,7 +619,7 @@ export class SyncService {
 
   async getQueueStatus(): Promise<QueueStatusDto[]> {
     const stats = await this.queueService.getAllQueues();
-    return stats.map(stat => ({
+    return stats.map((stat) => ({
       name: stat.name,
       waiting: stat.waiting,
       active: stat.active,

@@ -255,8 +255,9 @@ export default function FeaturedBandsCarousel() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-lg text-gray-900 truncate">{band.name}</h3>
-                        <p className="text-sm text-gray-600 truncate">{band.school}</p>
+                        <h3 className="font-bold text-lg text-gray-900 line-clamp-2">
+                          {band.school} - {band.name}
+                        </h3>
                       </div>
                     </div>
 

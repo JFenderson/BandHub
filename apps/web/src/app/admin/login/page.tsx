@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import type { LoginCredentials } from '@/types/auth';
 
@@ -249,9 +250,15 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <p className="text-xs text-gray-500">
             Protected access for administrators only
+          </p>
+          <p className="text-sm text-gray-600">
+            Not an admin?{' '}
+            <Link href="/login" className="font-medium text-primary-600 hover:text-primary-500">
+              Back to member login
+            </Link>
           </p>
         </div>
       </div>

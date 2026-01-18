@@ -10,6 +10,11 @@
       "aliases": ["NOASB", "New Orleans All-Star", "NOLA All-Star"],
       "region": "New Orleans, LA"
     },
+        {
+      "name": "Mississippi All-Star Alumni Band",
+      "aliases": ["MAAB", "Mississippi All-Star Alumni", "Mississippi All-Star"],
+      "region": "Mississippi"
+    },
     {
       "name": "Dallas Legion All-Star Band",
       "aliases": ["DLASB", "The Legion", "Dallas Legion", "Dallas All-Star"],

@@ -127,10 +127,7 @@ export default function BandTable({
               />
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Band
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              School
+              School - Band
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Location
@@ -180,15 +177,14 @@ export default function BandTable({
                       className="mr-3"
                     />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{band.name}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {band.school || band.schoolName} - {band.name}
+                      </div>
                       {band.nickname && (
                         <div className="text-sm text-gray-500">{band.nickname}</div>
                       )}
                     </div>
                   </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{band.school}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
@@ -331,7 +327,7 @@ export default function BandTable({
               </tr>
               {expandedRows.has(band.id) && (
                 <tr key={`${band.id}-details`}>
-                  <td colSpan={10} className="px-6 py-4 bg-gray-50">
+                  <td colSpan={9} className="px-6 py-4 bg-gray-50">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="font-medium text-gray-700">Description:</span>

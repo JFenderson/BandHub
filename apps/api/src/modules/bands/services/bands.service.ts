@@ -246,14 +246,19 @@ export class BandsService {
     return this.cacheStrategy.wrap(
       cacheKey,
       async () => {
-        // Get bands where isFeatured = true
+        // Query bands where isFeatured = true directly from database
         const result = await this.bandsRepository.findMany({
           page: 1,
           limit: 20,
+          isFeatured: true,
         });
-        
-        // Filter on data array, not on result object
-        return result.data.filter((band: any) => band.isFeatured);
+
+        // Sort by featuredOrder and return in expected format
+        const sortedBands = result.data.sort((a: any, b: any) =>
+          (a.featuredOrder || 999) - (b.featuredOrder || 999)
+        );
+
+        return { bands: sortedBands };
       },
       CACHE_TTL.BAND_LIST,
     );
@@ -269,12 +274,13 @@ export class BandsService {
     return this.cacheStrategy.wrap(
       cacheKey,
       async () => {
-        const featuredBands = await this.getFeaturedBands();
-        
+        const featuredResult = await this.getFeaturedBands();
+        const featuredBands = featuredResult.bands || [];
+
         return {
           totalFeatured: featuredBands.length,
           totalVideos: featuredBands.reduce((sum, band: any) => sum + (band._count?.videos || 0), 0),
-          averageVideosPerBand: featuredBands.length > 0 
+          averageVideosPerBand: featuredBands.length > 0
             ? Math.round(featuredBands.reduce((sum, band: any) => sum + (band._count?.videos || 0), 0) / featuredBands.length)
             : 0,
         };

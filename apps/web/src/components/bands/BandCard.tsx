@@ -41,10 +41,9 @@ export function BandCard({ band }: BandCardProps) {
 
       {/* Band Info */}
       <div className="p-4">
-        <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1">
-          {band.name}
+        <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2">
+          {band.schoolName || band.school} - {band.name}
         </h3>
-        <p className="text-sm text-gray-600 truncate">{band.schoolName}</p>
         <p className="text-sm text-gray-600 mt-1 line-clamp-1">
           {locationText}
         </p>
