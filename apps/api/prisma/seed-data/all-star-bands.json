@@ -1,0 +1,241 @@
+[
+  {
+    "name": "Georgia All-Star Mass Band",
+    "slug": "georgia-all-star-mass-band",
+    "aliases": [
+      "AAMB",
+      "Georgia Mass Band",
+      "GMB",
+      "Atlanta All-Star",
+      "Atlanta Mass Band",
+      "Georgia All-Star",
+      "GA Mass Band"
+    ],
+    "city": "Atlanta",
+    "state": "GA",
+    "region": "Atlanta, GA",
+    "bandType": "ALL_STAR",
+    "description": "The Georgia All-Star Mass Band brings together talented musicians from HBCUs across Georgia and the Southeast for spectacular performances.",
+    "searchKeywords": [
+      "AAMB",
+      "Georgia Mass Band",
+      "Atlanta All-Star",
+      "Georgia All-Star",
+      "Atlanta Mass Band"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "New Orleans All-Star Band",
+    "slug": "new-orleans-all-star-band",
+    "aliases": [
+      "NOASB",
+      "New Orleans All-Star",
+      "NOLA All-Star"
+    ],
+    "city": "New Orleans",
+    "state": "LA",
+    "region": "New Orleans, LA",
+    "bandType": "ALL_STAR",
+    "description": "The New Orleans All-Star Band showcases the rich musical heritage of NOLA with alumni from Louisiana's premier HBCU bands.",
+    "searchKeywords": [
+      "NOASB",
+      "New Orleans",
+      "NOLA All-Star"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Mississippi All-Star Alumni Band",
+    "slug": "mississippi-all-star-alumni-band",
+    "aliases": [
+      "MAAB",
+      "Mississippi All-Star Alumni",
+      "Mississippi All-Star"
+    ],
+    "city": null,
+    "state": "MS",
+    "region": "Mississippi",
+    "bandType": "ALL_STAR",
+    "description": "The Mississippi All-Star Alumni Band unites talented alumni from Mississippi's rich HBCU band tradition.",
+    "searchKeywords": [
+      "MAAB",
+      "Mississippi All-Star",
+      "MS All-Star"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Dallas Legion All-Star Band",
+    "slug": "dallas-legion-all-star-band",
+    "aliases": [
+      "DLASB",
+      "The Legion",
+      "Dallas Legion",
+      "Dallas All-Star"
+    ],
+    "city": "Dallas",
+    "state": "TX",
+    "region": "Dallas, TX",
+    "bandType": "ALL_STAR",
+    "description": "The Dallas Legion All-Star Band represents the passion and precision of Texas HBCU band culture.",
+    "searchKeywords": [
+      "DLASB",
+      "Dallas Legion",
+      "The Legion"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Broward All-Star Band",
+    "slug": "broward-all-star-band",
+    "aliases": [
+      "BAB",
+      "Broward All-Star"
+    ],
+    "city": "Fort Lauderdale",
+    "state": "FL",
+    "region": "Broward County, FL",
+    "bandType": "ALL_STAR",
+    "description": "The Broward All-Star Band brings together the best talent from South Florida's HBCU band programs.",
+    "searchKeywords": [
+      "BAB",
+      "Broward All-Star",
+      "South Florida"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Austin All-Star Band",
+    "slug": "austin-all-star-band",
+    "aliases": [
+      "Austin All-Star"
+    ],
+    "city": "Austin",
+    "state": "TX",
+    "region": "Austin, TX",
+    "bandType": "ALL_STAR",
+    "description": "The Austin All-Star Band showcases HBCU band excellence in the heart of Texas.",
+    "searchKeywords": [
+      "Austin All-Star",
+      "Austin Band"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Alabama Mass Band",
+    "slug": "alabama-mass-band",
+    "aliases": [
+      "AMB",
+      "Alabama All-Star",
+      "Alabama Mass Band"
+    ],
+    "city": "Montgomery",
+    "state": "AL",
+    "region": "Alabama",
+    "bandType": "ALL_STAR",
+    "description": "The Alabama Mass Band unites musicians from Alabama's proud HBCU band tradition.",
+    "searchKeywords": [
+      "AMB",
+      "Alabama Mass Band",
+      "Alabama All-Star"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Magic City All-Star Band",
+    "slug": "magic-city-all-star-band",
+    "aliases": [
+      "Magic City All-Star",
+      "MCA"
+    ],
+    "city": "Birmingham",
+    "state": "AL",
+    "region": "Birmingham, AL",
+    "bandType": "ALL_STAR",
+    "description": "The Magic City All-Star Band represents Birmingham's vibrant HBCU band community.",
+    "searchKeywords": [
+      "Magic City",
+      "MCA",
+      "Birmingham"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Memphis Mass Band",
+    "slug": "memphis-mass-band",
+    "aliases": [
+      "MMB",
+      "Memphis All-Star",
+      "Memphis Mass Band"
+    ],
+    "city": "Memphis",
+    "state": "TN",
+    "region": "Memphis, TN",
+    "bandType": "ALL_STAR",
+    "description": "The Memphis Mass Band brings together the soulful sounds of Memphis HBCU bands.",
+    "searchKeywords": [
+      "MMB",
+      "Memphis Mass Band",
+      "Memphis All-Star"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Regulators",
+    "slug": "regulators",
+    "aliases": [
+      "The Regulators",
+      "Regulators"
+    ],
+    "city": null,
+    "state": "Louisiana",
+    "region": "Various",
+    "bandType": "ALL_STAR",
+    "description": "The Regulators are an elite all-star ensemble known for high-energy performances.",
+    "searchKeywords": [
+      "Regulators",
+      "The Regulators"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "North Carolina Mass Band",
+    "slug": "north-carolina-mass-band",
+    "aliases": [
+      "NCMB",
+      "NC Mass Band",
+      "North Carolina All-Star",
+      "NC All-Star",
+      "North Carolina Mass Band"
+    ],
+    "city": null,
+    "state": "NC",
+    "region": "North Carolina",
+    "bandType": "ALL_STAR",
+    "description": "The North Carolina Mass Band showcases the talent of NC's HBCU band programs.",
+    "searchKeywords": [
+      "NCMB",
+      "NC Mass Band",
+      "North Carolina"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "LLI",
+    "slug": "lli",
+    "aliases": [
+      "LLI Band"
+    ],
+    "city": null,
+    "state": "Louisiana",
+    "region": "Various",
+    "bandType": "ALL_STAR",
+    "description": "LLI is a premier all-star band bringing together exceptional HBCU band talent.",
+    "searchKeywords": [
+      "LLI",
+      "LLI Band"
+    ],
+    "isActive": true
+  }
+]

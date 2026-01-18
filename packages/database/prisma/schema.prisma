@@ -193,6 +193,7 @@ model Band {
   state              String
   bandType           BandType            @default(HBCU) @map("band_type")
   conference         String?
+  nickname           String?             @map("nickname")
   logoUrl            String?             @map("logo_url")
   bannerUrl          String?             @map("banner_url")
   description        String?
@@ -334,17 +335,19 @@ model Event {
   id          String       @id @default(cuid())
   name        String
   slug        String       @unique
+  aliases     String[]     @default([]) 
   description String?
   eventType   EventType    @map("event_type")
-  eventDate   DateTime     @map("event_date")
+  eventDate   DateTime?     @map("event_date")
   endDate     DateTime?    @map("end_date")
   location    String?
   venue       String?
   city        String?
   state       String?
-  year        Int
-  isRecurring Boolean      @default(false) @map("is_recurring")
+  year        Int?
+  isRecurring Boolean      @default(true) @map("is_recurring")
   isActive    Boolean      @default(true) @map("is_active")
+  tags        String[]     @default([])  // Flexible tags like ["classic", "rivalry", "parade"]
   imageUrl    String?      @map("image_url")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
@@ -1062,16 +1065,12 @@ enum BandType {
 }
 
 enum EventType {
-  BAYOU_CLASSIC
-  SWAC_CHAMPIONSHIP
-  HOMECOMING
-  BATTLE_OF_THE_BANDS
-  FOOTBALL_GAME
-  PARADE
-  CONCERT
-  COMPETITION
-  EXHIBITION
-  OTHER
+  BATTLE_OF_THE_BANDS    // Pure band competition, no football
+  FOOTBALL_GAME          // Football game with bands (classics, rivalries, regular games)
+  PARADE                 // Parade performance
+  CONCERT                // Concert performance
+  SHOWCASE               // Exhibition/clinic/workshop
+  CONFERENCE_CHAMPIONSHIP // Conference championship
 }
 
 enum OAuthProvider {

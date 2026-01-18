@@ -1,0 +1,334 @@
+[
+  {
+    "name": "Honda Battle of the Bands",
+    "slug": "honda-battle-of-the-bands",
+    "aliases": [
+      "HBOB",
+      "Honda BOTB",
+      "Honda Battle"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["national", "showcase", "hbcu", "competition"],
+    "description": "The Honda Battle of the Bands is one of the premier HBCU band showcases, featuring the nation's top eight HBCU marching bands selected through an annual invitation process.",
+    "location": "Atlanta, GA",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "National Battle of the Bands",
+    "slug": "national-battle-of-the-bands",
+    "aliases": [
+      "NBOTB",
+      "National BOTB"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["national", "showcase", "hbcu"],
+    "description": "The National Battle of the Bands brings together HBCU bands for an exciting showcase of talent and tradition.",
+    "location": "Houston, TX",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Band of the Year",
+    "slug": "band-of-the-year",
+    "aliases": [
+      "BOTY",
+      "Band of the Yr",
+      "Band of the Year"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["competition", "hbcu"],
+    "description": "Band of the Year is a competitive event recognizing excellence in HBCU band performance.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Mayhem in the Mecca",
+    "slug": "mayhem-in-the-mecca",
+    "aliases": [
+      "Mayhem Mecca"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["all-star", "regional"],
+    "description": "Mayhem in the Mecca showcases all-star bands in an electrifying event.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Midsouth Massacre",
+    "slug": "midsouth-massacre",
+    "aliases": [
+      "Mid South Massacre"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["all-star", "regional"],
+    "description": "The Midsouth Massacre features intense all-star band performances in the Mid-South region.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Gulf Coast Takeover",
+    "slug": "gulf-coast-takeover",
+    "aliases": [
+      "GCT"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["all-star", "regional"],
+    "description": "Gulf Coast Takeover brings all-star band energy to the Gulf Coast.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Battle for the Culture",
+    "slug": "battle-for-the-culture",
+    "aliases": [
+      "BFTC"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["all-star", "hbcu"],
+    "description": "Battle for the Culture celebrates HBCU band culture through all-star performances.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Battle of the Gulf Coast",
+    "slug": "battle-of-the-gulf-coast",
+    "aliases": [
+      "BOTGC",
+      "Gulf Coast BOTB"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["all-star", "regional", "competition"],
+    "description": "Battle of the Gulf Coast features competitive all-star band performances.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Columbus Battle Of The Bands",
+    "slug": "columbus-battle-of-the-bands",
+    "aliases": [
+      "Columbus BOTB",
+      "Columbus Battle of the Bands"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["all-star", "regional", "hbcu"],
+    "description": "Columbus Battle of the Bands showcases HBCU band talent in Columbus.",
+    "location": "Columbus, GA",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Richmond Co BOTB",
+    "slug": "richmond-co-botb",
+    "aliases": [
+      "Richmond County Battle of the Bands",
+      "Richmond Co Battle of the Bands"
+    ],
+    "eventType": "BATTLE_OF_THE_BANDS",
+    "tags": ["competition", "regional"],
+    "description": "Richmond County Battle of the Bands features competitive band performances.",
+    "location": "Augusta, GA",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "MEAC SWAC Challenge",
+    "slug": "meac-swac-challenge",
+    "aliases": [
+      "MEAC SWAC",
+      "MEAC-SWAC Challenge",
+      "MEAC/SWAC"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["national", "showcase", "hbcu"],
+    "description": "The MEAC/SWAC Challenge brings together teams and bands from two historic HBCU conferences.",
+    "location": "Various",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Bayou Classic",
+    "slug": "bayou-classic",
+    "aliases": [
+      "BC",
+      "Bayou"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "rivalry", "pre-game-battle", "hbcu"],
+    "description": "The Bayou Classic is the annual rivalry between Grambling State and Southern University, featuring one of the most anticipated halftime shows of the year.",
+    "location": "New Orleans, LA",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Florida Classic",
+    "slug": "florida-classic",
+    "aliases": [
+      "FC",
+      "Florida"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "rivalry", "parade", "pre-game-battle", "hbcu"],
+    "description": "The Florida Classic is the annual rivalry game between Florida A&M and Bethune-Cookman, known for spectacular band performances.",
+    "location": "Orlando, FL",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Southern Heritage Classic",
+    "slug": "southern-heritage-classic",
+    "aliases": [
+      "SHC",
+      "Southern Heritage"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "rivalry", "hbcu"],
+    "description": "The Southern Heritage Classic is an annual football game and band showcase held in Memphis, Tennessee.",
+    "location": "Memphis, TN",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "State Fair Classic",
+    "slug": "state-fair-classic",
+    "aliases": [
+      "SFC",
+      "State Fair"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "rivalry", "hbcu"],
+    "description": "The State Fair Classic features the annual rivalry game and halftime battle.",
+    "location": "Dallas, TX",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Turkey Day Classic",
+    "slug": "turkey-day-classic",
+    "aliases": [
+      "TDC",
+      "Turkey Day"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "rivalry", "hbcu"],
+    "description": "The Turkey Day Classic is a Thanksgiving tradition featuring HBCU football and marching bands.",
+    "location": "Montgomery, AL",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Atlanta Football Classic",
+    "slug": "atlanta-football-classic",
+    "aliases": [
+      "AFC",
+      "Atlanta Classic"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "hbcu"],
+    "description": "The Atlanta Football Classic brings HBCU football and band culture to Atlanta.",
+    "location": "Atlanta, GA",
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Red River Classic",
+    "slug": "red-river-classic",
+    "aliases": [
+      "RRC",
+      "Red River"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "hbcu"],
+    "description": "The Red River Classic showcases HBCU bands and football along the Red River region.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Crown Classic",
+    "slug": "crown-classic",
+    "aliases": [
+      "Crown Classic"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "hbcu"],
+    "description": "The Crown Classic features HBCU bands competing for supremacy.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Comparative Study",
+    "slug": "comparative-study",
+    "aliases": [
+      "Comparative Study"
+    ],
+    "eventType": "SHOWCASE",
+    "tags": ["hbcu", "educational"],
+    "description": "Comparative Study events analyze and celebrate HBCU band performances.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Port City Classic",
+    "slug": "port-city-classic",
+    "aliases": [
+      "Port City",
+      "PCC"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "hbcu"],
+    "description": "The Port City Classic brings HBCU band tradition to the coast.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Gulfcoast Challenge",
+    "slug": "gulfcoast-challenge",
+    "aliases": [
+      "Gulfcoast Challenge"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["competition", "hbcu"],
+    "description": "The Gulfcoast Challenge brings competitive spirit to Gulf Coast bands.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Soul Bowl",
+    "slug": "soul-bowl",
+    "aliases": [
+      "Soul Bowl",
+      "Soul Bowl Classic"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "hbcu"],
+    "description": "The Soul Bowl Classic celebrates HBCU football and band culture.",
+    "location": null,
+    "isRecurring": true,
+    "isActive": true
+  },
+  {
+    "name": "Black College Football Hall of Fame Classic",
+    "slug": "black-college-football-hall-of-fame-classic",
+    "aliases": [
+      "BCFHOF Classic",
+      "Black College Football Hall of Fame"
+    ],
+    "eventType": "FOOTBALL_GAME",
+    "tags": ["classic", "national", "hbcu"],
+    "description": "The Black College Football Hall of Fame Classic honors HBCU football and band excellence.",
+    "location": "Canton, OH",
+    "isRecurring": true,
+    "isActive": true
+  }
+]
