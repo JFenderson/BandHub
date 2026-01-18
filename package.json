@@ -35,7 +35,15 @@
     "build:packages": "npm run build:shared && cd packages/database && npm run build && cd ../cache && npm run build",
     "prisma:generate": "cd packages/database && npm run prisma:generate",
     "dev": "npm run build:packages && npm run prisma:generate && turbo run dev",
-    "build": "npm run build:packages && npm run prisma:generate && turbo run build"
+    "build": "npm run build:packages && npm run prisma:generate && turbo run build",
+    "dev:doppler": "doppler run -- turbo dev",
+    "dev:api:doppler": "doppler run -- npm run dev:api",
+    "dev:web": "turbo dev --filter=web",
+    "dev:worker:doppler": "doppler run -- npm run dev:worker",
+    "doppler:setup": "doppler setup --project bandhub --config dev",
+    "doppler:secrets": "doppler secrets",
+    "doppler:secrets:download": "doppler secrets download --no-file --format env",
+    "rotate:jwt": "./scripts/rotate-secrets.sh"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

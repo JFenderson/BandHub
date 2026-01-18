@@ -9,9 +9,12 @@ This guide will help you set up Doppler for managing environment variables and s
 - [Prerequisites](#prerequisites)
 - [Initial Setup](#initial-setup)
 - [Local Development Setup](#local-development-setup)
+- [Team Onboarding](#team-onboarding)
 - [CI/CD Integration](#cicd-integration)
 - [Production Deployment](#production-deployment)
+- [Production Deployment Checklist](#production-deployment-checklist)
 - [Fallback Mechanism](#fallback-mechanism)
+- [Verification & Testing](#verification--testing)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 
@@ -42,6 +45,37 @@ Doppler is a universal secrets management platform that helps you manage environ
 - 📦 **Multiple environments** - Dev, staging, production all configured
 
 ## Prerequisites
+
+**Before you start, ensure you have:**
+
+- [ ] Doppler account (sign up at [https://doppler.com](https://doppler.com))
+- [ ] Admin access to create projects (or ask your team lead for an invitation)
+- [ ] Docker installed (if using Docker-based development)
+- [ ] Node.js 18+ installed
+
+**Quick Start Overview:**
+
+```
+┌─────────────────┐
+│  Doppler Cloud  │  ← Centralized secrets storage
+└────────┬────────┘
+         │
+    ┌────▼────┐
+    │ API Key │  ← Authentication token
+    └────┬────┘
+         │
+    ┌────▼────────────────┐
+    │  Doppler CLI        │  ← Your local machine
+    │  doppler run -- ... │
+    └────┬────────────────┘
+         │
+    ┌────▼──────────┐
+    │ Your App      │  ← Secrets injected as env vars
+    │ (API/Worker)  │
+    └───────────────┘
+```
+
+**Estimated Setup Time:** 5 minutes for first-time setup
 
 1. **Doppler Account** - Sign up at [https://doppler.com](https://doppler.com)
 2. **Doppler CLI** - Install the command-line tool
@@ -181,8 +215,8 @@ cd /path/to/BandHub
 
 # Setup Doppler (one-time)
 doppler setup
-# Select project: hbcu-band-hub
-# Select config: dev
+# Select project: bandhub (auto-selected from doppler.yaml)
+# Select config: dev (auto-selected from doppler.yaml)
 
 # Run your development server with Doppler
 doppler run -- npm run dev:api
@@ -191,8 +225,85 @@ doppler run -- npm run dev:api
 doppler run -- npm run dev:worker
 
 # Or run the entire stack
-doppler run -- docker-compose up
+doppler run -- docker compose up
 ```
+
+**Verify Doppler is working:**
+```bash
+# Check that secrets are being injected
+doppler run -- env | grep DATABASE_URL
+doppler run -- env | grep JWT_SECRET
+
+# Should show values from Doppler, not from .env files
+```
+
+### Troubleshooting Common CLI Issues
+
+#### Issue: Command hangs or times out
+**Cause:** Network connectivity issues or firewall blocking Doppler API  
+**Solution:**
+```bash
+# Test connectivity
+curl -I https://api.doppler.com
+
+# If blocked, check your firewall/VPN settings
+# Or use offline mode (see below)
+```
+
+#### Issue: "Project not found" error
+**Cause:** Not authenticated or wrong project name  
+**Solution:**
+```bash
+# Re-login
+doppler login
+
+# Verify authentication
+doppler whoami
+
+# Check available projects
+doppler projects
+
+# Setup with correct project
+doppler setup --project bandhub --config dev
+```
+
+#### Issue: Secrets not updating
+**Cause:** Doppler caching secrets locally  
+**Solution:**
+```bash
+# Force refresh
+doppler secrets download --no-file --format env
+
+# Clear local cache
+rm -rf ~/.doppler/cache
+
+# Re-run your command
+doppler run -- npm run dev:api
+```
+
+### Offline Development Workflow
+
+When you don't have internet access or Doppler is down:
+
+1. **Download secrets for offline use:**
+   ```bash
+   # Download to .env.local (one-time before going offline)
+   doppler secrets download --no-file --format env > .env.local
+   
+   # ⚠️ Never commit .env.local!
+   ```
+
+2. **Use .env.local as fallback:**
+   ```bash
+   # App will automatically use .env.local when Doppler is unavailable
+   npm run dev:api
+   ```
+
+3. **Or use doppler.yaml for offline mode:**
+   ```bash
+   # Doppler CLI can use cached secrets
+   doppler run --fallback-readonly -- npm run dev:api
+   ```
 
 ### Option 2: Using .env Files (Fallback)
 
@@ -210,6 +321,73 @@ npm run dev:api
 ```
 
 **Note:** The application will automatically fall back to reading `.env` files if Doppler is not configured.
+
+## Team Onboarding
+
+### For New Developers
+
+1. **Get Doppler Access:**
+   - Ask team lead to invite you to the Doppler organization
+   - You'll receive an email invitation
+   - Create your Doppler account
+
+2. **Install Doppler CLI:**
+   ```bash
+   # macOS
+   brew install dopplerhq/tap/doppler
+   
+   # Windows
+   scoop bucket add doppler https://github.com/DopplerHQ/scoop-doppler.git
+   scoop install doppler
+   
+   # Linux
+   sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+   curl -sLf --retry 3 --tlsv1.2 --proto "=https" 'https://packages.doppler.com/public/cli/gpg.DE2A7741A397C129.key' | sudo apt-key add -
+   echo "deb https://packages.doppler.com/public/cli/deb/debian any-version main" | sudo tee /etc/apt/sources.list.d/doppler-cli.list
+   sudo apt-get update && sudo apt-get install doppler
+   ```
+
+3. **Login:**
+   ```bash
+   doppler login
+   ```
+
+4. **Setup Project:**
+   ```bash
+   cd /path/to/BandHub
+   doppler setup
+   # Project will auto-select to 'bandhub' from doppler.yaml
+   # Choose config: dev
+   ```
+
+5. **Start Development:**
+   ```bash
+   # All secrets are automatically injected
+   doppler run -- npm run dev
+   
+   # Or for Docker
+   doppler run -- docker compose up
+   ```
+
+### For Developers Without Doppler Access
+
+You can still develop locally using `.env` files:
+
+1. **Copy example environment:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Request secrets from team lead:**
+   - Ask for development values for: `DATABASE_URL`, `JWT_SECRET`, `YOUTUBE_API_KEY`
+   - Never share production secrets via Slack/email
+
+3. **Run normally:**
+   ```bash
+   npm run dev
+   # or
+   docker compose up
+   ```
 
 ### Sharing Doppler Access with Team
 
@@ -235,46 +413,107 @@ doppler run -- npm run dev:api
 
 ### GitHub Actions Integration
 
-1. **Create a Service Token in Doppler:**
+1. **Create Service Tokens in Doppler:**
    - Go to your project in Doppler
    - Navigate to Access → Service Tokens
-   - Click "Generate"
-   - Name it "GitHub Actions - Production"
-   - Select config: `prd`
-   - Copy the token (it won't be shown again!)
+   - Create tokens for each environment:
+     - "GitHub Actions - Staging" → Select config: `stg`
+     - "GitHub Actions - Production" → Select config: `prd`
+   - Copy each token (they won't be shown again!)
 
-2. **Add Token to GitHub Secrets:**
+2. **Add Tokens to GitHub Secrets:**
    - Go to your GitHub repository
    - Settings → Secrets and variables → Actions
-   - Click "New repository secret"
-   - Name: `DOPPLER_TOKEN_PRD`
-   - Value: Paste the service token
-   - Click "Add secret"
+   - Add repository secrets:
+     - Name: `DOPPLER_TOKEN_STG` → Value: staging token
+     - Name: `DOPPLER_TOKEN_PRD` → Value: production token
 
-3. **Use in GitHub Actions Workflow:**
+3. **Use in GitHub Actions Workflows:**
 
+**For PR builds and tests:**
 ```yaml
-# .github/workflows/deploy.yml
+# .github/workflows/test.yml
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      # Use test environment variables (no Doppler needed)
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
+          JWT_SECRET: test-secret-for-ci
+          NODE_ENV: test
+        run: npm test
+```
+
+**For staging deployments:**
+```yaml
+# .github/workflows/deploy-staging.yml
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop, staging]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+      
+      - name: Deploy to Staging
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_STG }}
+        run: |
+          doppler run -- ./scripts/deploy.sh staging
+```
+
+**For production deployments:**
+```yaml
+# .github/workflows/deploy-production.yml
 name: Deploy to Production
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Install Doppler CLI
         uses: dopplerhq/cli-action@v3
       
-      - name: Build and Deploy
+      - name: Verify Doppler Connection
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
         run: |
-          doppler run -- npm run build
+          doppler secrets --config prd --project bandhub --silent
+      
+      - name: Deploy to Production
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
           doppler run -- ./scripts/deploy.sh production
 ```
 
@@ -351,6 +590,23 @@ spec:
           mountPath: /secrets
 ```
 
+## Production Deployment Checklist
+
+Before deploying to production with Doppler:
+
+- [ ] Doppler service token for `prd` config created
+- [ ] Token added to GitHub Secrets as `DOPPLER_TOKEN_PRD`
+- [ ] All required secrets populated in Doppler `prd` config
+- [ ] Secrets validated in staging environment first
+- [ ] Team has documented rollback procedure
+- [ ] Emergency contact list updated
+- [ ] Monitoring/alerting configured for secret-related errors
+- [ ] Database connection string tested
+- [ ] JWT secrets are different from staging/dev
+- [ ] Redis password configured (if applicable)
+- [ ] All API keys have appropriate rate limits
+- [ ] Backup `.env` file stored securely (encrypted) for emergency
+
 ## Fallback Mechanism
 
 The application is designed to work with or without Doppler. The secrets manager service automatically:
@@ -375,6 +631,87 @@ async loadSecrets(): Promise<Record<string, string>> {
   // Fall back to .env files
   return this.loadFromEnvFiles();
 }
+```
+
+## Verification & Testing
+
+### Step 1: Verify Doppler Configuration
+
+```bash
+# Check Doppler is installed and logged in
+doppler --version
+doppler whoami
+
+# Verify project setup
+doppler setup --get
+
+# List available secrets (should not show values)
+doppler secrets --config dev
+```
+
+### Step 2: Test Local Development
+
+```bash
+# Test API with Doppler
+doppler run -- npm run dev:api
+
+# Check if secrets are loaded
+doppler run -- env | grep DATABASE_URL
+doppler run -- env | grep JWT_SECRET
+```
+
+### Step 3: Test Docker Integration
+
+```bash
+# Test development docker-compose
+doppler run -- docker compose up -d
+
+# Check API health
+curl http://localhost:3001/api/health
+
+# View logs
+docker compose logs api
+```
+
+### Step 4: Test Secret Rotation
+
+```bash
+# Test JWT rotation in development
+./scripts/rotate-secrets.sh dev JWT_SECRET
+
+# Verify JWT_PREVIOUS_SECRET was set
+doppler secrets get JWT_PREVIOUS_SECRET --config dev
+
+# Restart API and verify no errors
+doppler run -- docker compose restart api
+docker compose logs api
+```
+
+### Common Issues
+
+#### Issue: "DOPPLER_TOKEN not configured"
+**Solution:** Run `doppler login` and `doppler setup`
+
+#### Issue: "Failed to fetch secrets from Doppler"
+**Solution:** Check your internet connection and verify token:
+```bash
+doppler secrets --config dev
+```
+
+#### Issue: "Project not found"
+**Solution:** Verify project name:
+```bash
+doppler setup --project bandhub
+```
+
+#### Issue: Secrets not being injected
+**Solution:** Ensure you're using `doppler run --`:
+```bash
+# Wrong
+npm run dev
+
+# Correct
+doppler run -- npm run dev
 ```
 
 ## Best Practices

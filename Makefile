@@ -241,3 +241,40 @@ info: ## Show Docker environment info
 	@echo ""
 	@echo "Docker disk usage:"
 	@docker system df
+
+# ========================================
+# Doppler Commands
+# ========================================
+doppler-setup: ## Setup Doppler CLI for local development
+	@echo "$(BLUE)Setting up Doppler...$(NC)"
+	doppler login
+	doppler setup --project bandhub --config dev
+	@echo "$(GREEN)Doppler setup complete!$(NC)"
+
+doppler-start: ## Start services with Doppler
+	@echo "$(BLUE)Starting services with Doppler...$(NC)"
+	doppler run -- docker compose up -d
+	@echo "$(GREEN)Services started with Doppler!$(NC)"
+
+doppler-secrets: ## List secrets from Doppler
+	doppler secrets --config dev
+
+doppler-pull: ## Download secrets to .env.doppler (for offline development)
+	@echo "$(BLUE)Downloading secrets...$(NC)"
+	doppler secrets download --no-file --format env > .env.doppler
+	@echo "$(GREEN)Secrets saved to .env.doppler$(NC)"
+	@echo "$(YELLOW)⚠️  Do not commit this file!$(NC)"
+
+# ========================================
+# Secret Rotation Commands
+# ========================================
+rotate-jwt-dev: ## Rotate JWT secret in development
+	./scripts/rotate-secrets.sh dev JWT_SECRET
+
+rotate-jwt-stg: ## Rotate JWT secret in staging
+	./scripts/rotate-secrets.sh stg JWT_SECRET
+
+rotate-jwt-prd: ## Rotate JWT secret in production
+	@echo "$(YELLOW)⚠️  This will rotate production JWT secret$(NC)"
+	@read -p "Are you sure? (yes/no) " confirm && [ "$$confirm" = "yes" ]
+	./scripts/rotate-secrets.sh prd JWT_SECRET

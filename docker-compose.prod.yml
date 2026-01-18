@@ -92,9 +92,8 @@ services:
       target: runner
     environment:
       NODE_ENV: production
-      # Note: DATABASE_URL uses env vars from .env file. For enhanced security in Docker Swarm,
-      # consider using a secrets-aware entrypoint script that reads from /run/secrets/*
-      # and constructs the DATABASE_URL at runtime.
+      # Note: When using Doppler, these values are overridden by /secrets/.env
+      # For non-Doppler deployments, these use env vars from .env file or Docker secrets
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hbcu_band_hub}?schema=public
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -104,6 +103,9 @@ services:
       YOUTUBE_API_KEY_FILE: /run/secrets/youtube_api_key
     volumes:
       - api_uploads:/app/apps/api/uploads
+      - doppler_secrets:/secrets:ro
+    env_file:
+      - /secrets/.env
     secrets:
       - jwt_secret
       - youtube_api_key
@@ -113,6 +115,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      doppler:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
@@ -148,8 +152,14 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.hbcubandhub.com}
+    volumes:
+      - doppler_secrets:/secrets:ro
+    env_file:
+      - /secrets/.env
     depends_on:
       api:
+        condition: service_healthy
+      doppler:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
@@ -185,7 +195,7 @@ services:
     container_name: hbcu-band-hub-worker-prod
     environment:
       NODE_ENV: production
-      # Note: DATABASE_URL uses env vars from .env file. See API service comment for security notes.
+      # Note: When using Doppler, these values are overridden by /secrets/.env
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hbcu_band_hub}?schema=public
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -193,6 +203,10 @@ services:
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
       YOUTUBE_API_KEY_FILE: /run/secrets/youtube_api_key
       MAX_YOUTUBE_CALLS_PER_MINUTE: ${MAX_YOUTUBE_CALLS_PER_MINUTE:-60}
+    volumes:
+      - doppler_secrets:/secrets:ro
+    env_file:
+      - /secrets/.env
     secrets:
       - youtube_api_key
       - postgres_user
@@ -201,6 +215,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      doppler:
         condition: service_healthy
     networks:
       - hbcu-internal
@@ -281,49 +297,36 @@ services:
         max-file: "2"
 
   # ========================================
-  # Doppler Secrets Manager (Optional)
+  # Doppler Secrets Manager (Sidecar Pattern)
   # ========================================
-  # Uncomment this service to use Doppler for secrets management
-  # Requires DOPPLER_TOKEN to be set in environment
-  # See docs/DOPPLER_SETUP.md for configuration instructions
-  #
-  # doppler:
-  #   image: dopplerhq/cli:latest
-  #   container_name: hbcu-band-hub-doppler
-  #   environment:
-  #     DOPPLER_TOKEN: ${DOPPLER_TOKEN}
-  #   command: >
-  #     secrets download 
-  #     --format=env 
-  #     --config=${DOPPLER_CONFIG:-prd}
-  #     --project=hbcu-band-hub
-  #     --no-file
-  #     --mount=/secrets/.env
-  #   volumes:
-  #     - doppler_secrets:/secrets
-  #   networks:
-  #     - hbcu-internal
-  #   restart: always
-  #   healthcheck:
-  #     test: ["CMD", "test", "-f", "/secrets/.env"]
-  #     interval: 30s
-  #     timeout: 5s
-  #     retries: 3
-  #     start_period: 10s
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m"
-  #       max-file: "2"
-  #
-  # To use Doppler with your services, add these to the service definition:
-  #   depends_on:
-  #     doppler:
-  #       condition: service_healthy
-  #   volumes:
-  #     - doppler_secrets:/secrets:ro
-  #   env_file:
-  #     - /secrets/.env
+  doppler:
+    image: dopplerhq/cli:3
+    container_name: hbcu-band-hub-doppler
+    environment:
+      DOPPLER_TOKEN: ${DOPPLER_TOKEN}
+    command: >
+      secrets download 
+      --format=env 
+      --config=${DOPPLER_CONFIG:-prd}
+      --project=bandhub
+      --no-file
+      --mount=/secrets/.env
+    volumes:
+      - doppler_secrets:/secrets
+    networks:
+      - hbcu-internal
+    restart: always
+    healthcheck:
+      test: ["CMD", "test", "-f", "/secrets/.env"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
 
 # ========================================
 # Secrets (for Docker Swarm or external secrets management)
@@ -356,8 +359,8 @@ volumes:
     driver: local
   certbot_www:
     driver: local
-  # doppler_secrets:  # Uncomment if using Doppler sidecar
-  #   driver: local
+  doppler_secrets:
+    driver: local
 
 # ========================================
 # Networks

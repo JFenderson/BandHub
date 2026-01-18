@@ -1,0 +1,76 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Deployment reason'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+      
+      - name: Verify Doppler connection
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
+          doppler secrets --config prd --project bandhub --silent
+          echo "✅ Doppler connection verified"
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Create backup
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
+          doppler run -- ./scripts/backup.sh
+      
+      - name: Build Docker images
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
+          doppler run -- docker compose -f docker-compose.prod.yml build
+      
+      - name: Run database migrations
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
+          doppler run -- docker compose -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
+      
+      - name: Deploy to production
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
+          doppler run -- ./scripts/deploy.sh production
+      
+      - name: Health check
+        run: |
+          sleep 30
+          curl -f https://api.bandhub.com/api/health || exit 1
+      
+      - name: Smoke tests
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+        run: |
+          # Add smoke tests here
+          curl -f https://api.bandhub.com/api/health
+          echo "✅ Smoke tests passed"
+      
+      - name: Notify team
+        if: always()
+        run: |
+          echo "Production deployment ${{ job.status }}"
+          # Add Slack/PagerDuty notification here
