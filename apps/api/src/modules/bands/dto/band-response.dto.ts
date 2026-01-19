@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 
 // Response DTOs are just for Swagger documentation
 // They describe the shape of responses, not validated input
@@ -47,6 +48,12 @@ export class BandResponseDto {
 
   @ApiProperty()
   updatedAt!: Date;
+
+  @Expose()
+  primaryColor?: string;
+
+  @Expose()
+  secondaryColor?: string;
 }
 
 export class BandWithVideoCountDto extends BandResponseDto {

@@ -32,10 +32,17 @@ export default async function BandPage({ params }: BandPageProps) {
     ? `${band.city}, ${band.state}` 
     : band.state || '';
 
+    const headerStyle = band.primaryColor && band.secondaryColor
+    ? { background: `linear-gradient(135deg, ${band.primaryColor} 0%, ${band.secondaryColor} 100%)` }
+    : {}; // Fallback handled by className
+
   return (
     <div className="bg-white">
       {/* Band Header */}
-      <div className="bg-gradient-to-br from-primary-600 to-secondary-700 text-white">
+      <div 
+        className={`text-white shadow-lg ${!band.primaryColor ? 'bg-gradient-to-br from-primary-600 to-secondary-700' : ''}`}
+        style={headerStyle}
+      >
         <div className="container-custom py-12">
           <div className="flex flex-col md:flex-row items-start gap-6">
             {/* Logo */}

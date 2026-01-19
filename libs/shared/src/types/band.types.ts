@@ -26,6 +26,8 @@ export interface Band {
   isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 export interface BandWithVideoCount extends Band {

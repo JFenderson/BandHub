@@ -29,6 +29,8 @@ export interface Band {
   _count?: {
     videos?: number;
   };
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 export interface CreateBandDto {
