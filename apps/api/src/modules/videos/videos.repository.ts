@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, Video, PrismaService } from '@bandhub/database';
+import { Prisma, Video, PrismaService, ReadReplicaService } from '@bandhub/database';
 
 export interface VideoQueryDto {
   bandId?: string;
@@ -35,9 +35,19 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
   'OTHER': [], // No specific keywords for OTHER
 };
 
+/**
+ * VideosRepository
+ *
+ * Handles all database operations for videos.
+ * Uses read replica for read operations (findMany, findById, etc.)
+ * Uses primary database for write operations (create, update, delete)
+ */
 @Injectable()
 export class VideosRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly readReplica: ReadReplicaService,
+  ) {}
 
   async findMany(query: VideoQueryDto) {
     const {
@@ -197,16 +207,19 @@ export class VideosRepository {
       },
     };
 
-    const [videos, total] = await Promise.all([
-      this.prisma.video.findMany({
-        where,
-        select,
-        orderBy,
-        ...(skip > 0 && { skip }),
-        take: takeValue,
-      }),
-      this.prisma.video.count({ where }),
-    ]);
+    // Use read replica for better read performance
+    const [videos, total] = await this.readReplica.executeRead(async (client) => {
+      return Promise.all([
+        client.video.findMany({
+          where,
+          select,
+          orderBy,
+          ...(skip > 0 && { skip }),
+          take: takeValue,
+        }),
+        client.video.count({ where }),
+      ]);
+    });
 
     return {
       data: videos,
@@ -264,56 +277,61 @@ export class VideosRepository {
     const limitParam = `$${paramIndex}`;
     const offsetParam = `$${paramIndex + 1}`;
 
-    const videos = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT 
-        v.id,
-        v.youtube_id as "youtubeId",
-        v.title,
-        v.description,
-        v.thumbnail_url as "thumbnailUrl",
-        v.duration,
-        v.published_at as "publishedAt",
-        v.view_count as "viewCount",
-        v.like_count as "likeCount",
-        v.event_name as "eventName",
-        v.event_year as "eventYear",
-        v.tags,
-        v.quality_score as "qualityScore",
-        v.is_hidden as "isHidden",
-        v.created_at as "createdAt",
-        ts_rank(v.search_vector, plainto_tsquery('english', $1)) as rank,
-        jsonb_build_object(
-          'id', b.id,
-          'name', b.name,
-          'slug', b.slug,
-          'schoolName', b.school_name,
-          'logoUrl', b.logo_url
-        ) as band,
-        CASE 
-          WHEN c.id IS NOT NULL THEN jsonb_build_object(
-            'id', c.id,
-            'name', c.name,
-            'slug', c.slug
-          )
-          ELSE NULL
-        END as category,
-        NULL as "opponentBand",
-        NULL as creator
-      FROM videos v
-      INNER JOIN bands b ON v.band_id = b.id
-      LEFT JOIN categories c ON v.category_id = c.id
-      WHERE ${whereClause}
-      ORDER BY rank DESC, v.published_at DESC
-      LIMIT ${limitParam} OFFSET ${offsetParam}
-    `, ...params);
+    // Use read replica for full-text search queries
+    const { videos, count } = await this.readReplica.executeRead(async (client) => {
+      const videosResult = await client.$queryRawUnsafe<any[]>(`
+        SELECT
+          v.id,
+          v.youtube_id as "youtubeId",
+          v.title,
+          v.description,
+          v.thumbnail_url as "thumbnailUrl",
+          v.duration,
+          v.published_at as "publishedAt",
+          v.view_count as "viewCount",
+          v.like_count as "likeCount",
+          v.event_name as "eventName",
+          v.event_year as "eventYear",
+          v.tags,
+          v.quality_score as "qualityScore",
+          v.is_hidden as "isHidden",
+          v.created_at as "createdAt",
+          ts_rank(v.search_vector, plainto_tsquery('english', $1)) as rank,
+          jsonb_build_object(
+            'id', b.id,
+            'name', b.name,
+            'slug', b.slug,
+            'schoolName', b.school_name,
+            'logoUrl', b.logo_url
+          ) as band,
+          CASE
+            WHEN c.id IS NOT NULL THEN jsonb_build_object(
+              'id', c.id,
+              'name', c.name,
+              'slug', c.slug
+            )
+            ELSE NULL
+          END as category,
+          NULL as "opponentBand",
+          NULL as creator
+        FROM videos v
+        INNER JOIN bands b ON v.band_id = b.id
+        LEFT JOIN categories c ON v.category_id = c.id
+        WHERE ${whereClause}
+        ORDER BY rank DESC, v.published_at DESC
+        LIMIT ${limitParam} OFFSET ${offsetParam}
+      `, ...params);
 
-    // Count query - use same params except limit/offset
-    const countParams = params.slice(0, -2);
-    const [{ count }] = await this.prisma.$queryRawUnsafe<[{ count: bigint }]>(`
-      SELECT COUNT(*) as count
-      FROM videos v
-      WHERE ${whereClause}
-    `, ...countParams);
+      // Count query - use same params except limit/offset
+      const countParams = params.slice(0, -2);
+      const [{ count: countResult }] = await client.$queryRawUnsafe<[{ count: bigint }]>(`
+        SELECT COUNT(*) as count
+        FROM videos v
+        WHERE ${whereClause}
+      `, ...countParams);
+
+      return { videos: videosResult, count: countResult };
+    });
 
     return {
       data: videos,
@@ -326,82 +344,94 @@ export class VideosRepository {
     };
   }
 
+  /**
+   * Find video by ID
+   * Uses read replica for better performance
+   */
   async findById(id: string) {
-    return this.prisma.video.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        youtubeId: true,
-        title: true,
-        description: true,
-        thumbnailUrl: true,
-        duration: true,
-        publishedAt: true,
-        viewCount: true,
-        likeCount: true,
-        eventName: true,
-        eventYear: true,
-        tags: true,
-        isHidden: true,
-        hideReason: true,
-        qualityScore: true,
-        createdAt: true,
-        updatedAt: true,
-        band: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            schoolName: true,
-            logoUrl: true,
-            state: true,
-            city: true,
+    return this.readReplica.executeRead((client) =>
+      client.video.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          youtubeId: true,
+          title: true,
+          description: true,
+          thumbnailUrl: true,
+          duration: true,
+          publishedAt: true,
+          viewCount: true,
+          likeCount: true,
+          eventName: true,
+          eventYear: true,
+          tags: true,
+          isHidden: true,
+          hideReason: true,
+          qualityScore: true,
+          createdAt: true,
+          updatedAt: true,
+          band: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              schoolName: true,
+              logoUrl: true,
+              state: true,
+              city: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              description: true,
+            },
+          },
+          opponentBand: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              schoolName: true,
+              logoUrl: true,
+            },
+          },
+          contentCreator: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              thumbnailUrl: true,
+              isVerified: true,
+              isFeatured: true,
+              qualityScore: true,
+            },
           },
         },
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            description: true,
-          },
-        },
-        opponentBand: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            schoolName: true,
-            logoUrl: true,
-          },
-        },
-        contentCreator: {
-          select: {
-            id: true,
-            name: true,
-            logoUrl: true,
-            thumbnailUrl: true,
-            isVerified: true,
-            isFeatured: true,
-            qualityScore: true,
-          },
-        },
-      },
-    });
+      }),
+    );
   }
 
+  /**
+   * Find video by YouTube ID
+   * Uses read replica for better performance
+   */
   async findByYoutubeId(youtubeId: string) {
-    return this.prisma.video.findUnique({
-      where: { youtubeId },
-      select: {
-        id: true,
-        youtubeId: true,
-        title: true,
-        bandId: true,
-        categoryId: true,
-        isHidden: true,
-      },
-    });
+    return this.readReplica.executeRead((client) =>
+      client.video.findUnique({
+        where: { youtubeId },
+        select: {
+          id: true,
+          youtubeId: true,
+          title: true,
+          bandId: true,
+          categoryId: true,
+          isHidden: true,
+        },
+      }),
+    );
   }
 
   async create(data: Prisma.VideoCreateInput) {
@@ -431,57 +461,75 @@ export class VideosRepository {
     return this.prisma.video.delete({ where: { id } });
   }
 
+  /**
+   * Find hidden videos
+   * Uses read replica for better performance
+   */
   async findHidden() {
-    return this.prisma.video.findMany({
-      where: { isHidden: true },
-      select: {
-        id: true,
-        youtubeId: true,
-        title: true,
-        thumbnailUrl: true,
-        hideReason: true,
-        createdAt: true,
-        band: { select: { id: true, name: true, slug: true } },
-        category: { select: { id: true, name: true, slug: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async getVideoStats() {
-    const [total, hidden, byCategory] = await Promise.all([
-      this.prisma.video.count(),
-      this.prisma.video.count({ where: { isHidden: true } }),
-      this.prisma.video.groupBy({
-        by: ['categoryId'],
-        _count: true,
-        where: { isHidden: false, categoryId: { not: null } },
+    return this.readReplica.executeRead((client) =>
+      client.video.findMany({
+        where: { isHidden: true },
+        select: {
+          id: true,
+          youtubeId: true,
+          title: true,
+          thumbnailUrl: true,
+          hideReason: true,
+          createdAt: true,
+          band: { select: { id: true, name: true, slug: true } },
+          category: { select: { id: true, name: true, slug: true } },
+        },
+        orderBy: { createdAt: 'desc' },
       }),
-    ]);
-
-    return {
-      total,
-      hidden,
-      visible: total - hidden,
-      byCategory,
-    };
+    );
   }
 
-  async getPopularByBand(bandId: string, limit: number = 10) {
-    return this.prisma.video.findMany({
-      where: { bandId, isHidden: false },
-      select: {
-        id: true,
-        youtubeId: true,
-        title: true,
-        thumbnailUrl: true,
-        duration: true,
-        viewCount: true,
-        publishedAt: true,
-      },
-      orderBy: { viewCount: 'desc' },
-      take: limit,
+  /**
+   * Get video statistics
+   * Uses read replica for better performance
+   */
+  async getVideoStats() {
+    return this.readReplica.executeRead(async (client) => {
+      const [total, hidden, byCategory] = await Promise.all([
+        client.video.count(),
+        client.video.count({ where: { isHidden: true } }),
+        client.video.groupBy({
+          by: ['categoryId'],
+          _count: true,
+          where: { isHidden: false, categoryId: { not: null } },
+        }),
+      ]);
+
+      return {
+        total,
+        hidden,
+        visible: total - hidden,
+        byCategory,
+      };
     });
+  }
+
+  /**
+   * Get popular videos by band
+   * Uses read replica for better performance
+   */
+  async getPopularByBand(bandId: string, limit: number = 10) {
+    return this.readReplica.executeRead((client) =>
+      client.video.findMany({
+        where: { bandId, isHidden: false },
+        select: {
+          id: true,
+          youtubeId: true,
+          title: true,
+          thumbnailUrl: true,
+          duration: true,
+          viewCount: true,
+          publishedAt: true,
+        },
+        orderBy: { viewCount: 'desc' },
+        take: limit,
+      }),
+    );
   }
 
   async batchUpdateViewCounts(updates: Array<{ id: string; viewCount: number; likeCount: number }>) {

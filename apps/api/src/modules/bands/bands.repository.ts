@@ -1,19 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@bandhub/database';
+import { PrismaService, ReadReplicaService } from '@bandhub/database';
 import { BandQueryDto } from './dto';
 import { Prisma } from '@prisma/client';
 
 /**
  * BandsRepository
- * 
- * Handles all database operations for bands
+ *
+ * Handles all database operations for bands.
+ * Uses read replica for read operations (findMany, findById, etc.)
+ * Uses primary database for write operations (create, update, delete)
  */
 @Injectable()
 export class BandsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly readReplica: ReadReplicaService,
+  ) {}
 
   /**
    * Find many bands with filters
+   * Uses read replica for better performance on read-heavy operations
    */
   async findMany(query: BandQueryDto) {
     const { search, state, page = 1, limit = 20, bandType, isFeatured } = query;
@@ -40,20 +46,23 @@ export class BandsRepository {
       where.state = state;
     }
 
-    const [bands, total] = await Promise.all([
-      this.prisma.band.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { name: 'asc' },
-        include: {
-          _count: {
-            select: { videos: true },
+    // Use read replica for better read performance
+    const [bands, total] = await this.readReplica.executeRead(async (client) => {
+      return Promise.all([
+        client.band.findMany({
+          where,
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: { name: 'asc' },
+          include: {
+            _count: {
+              select: { videos: true },
+            },
           },
-        },
-      }),
-      this.prisma.band.count({ where }),
-    ]);
+        }),
+        client.band.count({ where }),
+      ]);
+    });
 
     return {
       data: bands,
@@ -68,30 +77,36 @@ export class BandsRepository {
 
   /**
    * Find band by ID
+   * Uses read replica for better performance
    */
   async findById(id: string) {
-    return this.prisma.band.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { videos: true },
+    return this.readReplica.executeRead((client) =>
+      client.band.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: { videos: true },
+          },
         },
-      },
-    });
+      }),
+    );
   }
 
   /**
    * Find band by slug
+   * Uses read replica for better performance
    */
   async findBySlug(slug: string) {
-    return this.prisma.band.findUnique({
-      where: { slug },
-      include: {
-        _count: {
-          select: { videos: true },
+    return this.readReplica.executeRead((client) =>
+      client.band.findUnique({
+        where: { slug },
+        include: {
+          _count: {
+            select: { videos: true },
+          },
         },
-      },
-    });
+      }),
+    );
   }
 
   /**
@@ -135,16 +150,19 @@ export class BandsRepository {
   /**
    * Get band statistics by ID
    * Returns video count and other stats
+   * Uses read replica for better performance
    */
   async getBandStats(id: string) {
-    const band = await this.prisma.band.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: { videos: true },
+    const band = await this.readReplica.executeRead((client) =>
+      client.band.findUnique({
+        where: { id },
+        include: {
+          _count: {
+            select: { videos: true },
+          },
         },
-      },
-    });
+      }),
+    );
 
     if (!band) {
       return null;
@@ -163,44 +181,50 @@ export class BandsRepository {
   /**
    * Get popular bands
    * Returns bands ordered by video count
+   * Uses read replica for better performance
    */
   async getPopularBands(limit: number) {
-    return this.prisma.band.findMany({
-      take: limit,
-      orderBy: {
-        videos: {
-          _count: 'desc',
+    return this.readReplica.executeRead((client) =>
+      client.band.findMany({
+        take: limit,
+        orderBy: {
+          videos: {
+            _count: 'desc',
+          },
         },
-      },
-      include: {
-        _count: {
-          select: { videos: true },
+        include: {
+          _count: {
+            select: { videos: true },
+          },
         },
-      },
-    });
+      }),
+    );
   }
 
   /**
    * Search bands
    * Full-text search across name, school, city, state
+   * Uses read replica for better performance
    */
   async search(query: string) {
-    return this.prisma.band.findMany({
-      where: {
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { schoolName: { contains: query, mode: 'insensitive' } },
-          { city: { contains: query, mode: 'insensitive' } },
-          { state: { contains: query, mode: 'insensitive' } },
-        ],
-      },
-      take: 20,
-      orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: { videos: true },
+    return this.readReplica.executeRead((client) =>
+      client.band.findMany({
+        where: {
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { schoolName: { contains: query, mode: 'insensitive' } },
+            { city: { contains: query, mode: 'insensitive' } },
+            { state: { contains: query, mode: 'insensitive' } },
+          ],
         },
-      },
-    });
+        take: 20,
+        orderBy: { name: 'asc' },
+        include: {
+          _count: {
+            select: { videos: true },
+          },
+        },
+      }),
+    );
   }
 }
