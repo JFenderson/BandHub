@@ -5,6 +5,13 @@ import { SanitizeSearch } from '../../../common';
 import { BandType } from '@prisma/client';
 
 export class BandQueryDto {
+  @ApiPropertyOptional({
+    description: 'Cursor for cursor-based pagination (mutually exclusive with page)',
+    example: 'eyJpZCI6ImNseDEyMzQ1Iiwic29ydFZhbHVlIjoiQmFuZCBOYW1lIiwic29ydEZpZWxkIjoibmFtZSJ9',
+  })
+  @IsOptional()
+  @IsString()
+  cursor?: string;
   @ApiPropertyOptional({ 
     description: 'Filter by band type',
     enum: BandType,

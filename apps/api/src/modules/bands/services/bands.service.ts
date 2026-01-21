@@ -4,6 +4,7 @@ import { BandsRepository } from '../bands.repository';
 import { CreateBandDto, UpdateBandDto, BandQueryDto } from '../dto';
 import { PrismaService } from '@bandhub/database';
 import { BandType } from '@prisma/client';
+import { CursorPaginatedResponse } from '../../../common';
 
 /**
  * BandsService with comprehensive caching
@@ -31,11 +32,16 @@ export class BandsService {
   /**
    * Find all bands with filters
    * Caches each unique filter combination
-   * NOW supports filtering by band type (HBCU or ALL_STAR)
+   * Supports both offset-based and cursor-based pagination
    */
   async findAll(query: BandQueryDto) {
+    // If cursor is provided, use cursor-based pagination
+    if (query.cursor) {
+      return this.findAllWithCursor(query);
+    }
+
     const cacheKey = CacheKeyBuilder.bandList({
-      bandType: query.bandType, // NEW: Include bandType in cache key
+      bandType: query.bandType,
       search: query.search,
       state: query.state,
       page: query.page,
@@ -45,6 +51,23 @@ export class BandsService {
     return this.cacheStrategy.wrap(
       cacheKey,
       () => this.bandsRepository.findMany(query),
+      CACHE_TTL.BAND_LIST,
+    );
+  }
+
+  /**
+   * Find all bands with cursor-based pagination
+   * More efficient for large datasets and infinite scroll UIs
+   */
+  async findAllWithCursor(
+    query: Omit<BandQueryDto, 'page'> & { cursor?: string },
+  ): Promise<CursorPaginatedResponse<any>> {
+    // Build cache key for cursor-based queries
+    const cacheKey = `bands:cursor:${query.cursor || 'start'}:${query.bandType || 'all'}:${query.search || ''}:${query.state || ''}:${query.limit || 20}:${query.sortBy || 'name'}:${query.sortOrder || 'asc'}`;
+
+    return this.cacheStrategy.wrap(
+      cacheKey,
+      () => this.bandsRepository.findManyWithCursorPagination(query),
       CACHE_TTL.BAND_LIST,
     );
   }

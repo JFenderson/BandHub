@@ -4,6 +4,14 @@ import { IsOptional, IsString, IsNumber, IsEnum, IsBoolean, Min, Max } from 'cla
 import { SanitizeSearch, SanitizeText } from '../../../common';
 
 export class VideoQueryDto {
+  @ApiPropertyOptional({
+    description: 'Cursor for cursor-based pagination (mutually exclusive with page)',
+    example: 'eyJpZCI6ImNseDEyMzQ1Iiwic29ydFZhbHVlIjoiMjAyNC0wMS0wMVQwMDowMDowMC4wMDBaIiwic29ydEZpZWxkIjoicHVibGlzaGVkQXQifQ==',
+  })
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
   @ApiPropertyOptional({ description: 'Filter by band ID' })
   @SanitizeText()
   @IsOptional()

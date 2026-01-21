@@ -8,6 +8,7 @@ import { Queue } from 'bullmq';
 import { QueueName } from '@hbcu-band-hub/shared-types';
 import { PrismaService } from '@bandhub/database';
 import { BandType } from '@prisma/client';
+import { CursorPaginatedResponse } from '../../common';
 
 /**
  * Production VideosService with full-text search and enhanced caching
@@ -33,8 +34,13 @@ export class VideosService {
   ) {}
 
   async findAll(query: VideoQueryDto) {
+    // If cursor is provided, use cursor-based pagination
+    if (query.cursor) {
+      return this.findAllWithCursor(query);
+    }
+
     const cacheKey = this.buildQueryCacheKey(query);
-    
+
     const cached = await this.cacheService.get(cacheKey);
     if (cached) {
       this.logger.debug(`Cache hit for videos query: ${cacheKey}`);
@@ -70,6 +76,43 @@ export class VideosService {
           modifiedQuery.limit,
         )
       : await this.videosRepository.findMany(modifiedQuery);
+
+    await this.cacheService.set(cacheKey, result, this.CACHE_TTL.VIDEO_LIST);
+
+    return result;
+  }
+
+  /**
+   * Find all videos with cursor-based pagination
+   * More efficient for large datasets and infinite scroll UIs
+   */
+  async findAllWithCursor(
+    query: Omit<VideoQueryDto, 'page'> & { cursor?: string },
+  ): Promise<CursorPaginatedResponse<any>> {
+    // Convert category enum to categoryId if provided
+    let categoryId = query.categoryId;
+    if (query.category && !categoryId) {
+      categoryId = await this.getCategoryIdFromEnum(query.category);
+    }
+
+    // Build modified query with categoryId
+    const modifiedQuery = {
+      ...query,
+      categoryId,
+    };
+
+    // Build cache key for cursor-based queries
+    const cacheKey = `videos:cursor:${query.cursor || 'start'}:${query.bandId || ''}:${query.categoryId || ''}:${query.sortBy || 'publishedAt'}:${query.sortOrder || 'desc'}:${query.limit || 20}`;
+
+    const cached = await this.cacheService.get<CursorPaginatedResponse<any>>(cacheKey);
+    if (cached) {
+      this.logger.debug(`Cache hit for cursor videos query: ${cacheKey}`);
+      return cached;
+    }
+
+    this.logger.debug(`Cache miss for cursor videos query: ${cacheKey}`);
+
+    const result = await this.videosRepository.findManyWithCursorPagination(modifiedQuery);
 
     await this.cacheService.set(cacheKey, result, this.CACHE_TTL.VIDEO_LIST);
 

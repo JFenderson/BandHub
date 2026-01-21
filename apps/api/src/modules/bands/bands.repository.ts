@@ -2,6 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService, ReadReplicaService } from '@bandhub/database';
 import { BandQueryDto } from './dto';
 import { Prisma } from '@prisma/client';
+import {
+  decodeCursor,
+  buildCursorCondition,
+  createCursorPaginatedResponse,
+  CursorPaginatedResponse,
+} from '../../common';
 
 /**
  * BandsRepository
@@ -20,9 +26,20 @@ export class BandsRepository {
   /**
    * Find many bands with filters
    * Uses read replica for better performance on read-heavy operations
+   * Supports both offset-based and cursor-based pagination
    */
   async findMany(query: BandQueryDto) {
-    const { search, state, page = 1, limit = 20, bandType, isFeatured } = query;
+    const {
+      search,
+      state,
+      page = 1,
+      limit = 20,
+      bandType,
+      isFeatured,
+      cursor,
+      sortBy = 'name',
+      sortOrder = 'asc',
+    } = query;
 
     const where: Prisma.BandWhereInput = {};
 
@@ -46,6 +63,14 @@ export class BandsRepository {
       where.state = state;
     }
 
+    // Handle cursor-based pagination
+    if (cursor) {
+      return this.findManyWithCursor(where, cursor, limit, sortBy, sortOrder);
+    }
+
+    // Default to offset-based pagination
+    const orderBy: Prisma.BandOrderByWithRelationInput = { [sortBy]: sortOrder };
+
     // Use read replica for better read performance
     const [bands, total] = await this.readReplica.executeRead(async (client) => {
       return Promise.all([
@@ -53,7 +78,7 @@ export class BandsRepository {
           where,
           skip: (page - 1) * limit,
           take: limit,
-          orderBy: { name: 'asc' },
+          orderBy,
           include: {
             _count: {
               select: { videos: true },
@@ -73,6 +98,96 @@ export class BandsRepository {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Find many bands using cursor-based pagination
+   * More efficient for large datasets and infinite scroll
+   */
+  private async findManyWithCursor(
+    baseWhere: Prisma.BandWhereInput,
+    cursor: string,
+    limit: number,
+    sortBy: string,
+    sortOrder: 'asc' | 'desc',
+  ): Promise<CursorPaginatedResponse<any>> {
+    const cursorData = decodeCursor(cursor);
+
+    let where: Prisma.BandWhereInput = { ...baseWhere };
+
+    if (cursorData) {
+      const cursorCondition = buildCursorCondition(cursorData, sortOrder);
+      where = {
+        AND: [baseWhere, cursorCondition],
+      };
+    }
+
+    const orderBy: Prisma.BandOrderByWithRelationInput = { [sortBy]: sortOrder };
+
+    // Fetch one extra item to determine if there are more results
+    const bands = await this.readReplica.executeRead((client) =>
+      client.band.findMany({
+        where,
+        take: limit + 1,
+        orderBy: [orderBy, { id: sortOrder }], // Secondary sort by id for stability
+        include: {
+          _count: {
+            select: { videos: true },
+          },
+        },
+      }),
+    );
+
+    // Create cursor-paginated response
+    return createCursorPaginatedResponse(
+      bands,
+      limit,
+      sortBy,
+      (band) => band[sortBy as keyof typeof band],
+    );
+  }
+
+  /**
+   * Find many bands with cursor pagination (public method)
+   * Returns cursor-paginated response format
+   */
+  async findManyWithCursorPagination(
+    query: Omit<BandQueryDto, 'page'> & { cursor?: string },
+  ): Promise<CursorPaginatedResponse<any>> {
+    const {
+      search,
+      state,
+      limit = 20,
+      bandType,
+      isFeatured,
+      cursor,
+      sortBy = 'name',
+      sortOrder = 'asc',
+    } = query;
+
+    const where: Prisma.BandWhereInput = {};
+
+    if (bandType) {
+      where.bandType = bandType;
+    }
+
+    if (isFeatured !== undefined) {
+      where.isFeatured = isFeatured;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { schoolName: { contains: search, mode: 'insensitive' } },
+        { city: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (state) {
+      where.state = state;
+    }
+
+    return this.findManyWithCursor(where, cursor || '', limit, sortBy, sortOrder);
   }
 
   /**

@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, Video, PrismaService, ReadReplicaService } from '@bandhub/database';
+import {
+  decodeCursor,
+  buildCursorCondition,
+  createCursorPaginatedResponse,
+  CursorPaginatedResponse,
+} from '../../common';
 
 export interface VideoQueryDto {
+  cursor?: string;
   bandId?: string;
   bandSlug?: string;
   category?: string;  // Category enum value like 'FIFTH_QUARTER'
@@ -51,6 +58,7 @@ export class VideosRepository {
 
   async findMany(query: VideoQueryDto) {
     const {
+      cursor,
       bandId,
       bandSlug,
       category,
@@ -150,8 +158,14 @@ export class VideosRepository {
     const orderBy: Prisma.VideoOrderByWithRelationInput = {};
     orderBy[sortBy] = sortOrder;
 
-    const skip = (page - 1) * limit;
     const takeValue = Math.max(1, Math.min(Number(limit) || 20, 100));
+
+    // Handle cursor-based pagination
+    if (cursor) {
+      return this.findManyWithCursor(where, cursor, takeValue, sortBy, sortOrder);
+    }
+
+    const skip = (page - 1) * limit;
 
     const select = {
       id: true,
@@ -230,6 +244,206 @@ export class VideosRepository {
         totalPages: Math.ceil(total / takeValue),
       },
     };
+  }
+
+  /**
+   * Find many videos using cursor-based pagination
+   * More efficient for large datasets and infinite scroll
+   */
+  private async findManyWithCursor(
+    baseWhere: Prisma.VideoWhereInput,
+    cursor: string,
+    limit: number,
+    sortBy: string,
+    sortOrder: 'asc' | 'desc',
+  ): Promise<CursorPaginatedResponse<any>> {
+    const cursorData = decodeCursor(cursor);
+
+    let where: Prisma.VideoWhereInput = { ...baseWhere };
+
+    if (cursorData) {
+      const cursorCondition = buildCursorCondition(cursorData, sortOrder);
+      where = {
+        AND: [baseWhere, cursorCondition],
+      };
+    }
+
+    const orderBy: Prisma.VideoOrderByWithRelationInput = { [sortBy]: sortOrder };
+
+    const select = {
+      id: true,
+      youtubeId: true,
+      title: true,
+      description: true,
+      thumbnailUrl: true,
+      duration: true,
+      publishedAt: true,
+      viewCount: true,
+      likeCount: true,
+      eventName: true,
+      eventYear: true,
+      tags: true,
+      qualityScore: true,
+      isHidden: true,
+      createdAt: true,
+      band: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          schoolName: true,
+          logoUrl: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+      opponentBand: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          schoolName: true,
+          logoUrl: true,
+        },
+      },
+      contentCreator: {
+        select: {
+          id: true,
+          name: true,
+          logoUrl: true,
+          thumbnailUrl: true,
+          isVerified: true,
+          isFeatured: true,
+          qualityScore: true,
+        },
+      },
+    };
+
+    // Fetch one extra item to determine if there are more results
+    const videos = await this.readReplica.executeRead((client) =>
+      client.video.findMany({
+        where,
+        select,
+        take: limit + 1,
+        orderBy: [orderBy, { id: sortOrder }], // Secondary sort by id for stability
+      }),
+    );
+
+    // Create cursor-paginated response
+    return createCursorPaginatedResponse(
+      videos,
+      limit,
+      sortBy,
+      (video) => video[sortBy as keyof typeof video],
+    );
+  }
+
+  /**
+   * Find many videos with cursor pagination (public method)
+   * Returns cursor-paginated response format
+   */
+  async findManyWithCursorPagination(
+    query: Omit<VideoQueryDto, 'page'> & { cursor?: string },
+  ): Promise<CursorPaginatedResponse<any>> {
+    const {
+      cursor,
+      bandId,
+      bandSlug,
+      category,
+      categoryId,
+      categorySlug,
+      creatorId,
+      opponentBandId,
+      eventYear,
+      eventName,
+      search,
+      includeHidden,
+      tags,
+      sortBy = 'publishedAt',
+      sortOrder = 'desc',
+      limit = 20,
+    } = query;
+
+    const where: Prisma.VideoWhereInput = {};
+
+    if (!includeHidden) {
+      where.isHidden = false;
+    }
+
+    if (bandId) {
+      where.bandId = bandId;
+    } else if (bandSlug) {
+      where.band = { slug: bandSlug };
+    }
+
+    if (category && CATEGORY_KEYWORDS[category]) {
+      const keywords = CATEGORY_KEYWORDS[category];
+      if (keywords.length > 0) {
+        where.OR = keywords.map(keyword => ({
+          title: { contains: keyword, mode: 'insensitive' as const }
+        }));
+      }
+    } else if (categoryId) {
+      where.categoryId = categoryId;
+    } else if (categorySlug) {
+      where.category = { slug: categorySlug };
+    }
+
+    if (creatorId) {
+      where.creatorId = creatorId;
+    }
+
+    if (opponentBandId) {
+      where.opponentBandId = opponentBandId;
+    }
+
+    if (eventYear) {
+      const startOfYear = new Date(eventYear, 0, 1);
+      const endOfYear = new Date(eventYear + 1, 0, 1);
+      where.publishedAt = {
+        gte: startOfYear,
+        lt: endOfYear,
+      };
+    }
+
+    if (eventName) {
+      where.eventName = { contains: eventName, mode: 'insensitive' };
+    }
+
+    if (tags) {
+      const tagList = tags.split(',').map((tag) => tag.trim());
+      where.tags = { hasSome: tagList };
+    }
+
+    if (search && search.trim().length > 0) {
+      const searchTerm = search.trim();
+      const searchConditions = [
+        { title: { contains: searchTerm, mode: 'insensitive' as const } },
+        { description: { contains: searchTerm, mode: 'insensitive' as const } },
+        { eventName: { contains: searchTerm, mode: 'insensitive' as const } },
+        { band: { name: { contains: searchTerm, mode: 'insensitive' as const } } },
+      ];
+
+      if (where.OR) {
+        const categoryConditions = where.OR;
+        delete where.OR;
+        where.AND = [
+          { OR: categoryConditions },
+          { OR: searchConditions }
+        ];
+      } else {
+        where.OR = searchConditions;
+      }
+    }
+
+    const takeValue = Math.max(1, Math.min(Number(limit) || 20, 100));
+
+    return this.findManyWithCursor(where, cursor || '', takeValue, sortBy, sortOrder);
   }
 
   /**
