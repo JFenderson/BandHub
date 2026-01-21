@@ -43,7 +43,7 @@ import { AdminRole } from '@prisma/client';
 import { ApiErrorDto } from '../../../common/dto/api-error.dto';
 
 @ApiTags('Bands')
-@Controller('bands')
+@Controller({ path: 'bands', version: '1' })
 // Apply default public API rate limit to entire controller
 @RateLimit({
   limit: 100,

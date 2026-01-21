@@ -12,7 +12,7 @@ import { CurrentUser, CurrentUserData } from '../users/decorators/current-user.d
 import { GetRecommendationsQueryDto } from './dto/recommendations.dto';
 
 @ApiTags('recommendations')
-@Controller('recommendations')
+@Controller({ path: 'recommendations', version: '1' })
 export class RecommendationsController {
   constructor(private readonly recommendationsService: RecommendationsService) {}
 

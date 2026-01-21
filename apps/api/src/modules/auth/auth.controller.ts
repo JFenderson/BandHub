@@ -9,7 +9,7 @@ import {
   Req,
   Delete,
   Ip,
-  Param
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto, LoginResponseDto } from './dto/login.dto';
@@ -38,7 +38,7 @@ import { ApiErrorDto } from '../../common/dto/api-error.dto';
  * - Token refresh: 10 attempts per 15 minutes per IP
  */
 @ApiTags('Authentication')
-@Controller('auth')
+@Controller({ path: 'auth', version: '1' })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

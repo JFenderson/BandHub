@@ -20,7 +20,7 @@ import {
 } from './dto/notification.dto';
 
 @ApiTags('notifications')
-@Controller('notifications')
+@Controller({ path: 'notifications', version: '1' })
 @UseGuards(UserAuthGuard)
 @ApiBearerAuth()
 export class NotificationsController {

@@ -20,7 +20,7 @@ import { SessionService, SessionInfo } from '../services/session.service';
 import { SecurityService } from '../services/security.service';
 
 @ApiTags('Sessions')
-@Controller('auth/sessions')
+@Controller({ path: 'auth/sessions', version: '1' })
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class SessionController {

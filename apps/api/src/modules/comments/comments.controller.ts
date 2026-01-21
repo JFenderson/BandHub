@@ -21,7 +21,7 @@ import { GetCommentsQueryDto } from './dto/get-comments-query.dto';
 import { LikeCommentDto } from './dto/like-comment.dto';
 
 @ApiTags('comments')
-@Controller()
+@Controller({ version: '1' })
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 

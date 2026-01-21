@@ -25,7 +25,7 @@ import { RateLimit } from '../../../common/decorators/rate-limit.decorator';
 import { RateLimitType } from '../../../common/interfaces/rate-limit.interface';
 
 @ApiTags('Reviews')
-@Controller()
+@Controller({ version: '1' })
 @RateLimit({
   limit: 100,
   windowMs: 60 * 60 * 1000,

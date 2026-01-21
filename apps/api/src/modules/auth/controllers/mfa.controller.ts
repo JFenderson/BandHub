@@ -34,7 +34,7 @@ class VerifyMfaDto {
 }
 
 @ApiTags('Multi-Factor Authentication')
-@Controller('auth/mfa')
+@Controller({ path: 'auth/mfa', version: '1' })
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class MfaController {

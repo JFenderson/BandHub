@@ -4,7 +4,7 @@ import { SearchService, SearchFilters } from './search.service';
 import { ApiErrorDto } from '../../common/dto/api-error.dto';
 
 @ApiTags('search')
-@Controller('search')
+@Controller({ path: 'search', version: '1' })
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 

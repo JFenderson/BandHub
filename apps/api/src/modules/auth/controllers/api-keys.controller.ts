@@ -33,7 +33,7 @@ class ExtendExpirationDto {
 }
 
 @ApiTags('API Keys')
-@Controller('api-keys')
+@Controller({ path: 'api-keys', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class ApiKeysController {

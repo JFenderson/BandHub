@@ -14,7 +14,7 @@ import { OptionalAuthGuard } from '../../../common/guards/optional-auth.guard';
 import { CurrentUser, CurrentUserData } from '../../../common/decorators/current-user.decorator';
 import { PrismaService } from '@bandhub/database';
 
-@Controller('bands/trending')
+@Controller({ path: 'bands/trending', version: '1' })
 export class TrendingController {
   constructor(
     private readonly trendingService: TrendingService,

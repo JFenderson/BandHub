@@ -20,7 +20,7 @@ import { AdminRole } from '@prisma/client';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Creators')
-@Controller('creators')
+@Controller({ path: 'creators', version: '1' })
 export class CreatorsController {
   constructor(private readonly creatorsService: CreatorsService) {}
 
@@ -50,7 +50,7 @@ export class CreatorsController {
 }
 
 @ApiTags('Admin Creators')
-@Controller('admin/creators')
+@Controller({ path: 'admin/creators', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
 @ApiBearerAuth('JWT-auth')

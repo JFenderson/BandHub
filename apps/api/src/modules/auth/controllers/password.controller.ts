@@ -118,7 +118,7 @@ class UpdatePasswordPolicyDto {
 }
 
 @ApiTags('Password Management')
-@Controller('auth/password')
+@Controller({ path: 'auth/password', version: '1' })
 export class PasswordController {
   constructor(
     private readonly passwordPolicyService: PasswordPolicyService,

@@ -16,7 +16,7 @@ import { CurrentUser, CurrentUserData } from '../users/decorators/current-user.d
 import { CreateShareDto, GetSharesQueryDto, ContentType } from './dto/sharing.dto';
 
 @ApiTags('sharing')
-@Controller('sharing')
+@Controller({ path: 'sharing', version: '1' })
 export class SharingController {
   constructor(private readonly sharingService: SharingService) {}
 

@@ -11,7 +11,7 @@ import { SkipRateLimit } from '../common/decorators/rate-limit.decorator';
  * monitoring systems can always check service health.
  */
 @ApiTags('health')
-@Controller('health')
+@Controller({ path: 'health', version: '1' })
 @SkipRateLimit() // Skip rate limiting for all health endpoints
 export class HealthController {
   constructor(

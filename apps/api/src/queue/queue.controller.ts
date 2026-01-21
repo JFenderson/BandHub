@@ -29,7 +29,7 @@ class CleanupDto {
   dryRun?: boolean;
 }
 
-@Controller('admin/queue')
+@Controller({ path: 'admin/queue', version: '1' })
 export class QueueController {
   constructor(private queueService: QueueService) {}
   

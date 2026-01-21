@@ -45,9 +45,35 @@ export class ApiClient {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private onUnauthorized?: () => void;
+  private apiVersion: string = 'v1'; // Default to v1
+  private onDeprecationWarning?: (warning: DeprecationWarning) => void;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  /**
+   * Set the API version to use (e.g., 'v1', 'v2')
+   * This allows testing new versions before switching the entire app
+   */
+  setApiVersion(version: string) {
+    this.apiVersion = version;
+    // Update base URL to use the new version
+    this.baseUrl = this.baseUrl.replace(/\/v\d+$/, `/${version}`);
+  }
+
+  /**
+   * Get the current API version being used
+   */
+  getApiVersion(): string {
+    return this.apiVersion;
+  }
+
+  /**
+   * Set callback for deprecation warnings
+   */
+  setOnDeprecationWarning(callback: (warning: DeprecationWarning) => void) {
+    this.onDeprecationWarning = callback;
   }
 
   /**
@@ -97,6 +123,9 @@ export class ApiClient {
 
     try {
       const response = await fetch(url, config);
+
+      // Check for deprecation warnings
+      this.checkDeprecationHeaders(response);
 
       // Clone the response so we can read it twice for logging
       const responseClone = response.clone();
@@ -751,6 +780,47 @@ console.log('🔍 getVideos query:', query);
   async getTopBands(): Promise<TopBand[]> {
     return this.request<TopBand[]>('/admin/dashboard/top-bands');
   }
+
+  /**
+   * Check response headers for API version deprecation warnings
+   */
+  private checkDeprecationHeaders(response: Response) {
+    const deprecationHeader = response.headers.get('Deprecation');
+    const sunsetHeader = response.headers.get('Sunset');
+    const warningHeader = response.headers.get('X-API-Deprecation-Warning');
+    const replacementVersion = response.headers.get('X-API-Replacement-Version');
+
+    if (deprecationHeader || sunsetHeader) {
+      const warning: DeprecationWarning = {
+        currentVersion: this.apiVersion,
+        message: warningHeader || 'This API version is deprecated',
+        sunsetDate: sunsetHeader ? new Date(sunsetHeader) : undefined,
+        replacementVersion: replacementVersion || undefined,
+      };
+
+      // Log warning to console
+      console.warn(
+        `⚠️ API Deprecation Warning: ${warning.message}`,
+        warning.sunsetDate ? `Sunset date: ${warning.sunsetDate.toLocaleDateString()}` : '',
+        warning.replacementVersion ? `Please upgrade to ${warning.replacementVersion}` : ''
+      );
+
+      // Call callback if provided
+      if (this.onDeprecationWarning) {
+        this.onDeprecationWarning(warning);
+      }
+    }
+  }
+}
+
+/**
+ * Deprecation warning information
+ */
+export interface DeprecationWarning {
+  currentVersion: string;
+  message: string;
+  sunsetDate?: Date;
+  replacementVersion?: string;
 }
 
 export const apiClient = new ApiClient(API_URL);

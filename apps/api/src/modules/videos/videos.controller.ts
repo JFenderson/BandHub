@@ -25,7 +25,7 @@ import { ApiErrorDto } from '../../common/dto/api-error.dto';
 import { AdminRole } from '@prisma/client';
 
 @ApiTags('Videos')
-@Controller('videos')
+@Controller({ path: 'videos', version: '1' })
 export class VideosController {
   constructor(private readonly videosService: VideosService) {}
 

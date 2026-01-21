@@ -17,7 +17,7 @@ import { CurrentUser, CurrentUserData } from '../users/decorators/current-user.d
 import { TrackWatchDto, GetWatchHistoryQueryDto } from './dto';
 
 @ApiTags('watch-history')
-@Controller('watch-history')
+@Controller({ path: 'watch-history', version: '1' })
 @UseGuards(UserAuthGuard)
 @ApiBearerAuth()
 export class WatchHistoryController {

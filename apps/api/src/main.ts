@@ -16,6 +16,9 @@ import {
 import * as Sentry from '@sentry/node';
 import { SanitizationPipe } from './common';
 import { VersioningType } from '@nestjs/common';
+import compression from 'compression';
+import { MetricsService } from './metrics/metrics.service';
+import { VersionDeprecationMiddleware } from './common/middleware/version-deprecation.middleware';
 
 async function bootstrap() {
   startTracing('api');
@@ -24,11 +27,54 @@ const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
   });
 
+  // Get metrics service for compression stats
+  const metricsService = app.get(MetricsService);
+
+  // Configure compression middleware
+  const isProduction = process.env.NODE_ENV === 'production';
+  const compressionLevel = isProduction ? 9 : 6; // Max compression for prod, balanced for dev
+
+  app.use(
+    compression({
+      level: compressionLevel,
+      threshold: 1024, // 1kb minimum size to compress
+      filter: (req, res) => {
+        // Skip compression for health and metrics endpoints
+        if (req.url?.startsWith('/api/health') || req.url?.startsWith('/api/metrics')) {
+          return false;
+        }
+        // Use default filter for other requests (compresses JSON, text, etc.)
+        return compression.filter(req, res);
+      },
+    }),
+  );
+
+  // Track compression stats in metrics
+  app.use((req: any, res: any, next: any) => {
+    const originalEnd = res.end;
+    res.end = function (chunk: any, encoding?: any, callback?: any) {
+      // Track compressed vs uncompressed responses
+      const contentEncoding = res.getHeader('content-encoding');
+      if (contentEncoding === 'gzip' || contentEncoding === 'deflate' || contentEncoding === 'br') {
+        metricsService.compressedResponses.inc({ encoding: contentEncoding as string });
+        const contentLength = res.getHeader('content-length');
+        if (contentLength) {
+          metricsService.compressedBytes.inc(parseInt(contentLength as string, 10));
+        }
+      }
+      return originalEnd.call(this, chunk, encoding, callback);
+    };
+    next();
+  });
+
   app.use(correlationIdMiddleware as never);
   app.use(createHttpLogger());
 
+  // Add version deprecation middleware
+  const versionDeprecationMiddleware = new VersionDeprecationMiddleware();
+  app.use(versionDeprecationMiddleware.use.bind(versionDeprecationMiddleware));
 
-    app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Enable API Versioning (URI Versioning e.g., /api/v1/bands)
   app.enableVersioning({
@@ -104,6 +150,18 @@ The API includes standard rate limit headers in responses:
 * \`X-RateLimit-Limit\`: The maximum number of requests allowed in the window.
 * \`X-RateLimit-Remaining\`: The number of requests remaining in the current window.
 * \`X-RateLimit-Reset\`: The time at which the current window resets.
+
+## 🗜️ Response Compression
+The API automatically compresses responses using gzip/deflate when:
+* Response size exceeds 1KB threshold
+* Client supports compression (sends \`Accept-Encoding\` header)
+* Endpoint is not \`/api/health\` or \`/api/metrics\` (excluded for monitoring)
+
+Compression levels:
+* **Production**: Level 9 (maximum compression)
+* **Development**: Level 6 (balanced speed/compression)
+
+Supported content types: JSON, text, HTML, CSS, JavaScript, and other compressible formats.
 
 ## 📁 File Uploads
 Endpoints accepting files use \`multipart/form-data\`. Ensure your client sets the correct Content-Type.

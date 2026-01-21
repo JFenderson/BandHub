@@ -26,7 +26,7 @@ import {
 } from './dto/event.dto';
 
 @ApiTags('Events')
-@Controller('events')
+@Controller({ path: 'events', version: '1' })
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 

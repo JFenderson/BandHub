@@ -37,7 +37,7 @@ import { SyncPriority } from './interfaces/quota.interface';
 // @ApiBearerAuth()
 // @UseGuards(JwtAuthGuard, RolesGuard)
 // @Roles('SUPER_ADMIN', 'ADMIN')
-@Controller('admin/youtube/quota')
+@Controller({ path: 'admin/youtube/quota', version: '1' })
 export class YoutubeQuotaController {
   constructor(private readonly quotaService: YoutubeQuotaService) {}
 

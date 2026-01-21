@@ -21,7 +21,7 @@ import { CurrentUser, CurrentUserData } from '../../common/decorators/current-us
 import { AdminRole } from '@prisma/client';
 
 @ApiTags('Categories')
-@Controller('categories')
+@Controller({ path: 'categories', version: '1' })
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 

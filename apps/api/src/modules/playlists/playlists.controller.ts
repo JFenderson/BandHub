@@ -21,7 +21,7 @@ import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 import { GetPlaylistsQueryDto, AddVideoToPlaylistDto } from './dto/playlist-query.dto';
 
 @ApiTags('playlists')
-@Controller('playlists')
+@Controller({ path: 'playlists', version: '1' })
 export class PlaylistsController {
   constructor(private readonly playlistsService: PlaylistsService) {}
 

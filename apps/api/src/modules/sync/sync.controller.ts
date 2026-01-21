@@ -26,7 +26,7 @@ import { SyncJobListResponseDto, SyncJobDetailDto } from './dto/sync-job-detail.
 import { QueueStatusDto, ErrorStatsResponseDto } from './dto/queue-status.dto';
 
 @ApiTags('Sync')
-@Controller('sync')
+@Controller({ path: 'sync', version: '1' })
 export class SyncController {
   constructor(private readonly syncService: SyncService) {}
 
@@ -127,7 +127,7 @@ export class SyncController {
 // ADMIN SYNC JOB MANAGEMENT ROUTES
 // ========================================
 @ApiTags('admin')
-@Controller('admin/sync-jobs')
+@Controller({ path: 'admin/sync-jobs', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class AdminSyncJobController {
@@ -182,7 +182,7 @@ export class AdminSyncJobController {
 // ADMIN QUEUE MANAGEMENT ROUTES
 // ========================================
 @ApiTags('admin')
-@Controller('admin/queue')
+@Controller({ path: 'admin/queue', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class AdminQueueController {
@@ -236,7 +236,7 @@ export class AdminQueueController {
 // ADMIN ERROR TRACKING ROUTES
 // ========================================
 @ApiTags('admin')
-@Controller('admin/sync')
+@Controller({ path: 'admin/sync', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class AdminSyncErrorController {

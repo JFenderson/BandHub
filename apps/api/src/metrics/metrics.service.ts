@@ -10,6 +10,9 @@ export class MetricsService implements OnModuleInit {
   // Business metrics (placeholders)
   public videosSynced: Counter<string>;
   public userRegistrations: Counter<string>;
+  // Compression metrics
+  public compressedResponses: Counter<string>;
+  public compressedBytes: Counter<string>;
 
   constructor() {
     this.register = new client.Registry();
@@ -45,6 +48,20 @@ export class MetricsService implements OnModuleInit {
     this.userRegistrations = new client.Counter({
       name: 'business_user_registrations_total',
       help: 'Total user registrations',
+      registers: [this.register],
+    });
+
+    // Compression metrics
+    this.compressedResponses = new client.Counter({
+      name: 'http_responses_compressed_total',
+      help: 'Total number of compressed HTTP responses',
+      labelNames: ['encoding'],
+      registers: [this.register],
+    });
+
+    this.compressedBytes = new client.Counter({
+      name: 'http_responses_compressed_bytes_total',
+      help: 'Total bytes of compressed HTTP responses',
       registers: [this.register],
     });
   }

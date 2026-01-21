@@ -19,7 +19,7 @@ import { UserAuthGuard } from '../../users/guards/user-auth.guard';
 import { CurrentUser, CurrentUserData } from '../../users/decorators/current-user.decorator';
 
 @ApiTags('OAuth')
-@Controller('auth')
+@Controller({ path: 'auth', version: '1' })
 export class OAuthController {
   constructor(
     private readonly oauthService: OAuthService,

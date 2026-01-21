@@ -20,7 +20,7 @@ import { AdminRole } from '@prisma/client';
  * Admin endpoints for YouTube sync management
  */
 @ApiTags('Admin Sync')
-@Controller('admin/sync')
+@Controller({ path: 'admin/sync', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class SyncAdminController {

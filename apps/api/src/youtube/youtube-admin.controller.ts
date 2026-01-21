@@ -27,7 +27,7 @@ import {
 } from './dto';
 
 @ApiTags('Admin YouTube')
-@Controller('admin/youtube')
+@Controller({ path: 'admin/youtube', version: '1' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 export class YouTubeAdminController {

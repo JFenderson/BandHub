@@ -43,7 +43,7 @@ class RedeemMagicLinkDto {
 }
 
 @ApiTags('Magic Link Authentication')
-@Controller('auth/magic-link')
+@Controller({ path: 'auth/magic-link', version: '1' })
 export class MagicLinkController {
   constructor(
     private readonly magicLinkService: MagicLinkService,
