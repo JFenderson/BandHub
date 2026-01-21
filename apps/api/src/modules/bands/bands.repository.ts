@@ -143,7 +143,15 @@ export class BandsRepository {
       bands,
       limit,
       sortBy,
-      (band) => band[sortBy as keyof typeof band],
+      (band) => {
+        const value = band[sortBy as keyof typeof band];
+        // Only name, schoolName, and createdAt are valid sortBy fields
+        if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+          return value;
+        }
+        // Fallback to name if sortBy resolves to an invalid type (should not happen)
+        return band.name;
+      },
     );
   }
 
