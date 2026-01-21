@@ -12,6 +12,17 @@ export class CacheStats {
 }
 
 /**
+ * SWR (Stale-While-Revalidate) metrics
+ */
+export interface SWRMetrics {
+  hits: number;           // Cache hits (fresh data)
+  staleHits: number;      // Stale data served while revalidating
+  misses: number;         // Cache misses (fetch fresh)
+  revalidations: number;  // Background revalidations
+  errors: number;         // Revalidation errors
+}
+
+/**
  * Overall cache metrics for monitoring
  */
 export class CacheMetricsDto {
@@ -28,6 +39,8 @@ export class CacheMetricsDto {
   usedMemoryMB: number;
 
   topKeys: CacheStats[];
+
+  swr?: SWRMetrics;
 }
 
 /**

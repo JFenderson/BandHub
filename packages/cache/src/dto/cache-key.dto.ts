@@ -163,6 +163,14 @@ export class CacheKeyBuilder {
   // ============ TRENDING/POPULAR KEYS ============
   
   /**
+   * Key for featured videos (homepage carousel)
+   * Invalidation: Time-based (1 hour TTL)
+   */
+  static featuredVideos(limit = 12): string {
+    return `featured:videos:${limit}`;
+  }
+
+  /**
    * Key for trending videos
    * Invalidation: Time-based (1 hour TTL)
    */

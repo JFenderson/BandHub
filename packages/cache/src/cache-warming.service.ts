@@ -22,27 +22,39 @@ import { PrismaService } from '@bandhub/database';
 @Injectable()
 export class CacheWarmingService implements OnModuleInit {
   private readonly logger = new Logger(CacheWarmingService.name);
+  private readonly warmingEnabled: boolean;
 
   constructor(
-private readonly cacheStrategy: CacheStrategyService,
-private readonly prisma: PrismaService,
-) {}
+    private readonly cacheStrategy: CacheStrategyService,
+    private readonly prisma: PrismaService,
+  ) {
+    this.warmingEnabled = process.env.CACHE_WARMING_ENABLED !== 'false';
+  }
 
   /**
    * Warm cache on application startup
    * This runs once when the API starts
    */
   async onModuleInit() {
+    if (!this.warmingEnabled) {
+      this.logger.log('⏸️  Cache warming is disabled via CACHE_WARMING_ENABLED env var');
+      return;
+    }
+
     this.logger.log('🔥 Starting cache warming on startup...');
+    const startTime = Date.now();
     
     try {
       await Promise.all([
         this.warmPopularBands(),
+        this.warmFeaturedVideos(),
         this.warmCategories(),
+        this.warmTrendingContent(),
         this.warmRecentVideos(),
       ]);
       
-      this.logger.log('✅ Cache warming on startup complete');
+      const duration = Date.now() - startTime;
+      this.logger.log(`✅ Cache warming on startup complete in ${duration}ms`);
     } catch (error) {
       this.logger.error('❌ Cache warming on startup failed:', error);
     }
@@ -54,16 +66,23 @@ private readonly prisma: PrismaService,
    */
   @Cron(CronExpression.EVERY_6_HOURS)
   async scheduledWarmup() {
+    if (!this.warmingEnabled) {
+      return;
+    }
+
     this.logger.log('🔥 Running scheduled cache warmup...');
+    const startTime = Date.now();
     
     try {
       await Promise.all([
         this.warmPopularBands(),
-        this.warmTrendingVideos(),
+        this.warmFeaturedVideos(),
+        this.warmTrendingContent(),
         this.warmPopularVideosByBand(),
       ]);
       
-      this.logger.log('✅ Scheduled cache warmup complete');
+      const duration = Date.now() - startTime;
+      this.logger.log(`✅ Scheduled cache warmup complete in ${duration}ms`);
     } catch (error) {
       this.logger.error('❌ Scheduled cache warmup failed:', error);
     }
@@ -74,6 +93,9 @@ private readonly prisma: PrismaService,
    * These are the most frequently accessed bands
    */
   async warmPopularBands(): Promise<void> {
+    const startTime = Date.now();
+    this.logger.log('⏳ Warming popular bands...');
+    
     try {
       const popularBands = await this.prisma.band.findMany({
         take: 20,
@@ -89,19 +111,89 @@ private readonly prisma: PrismaService,
         },
       });
 
+      let warmed = 0;
       // Warm each band's profile cache
       for (const band of popularBands) {
         const key = CacheKeyBuilder.bandProfile(band.id);
         await this.cacheStrategy.set(key, band, CACHE_TTL.BAND_PROFILE, true);
+        warmed++;
+        
+        if (warmed % 5 === 0) {
+          this.logger.debug(`  Progress: ${warmed}/${popularBands.length} popular bands warmed`);
+        }
       }
 
       // Also cache the popular bands list itself
       const popularKey = CacheKeyBuilder.popularBands(20);
       await this.cacheStrategy.set(popularKey, popularBands, CACHE_TTL.POPULAR_BANDS, true);
 
-      this.logger.log(`Warmed ${popularBands.length} popular band profiles`);
+      const duration = Date.now() - startTime;
+      this.logger.log(`✅ Warmed ${popularBands.length} popular band profiles in ${duration}ms`);
     } catch (error) {
       this.logger.error('Failed to warm popular bands:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Warm featured videos for homepage
+   * These are handpicked featured/highlighted videos
+   */
+  async warmFeaturedVideos(): Promise<void> {
+    const startTime = Date.now();
+    this.logger.log('⏳ Warming featured videos...');
+    
+    try {
+      // Get featured videos (assuming isFeatured flag exists or using top viewed)
+      const featuredVideos = await this.prisma.video.findMany({
+        take: 12, // Featured carousel on homepage
+        where: { 
+          isHidden: false,
+          // Add isFeatured: true if you have this field
+        },
+        orderBy: [
+          { viewCount: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        include: {
+          band: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logoUrl: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          contentCreator: {
+            select: {
+              id: true,
+              name: true,
+              isVerified: true,
+            },
+          },
+        },
+      });
+
+      const key = CacheKeyBuilder.featuredVideos(12);
+      await this.cacheStrategy.set(
+        key,
+        featuredVideos,
+        CACHE_TTL.TRENDING_VIDEOS,
+        true,
+      );
+
+      const duration = Date.now() - startTime;
+      this.logger.log(`✅ Warmed ${featuredVideos.length} featured videos in ${duration}ms`);
+    } catch (error) {
+      this.logger.error('Failed to warm featured videos:', error);
+      throw error;
     }
   }
 
@@ -109,12 +201,24 @@ private readonly prisma: PrismaService,
    * Warm trending videos (top 50 by view count)
    * These are frequently displayed on the homepage
    */
-  async warmTrendingVideos(): Promise<void> {
+  async warmTrendingContent(): Promise<void> {
+    const startTime = Date.now();
+    this.logger.log('⏳ Warming trending content...');
+    
     try {
+      // Trending videos algorithm: recent videos with high view velocity
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
       const trendingVideos = await this.prisma.video.findMany({
         take: 50,
+        where: { 
+          isHidden: false,
+          createdAt: {
+            gte: thirtyDaysAgo,
+          },
+        },
         orderBy: { viewCount: 'desc' },
-        where: { isHidden: false },
         include: {
           band: {
             select: {
@@ -149,9 +253,11 @@ private readonly prisma: PrismaService,
         true,
       );
 
-      this.logger.log(`Warmed ${trendingVideos.length} trending videos`);
+      const duration = Date.now() - startTime;
+      this.logger.log(`✅ Warmed ${trendingVideos.length} trending videos in ${duration}ms`);
     } catch (error) {
       this.logger.error('Failed to warm trending videos:', error);
+      throw error;
     }
   }
 
@@ -201,6 +307,9 @@ private readonly prisma: PrismaService,
    * Categories are used in filters and navigation
    */
   async warmCategories(): Promise<void> {
+    const startTime = Date.now();
+    this.logger.log('⏳ Warming categories...');
+    
     try {
       const categories = await this.prisma.category.findMany({
         orderBy: { sortOrder: 'asc' },
@@ -214,9 +323,12 @@ private readonly prisma: PrismaService,
       const key = CacheKeyBuilder.categories();
       await this.cacheStrategy.set(key, categories, CACHE_TTL.CATEGORIES, false);
 
-      this.logger.log(`Warmed ${categories.length} categories`);
+      const duration = Date.now() - startTime;
+      const totalVideos = categories.reduce((sum, cat) => sum + cat._count.videos, 0);
+      this.logger.log(`✅ Warmed ${categories.length} categories (${totalVideos} total videos) in ${duration}ms`);
     } catch (error) {
       this.logger.error('Failed to warm categories:', error);
+      throw error;
     }
   }
 
