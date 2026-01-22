@@ -2,12 +2,14 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Param,
   Query,
   Body,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { SyncMode, JobPriority } from '@hbcu-band-hub/shared-types';
@@ -29,6 +31,10 @@ class CleanupDto {
   dryRun?: boolean;
 }
 
+class UpdateJobPriorityDto {
+  priority!: JobPriority;
+}
+
 @Controller({ path: 'admin/queue', version: '1' })
 export class QueueController {
   constructor(private queueService: QueueService) {}
@@ -36,6 +42,22 @@ export class QueueController {
   @Get('stats')
   async getStats() {
     return this.queueService.getAllQueues();
+  }
+
+  /**
+   * Get priority distribution metrics for the queue dashboard
+   */
+  @Get('priority-metrics')
+  async getPriorityMetrics() {
+    return this.queueService.getPriorityMetrics();
+  }
+
+  /**
+   * Get priority distribution for all queues
+   */
+  @Get('priority-distribution')
+  async getPriorityDistribution() {
+    return this.queueService.getPriorityDistribution();
   }
   
   @Get(':queueName/jobs')
@@ -102,6 +124,42 @@ export class QueueController {
     @Param('jobId') jobId: string
   ) {
     await this.queueService.retryJob(queueName, jobId);
+  }
+
+  /**
+   * Update the priority of an existing job
+   * Only works for jobs in waiting or delayed state
+   */
+  @Put(':queueName/jobs/:jobId/priority')
+  async updateJobPriority(
+    @Param('queueName') queueName: string,
+    @Param('jobId') jobId: string,
+    @Body() dto: UpdateJobPriorityDto,
+  ) {
+    // Validate priority value
+    const validPriorities = [
+      JobPriority.CRITICAL,
+      JobPriority.HIGH,
+      JobPriority.NORMAL,
+      JobPriority.LOW,
+    ];
+
+    if (!validPriorities.includes(dto.priority)) {
+      throw new BadRequestException(
+        `Invalid priority. Valid values are: CRITICAL (${JobPriority.CRITICAL}), HIGH (${JobPriority.HIGH}), NORMAL (${JobPriority.NORMAL}), LOW (${JobPriority.LOW})`,
+      );
+    }
+
+    const result = await this.queueService.updateJobPriority(
+      queueName,
+      jobId,
+      dto.priority,
+    );
+
+    return {
+      message: `Job priority updated to ${JobPriority[dto.priority]}`,
+      ...result,
+    };
   }
   
   @Delete(':queueName/jobs/:jobId')

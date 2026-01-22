@@ -27,11 +27,30 @@ export interface JobInfo {
   data: any;
   progress: number | object;  // Changed to match BullMQ's type
   state: JobState | "unknown";
+  priority: number;
   attempts: number;
   failedReason?: string;
   createdAt: Date;
   processedAt?: Date;
   finishedAt?: Date;
+}
+
+/**
+ * Priority distribution metrics
+ */
+export interface PriorityDistribution {
+  critical: number;
+  high: number;
+  normal: number;
+  low: number;
+  total: number;
+}
+
+export interface QueuePriorityStats {
+  queueName: string;
+  waiting: PriorityDistribution;
+  active: PriorityDistribution;
+  delayed: PriorityDistribution;
 }
 
 @Injectable()
@@ -194,6 +213,7 @@ export class QueueService {
       data: job.data,
       progress: typeof job.progress === 'object' ? job.progress : (typeof job.progress === 'number' ? job.progress : (job.progress ? 100 : 0)),
       state,
+      priority: job.opts?.priority || JobPriority.NORMAL,
       attempts: job.attemptsMade,
       failedReason: job.failedReason,
       createdAt: new Date(job.timestamp),
@@ -201,7 +221,7 @@ export class QueueService {
       finishedAt: job.finishedOn ? new Date(job.finishedOn) : undefined,
     };
   }
-  
+
   /**
    * Get recent jobs from a queue
    */
@@ -243,6 +263,7 @@ export class QueueService {
           data: job.data,
           progress: typeof job.progress === 'object' ? job.progress : (typeof job.progress === 'number' ? job.progress : 0),
           state,
+          priority: job.opts?.priority || JobPriority.NORMAL,
           attempts: job.attemptsMade,
           failedReason: job.failedReason,
           createdAt: new Date(job.timestamp),
@@ -328,7 +349,160 @@ export class QueueService {
   async addSyncAllBandsJob(): Promise<Job> {
     return this.syncAllBands(SyncMode.INCREMENTAL, 5);
   }
-  
+
+  /**
+   * Update the priority of an existing job
+   * Note: BullMQ doesn't support changing priority directly, so we remove and re-add
+   */
+  async updateJobPriority(
+    queueName: string,
+    jobId: string,
+    newPriority: JobPriority,
+  ): Promise<{ success: boolean; newJobId?: string }> {
+    const queue = this.getQueue(queueName);
+    if (!queue) {
+      throw new Error(`Queue not found: ${queueName}`);
+    }
+
+    const job = await queue.getJob(jobId);
+    if (!job) {
+      throw new Error(`Job not found: ${jobId}`);
+    }
+
+    const state = await job.getState();
+    if (state !== 'waiting' && state !== 'delayed') {
+      throw new Error(`Cannot change priority of job in state: ${state}. Only waiting or delayed jobs can be reprioritized.`);
+    }
+
+    // Save job data and options
+    const jobData = job.data;
+    const jobName = job.name;
+    const jobOpts = { ...job.opts };
+
+    // Remove the old job
+    await job.remove();
+
+    // Create new job with updated priority
+    const newJobId = `${jobId}-reprioritized-${Date.now()}`;
+    await queue.add(jobName, jobData, {
+      ...jobOpts,
+      priority: newPriority,
+      jobId: newJobId,
+    });
+
+    this.logger.log(
+      `Updated job ${jobId} priority to ${JobPriority[newPriority]} (${newPriority}). New job ID: ${newJobId}`,
+    );
+
+    return { success: true, newJobId };
+  }
+
+  /**
+   * Get priority distribution metrics for all queues
+   */
+  async getPriorityDistribution(): Promise<QueuePriorityStats[]> {
+    const queues = [
+      { queue: this.youtubeSyncQueue, name: QUEUE_NAMES.YOUTUBE_SYNC },
+      { queue: this.videoProcessingQueue, name: QUEUE_NAMES.VIDEO_PROCESSING },
+      { queue: this.maintenanceQueue, name: QUEUE_NAMES.MAINTENANCE },
+    ];
+
+    const stats: QueuePriorityStats[] = [];
+
+    for (const { queue, name } of queues) {
+      const [waiting, active, delayed] = await Promise.all([
+        queue.getWaiting(0, 1000),
+        queue.getActive(0, 100),
+        queue.getDelayed(0, 1000),
+      ]);
+
+      stats.push({
+        queueName: name,
+        waiting: this.calculatePriorityDistribution(waiting),
+        active: this.calculatePriorityDistribution(active),
+        delayed: this.calculatePriorityDistribution(delayed),
+      });
+    }
+
+    return stats;
+  }
+
+  /**
+   * Calculate priority distribution from a list of jobs
+   */
+  private calculatePriorityDistribution(jobs: Job[]): PriorityDistribution {
+    const distribution: PriorityDistribution = {
+      critical: 0,
+      high: 0,
+      normal: 0,
+      low: 0,
+      total: jobs.length,
+    };
+
+    for (const job of jobs) {
+      const priority = job.opts?.priority || JobPriority.NORMAL;
+
+      // Map numeric priority to named buckets
+      if (priority <= JobPriority.CRITICAL) {
+        distribution.critical++;
+      } else if (priority <= JobPriority.HIGH) {
+        distribution.high++;
+      } else if (priority <= JobPriority.NORMAL) {
+        distribution.normal++;
+      } else {
+        distribution.low++;
+      }
+    }
+
+    return distribution;
+  }
+
+  /**
+   * Get aggregated priority metrics for dashboard
+   */
+  async getPriorityMetrics(): Promise<{
+    byQueue: QueuePriorityStats[];
+    totals: PriorityDistribution;
+    percentages: {
+      critical: number;
+      high: number;
+      normal: number;
+      low: number;
+    };
+  }> {
+    const byQueue = await this.getPriorityDistribution();
+
+    // Calculate totals across all queues
+    const totals: PriorityDistribution = {
+      critical: 0,
+      high: 0,
+      normal: 0,
+      low: 0,
+      total: 0,
+    };
+
+    for (const queueStats of byQueue) {
+      for (const state of ['waiting', 'active', 'delayed'] as const) {
+        totals.critical += queueStats[state].critical;
+        totals.high += queueStats[state].high;
+        totals.normal += queueStats[state].normal;
+        totals.low += queueStats[state].low;
+        totals.total += queueStats[state].total;
+      }
+    }
+
+    // Calculate percentages
+    const total = totals.total || 1; // Avoid division by zero
+    const percentages = {
+      critical: Math.round((totals.critical / total) * 100),
+      high: Math.round((totals.high / total) * 100),
+      normal: Math.round((totals.normal / total) * 100),
+      low: Math.round((totals.low / total) * 100),
+    };
+
+    return { byQueue, totals, percentages };
+  }
+
   private getQueue(name: string): Queue | null {
     switch (name) {
       case QUEUE_NAMES.YOUTUBE_SYNC:

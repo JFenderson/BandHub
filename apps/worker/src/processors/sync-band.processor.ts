@@ -1,19 +1,16 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { 
-  QueueName, 
-  JobType, 
-  SyncBandJobData, 
+import {
+  QueueName,
+  SyncBandJobData,
   SyncJobResult,
-  ProcessVideoJobData,
   SyncMode,
 } from '@hbcu-band-hub/shared-types';
 import { SyncJobType, SyncJobStatus } from '@prisma/client';
 import { YouTubeService, YouTubeQuotaExceededError, YouTubeRateLimitError } from '../services/youtube.service';
 import { DatabaseService } from '../services/database.service';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { QueueService } from '../queue/queue.service';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -25,12 +22,11 @@ function getErrorMessage(error: unknown): string {
 })
 export class SyncBandProcessor extends WorkerHost {
   private readonly logger = new Logger(SyncBandProcessor.name);
-  
+
   constructor(
     private youtubeService: YouTubeService,
     private databaseService: DatabaseService,
-    @InjectQueue(QueueName.VIDEO_PROCESSING)
-    private videoProcessingQueue: Queue,
+    private queueService: QueueService,
   ) {
     super();
   }
@@ -109,21 +105,14 @@ export class SyncBandProcessor extends WorkerHost {
             result.videosFound++;
             
             try {
-              await this.videoProcessingQueue.add(
-                JobType.PROCESS_VIDEO,
-                {
-                  type: JobType.PROCESS_VIDEO,
-                  videoId: videoMetadata.id,
-                  bandId,
-                  rawMetadata: videoMetadata,
-                  isUpdate: await this.databaseService.videoExists(videoMetadata.id),
-                } as ProcessVideoJobData,
-                {
-                  priority: 3,
-                  attempts: 2,
-                  backoff: { type: 'exponential', delay: 5000 },
-                }
-              );
+              // Use QueueService for auto-prioritization
+              // Featured bands get CRITICAL, recent videos get HIGH
+              await this.queueService.addProcessVideoJob({
+                videoId: videoMetadata.id,
+                bandId,
+                rawMetadata: videoMetadata,
+                isUpdate: await this.databaseService.videoExists(videoMetadata.id),
+              });
             } catch (error) {
               this.logger.error(`Failed to queue video ${videoMetadata.id}`, error);
               result.errors.push(`Video ${videoMetadata.id}: ${getErrorMessage(error)}`);
@@ -177,17 +166,13 @@ export class SyncBandProcessor extends WorkerHost {
             foundVideoIds.add(videoMetadata.id);
             result.videosFound++;
             
-            await this.videoProcessingQueue.add(
-              JobType.PROCESS_VIDEO,
-              {
-                type: JobType.PROCESS_VIDEO,
-                videoId: videoMetadata.id,
-                bandId,
-                rawMetadata: videoMetadata,
-                isUpdate: await this.databaseService.videoExists(videoMetadata.id),
-              } as ProcessVideoJobData,
-              { priority: 3, attempts: 2 }
-            );
+            // Use QueueService for auto-prioritization
+            await this.queueService.addProcessVideoJob({
+              videoId: videoMetadata.id,
+              bandId,
+              rawMetadata: videoMetadata,
+              isUpdate: await this.databaseService.videoExists(videoMetadata.id),
+            });
           }
         } catch (error) {
           this.logger.error(`Channel fetch failed for ${band.youtubeChannelId}`, error);

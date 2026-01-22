@@ -9,6 +9,8 @@ import { QueueName } from '@hbcu-band-hub/shared-types';
 import { PrismaModule } from '@bandhub/database';
 import { DatabaseService } from './services/database.service';
 import { CacheModule } from '@bandhub/cache';
+// Queue module with priority support
+import { QueueModule } from './queue/queue.module';
 // Worker services
 import { YouTubeService } from './services/youtube.service';
 import { CircuitBreakerService } from './external/circuit-breaker.service';
@@ -41,6 +43,9 @@ ScheduleModule.forRoot(),
 
 // Worker metrics (exposes /metrics on configured port)
 MetricsModule,
+
+// Queue module with priority-based job processing
+QueueModule,
 
 // BullMQ configuration
 BullModule.forRootAsync({

@@ -14,11 +14,12 @@ export enum SyncMode {
 }
 
 // Job priority enum
+// Note: Lower values = higher priority in BullMQ
 export enum JobPriority {
-  LOW = 1,
-  NORMAL = 5,
-  HIGH = 10,
-  CRITICAL = 20,
+  CRITICAL = 1,
+  HIGH = 5,
+  NORMAL = 10,
+  LOW = 15,
 }
 
 // Job data interfaces

@@ -19,9 +19,9 @@ export enum JobType {
 
 export enum JobPriority {
   CRITICAL = 1,
-  HIGH = 2,
-  NORMAL = 3,
-  LOW = 4,
+  HIGH = 5,
+  NORMAL = 10,
+  LOW = 15,
 }
 
 export enum SyncMode {
@@ -35,6 +35,7 @@ export interface SyncBandJobData {
   mode: SyncMode;
   triggeredBy: 'admin' | 'schedule' | 'system';
   maxResults?: number;
+  priority?: JobPriority;
 }
 
 export interface SyncAllBandsJobData {
@@ -42,6 +43,7 @@ export interface SyncAllBandsJobData {
   mode: SyncMode;
   triggeredBy: 'admin' | 'schedule';
   batchSize?: number;
+  priority?: JobPriority;
 }
 
 export interface ProcessVideoJobData {
@@ -50,18 +52,21 @@ export interface ProcessVideoJobData {
   bandId: string;
   rawMetadata: YouTubeVideoMetadata;
   isUpdate: boolean;
+  priority?: JobPriority;
 }
 
 export interface CleanupVideosJobData {
   type: JobType.CLEANUP_VIDEOS;
   scope: 'duplicates' | 'irrelevant' | 'deleted' | 'all';
   dryRun?: boolean;
+  priority?: JobPriority;
 }
 
 export interface UpdateStatsJobData {
   type: JobType.UPDATE_STATS;
   videoIds?: string[];
   batchSize?: number;
+  priority?: JobPriority;
 }
 
 export interface BackfillCreatorsJobData {
@@ -69,6 +74,7 @@ export interface BackfillCreatorsJobData {
   triggeredBy: 'admin' | 'schedule' | 'system';
   creatorId?: string;
   limit?: number;
+  priority?: JobPriority;
 }
 
 export interface BackfillBandsJobData {
@@ -76,6 +82,7 @@ export interface BackfillBandsJobData {
   triggeredBy: 'admin' | 'schedule' | 'system';
   bandId?: string;
   limit?: number;
+  priority?: JobPriority;
 }
 
 export interface MatchVideosJobData {
@@ -83,12 +90,14 @@ export interface MatchVideosJobData {
   triggeredBy: 'admin' | 'schedule' | 'system';
   limit?: number;
   minConfidence?: number;
+  priority?: JobPriority;
 }
 
 export interface PromoteVideosJobData {
   type: JobType.PROMOTE_VIDEOS;
   triggeredBy: 'admin' | 'schedule' | 'system';
   limit?: number;
+  priority?: JobPriority;
 }
 
 export type JobData =

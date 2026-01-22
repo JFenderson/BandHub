@@ -1,19 +1,19 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import { ConfigModule } from '@nestjs/config';
 import { QueueName } from '@hbcu-band-hub/shared-types';
-import { MetricsService } from './metrics.service';
+import { PrismaModule } from '@bandhub/database';
+import { QueueService } from './queue.service';
 
 @Module({
   imports: [
-    ConfigModule,
+    PrismaModule,
     BullModule.registerQueue(
       { name: QueueName.VIDEO_SYNC },
       { name: QueueName.VIDEO_PROCESSING },
       { name: QueueName.MAINTENANCE },
     ),
   ],
-  providers: [MetricsService],
-  exports: [MetricsService],
+  providers: [QueueService],
+  exports: [QueueService],
 })
-export class MetricsModule {}
+export class QueueModule {}
