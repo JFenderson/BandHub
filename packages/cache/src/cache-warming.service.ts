@@ -442,7 +442,7 @@ export class CacheWarmingService implements OnModuleInit {
     try {
       await Promise.all([
         this.warmPopularBands(),
-        this.warmTrendingVideos(),
+        this.warmTrendingContent(),
         this.warmRecentVideos(),
         this.warmCategories(),
         this.warmPopularVideosByBand(),

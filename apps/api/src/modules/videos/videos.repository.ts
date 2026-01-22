@@ -339,7 +339,15 @@ export class VideosRepository {
       videos,
       limit,
       sortBy,
-      (video) => video[sortBy as keyof typeof video],
+      (video) => {
+        const value = video[sortBy as keyof typeof video];
+        // Only valid sortBy fields return string, number, or Date types
+        if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+          return value;
+        }
+        // Fallback to publishedAt if sortBy resolves to an invalid type (should not happen)
+        return video.publishedAt;
+      },
     );
   }
 
