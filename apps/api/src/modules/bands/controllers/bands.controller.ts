@@ -35,7 +35,7 @@ import { diskStorage } from 'multer';
 import { processUploadedImage } from '../../../common/utils/image-processing.util';
 import { unlink } from 'fs/promises';
 import { CreateBandDto, UpdateBandDto, BandQueryDto, UpdateFeaturedOrderDto } from '../dto';
-import { RateLimit } from '../../../common/decorators/rate-limit.decorator';
+import { RateLimit, ThrottleEndpoint } from '../../../common/decorators/rate-limit.decorator';
 import { RateLimitType } from '../../../common/interfaces/rate-limit.interface';
 
 // Import AdminRole from generated Prisma client
@@ -146,13 +146,20 @@ export class BandsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(AdminRole.MODERATOR, AdminRole.SUPER_ADMIN)
   @ApiBearerAuth('JWT-auth')
+  @ThrottleEndpoint(3, 60 * 1000, (context) => {
+    const req = context.request;
+    const userId = req.user?.id || 'anonymous';
+    const ip = req.realIp || req.ip;
+    return `bands:create:${userId}:${ip}`;
+  })
   @ApiOperation({ 
     summary: 'Create a new band', 
-    description: 'Creates a new band profile (HBCU or ALL_STAR type). Restricted to Moderators and Super Admins.' 
+    description: 'Creates a new band profile (HBCU or ALL_STAR type). Restricted to Moderators and Super Admins. Rate limit: 3 requests per minute.' 
   })
   @ApiResponse({ status: 201, description: 'Band created successfully', type: CreateBandDto })
   @ApiResponse({ status: 401, description: 'Unauthorized', type: ApiErrorDto })
   @ApiResponse({ status: 403, description: 'Insufficient permissions', type: ApiErrorDto })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded', type: ApiErrorDto })
   async create(@Body() createBandDto: CreateBandDto, @CurrentUser() user: CurrentUserData) {
     return this.bandsService.create(createBandDto);
   }

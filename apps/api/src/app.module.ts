@@ -22,6 +22,7 @@ import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { YoutubeModule } from './youtube/youtube.module';
+import { SecurityModule } from './modules/security/security.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
@@ -41,6 +42,7 @@ import Redis from 'ioredis';
 import { Reflector } from '@nestjs/core/services/reflector.service';
 import { PrismaModule } from '@bandhub/database'; // From shared package
 import { CacheModule } from '@bandhub/cache'; // From shared package
+import { MetricsService } from './metrics/metrics.service';
 
 @Module({
   imports: [
@@ -99,6 +101,7 @@ import { CacheModule } from '@bandhub/cache'; // From shared package
     YoutubeModule,
     CreatorsModule,
     SharingModule,
+    SecurityModule,
     RecommendationsModule,
     
     // Utilities
@@ -112,10 +115,10 @@ DatabaseService,
 // Rate limiting service (used by guard)
 RedisRateLimiterService,
 {
-  provide: APP_GUARD,
-  useFactory: (reflector: Reflector, rateLimiter: RedisRateLimiterService) => {
-    return new RateLimitingGuard(reflector, rateLimiter);
+  provide: APP_GUARD,, metrics: MetricsService) => {
+    return new RateLimitingGuard(reflector, rateLimiter, metrics);
   },
+  inject: [Reflector, RedisRateLimiterService, Metrics
   inject: [Reflector, RedisRateLimiterService],
 },
     // Global filters

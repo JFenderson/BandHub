@@ -24,11 +24,13 @@ import { MfaController } from './controllers/mfa.controller';
 import { PasswordController } from './controllers/password.controller';
 import { MagicLinkController } from './controllers/magic-link.controller';
 import { OAuthController } from './controllers/oauth.controller';
+import { ApiKeyAnalyticsController } from './controllers/api-key-analytics.controller';
 import { EmailModule } from '../email/email.module';
 import { RolesGuard, ApiKeyGuard } from 'src/common';
 import { OptionalAuthGuard } from 'src/common/guards/optional-auth.guard';
 import { UserAuthGuard } from '../users/guards/user-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ApiKeyAnalyticsService } from './services/api-key-analytics.service';
 
 @Module({
   imports: [
@@ -62,6 +64,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
   controllers: [
     AuthController,
     ApiKeysController,
+    ApiKeyAnalyticsController,
     SessionController,
     MfaController,
     PasswordController,
@@ -72,6 +75,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     AuthService,
     JwtStrategy,
     ApiKeyService,
+    ApiKeyAnalyticsService,
     SessionService,
     MfaService,
     SecurityService,

@@ -38,6 +38,7 @@ import {
 } from '../../config/rate-limit.config';
 import { RateLimitException } from '../filters/rate-limit-exception.filter';
 import { RequestWithIp } from '../middleware/ip-extractor.middleware';
+import { MetricsService } from '../../metrics/metrics.service';
 
 @Injectable()
 export class RateLimitingGuard implements CanActivate {
@@ -46,6 +47,7 @@ export class RateLimitingGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly rateLimiterService: RedisRateLimiterService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -99,6 +101,17 @@ export class RateLimitingGuard implements CanActivate {
     // Check rate limit
     const result = await this.rateLimiterService.checkRateLimit(key, config);
 
+    // Track metrics
+    const path = request.route?.path || request.path || request.url;
+    const isAuthenticated = !!request.user;
+    
+    this.metricsService.rateLimitRequests.inc({
+      endpoint: path,
+      type: config.type,
+      user_authenticated: String(isAuthenticated),
+      allowed: String(result.allowed),
+    });
+
     // Attach rate limit metadata to request for logging/monitoring
     request['rateLimitMetadata'] = {
       key,
@@ -115,6 +128,13 @@ export class RateLimitingGuard implements CanActivate {
 
     // Block if rate limit exceeded
     if (!result.allowed) {
+      // Track rate limit exceeded metric
+      this.metricsService.rateLimitExceeded.inc({
+        endpoint: path,
+        type: config.type,
+        user_authenticated: String(isAuthenticated),
+      });
+      
       throw new RateLimitException(
         config.message || 'Too many requests. Please try again later.',
         result,

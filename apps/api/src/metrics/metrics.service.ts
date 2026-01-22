@@ -13,6 +13,9 @@ export class MetricsService implements OnModuleInit {
   // Compression metrics
   public compressedResponses: Counter<string>;
   public compressedBytes: Counter<string>;
+  // Rate limit metrics
+  public rateLimitExceeded: Counter<string>;
+  public rateLimitRequests: Counter<string>;
 
   constructor() {
     this.register = new client.Registry();
@@ -62,6 +65,21 @@ export class MetricsService implements OnModuleInit {
     this.compressedBytes = new client.Counter({
       name: 'http_responses_compressed_bytes_total',
       help: 'Total bytes of compressed HTTP responses',
+      registers: [this.register],
+    });
+
+    // Rate limit metrics
+    this.rateLimitExceeded = new client.Counter({
+      name: 'rate_limit_exceeded_total',
+      help: 'Total number of rate limit exceeded events',
+      labelNames: ['endpoint', 'type', 'user_authenticated'],
+      registers: [this.register],
+    });
+
+    this.rateLimitRequests = new client.Counter({
+      name: 'rate_limit_requests_total',
+      help: 'Total number of requests checked against rate limits',
+      labelNames: ['endpoint', 'type', 'user_authenticated', 'allowed'],
       registers: [this.register],
     });
   }

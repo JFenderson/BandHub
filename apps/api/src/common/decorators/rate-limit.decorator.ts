@@ -7,7 +7,7 @@
  */
 
 import { SetMetadata } from '@nestjs/common';
-import { RateLimitConfig } from '../interfaces/rate-limit.interface';
+import { RateLimitConfig, RateLimitType } from '../interfaces/rate-limit.interface';
 
 /**
  * Metadata key for rate limit configuration
@@ -132,4 +132,39 @@ export const AdminRateLimit = () =>
     limit: 1000,
     windowMs: 60 * 60 * 1000, // 1 hour
     message: 'Admin rate limit exceeded.',
+  });
+
+/**
+ * Apply throttle endpoint with custom configuration
+ * Supports custom key generator function
+ * 
+ * @param limit - Maximum number of requests allowed
+ * @param ttl - Time window in milliseconds
+ * @param keyGenerator - Optional custom function to generate rate limit key
+ * 
+ * @example
+ * ```typescript
+ * @Post('upload')
+ * @ThrottleEndpoint(3, 60 * 1000, (context) => {
+ *   const req = context.request;
+ *   const userId = req.user?.id || 'anonymous';
+ *   const ip = req.realIp || req.ip;
+ *   return `upload:${userId}:${ip}`;
+ * })
+ * async uploadFile(@UploadedFile() file: Express.Multer.File) {
+ *   // ...
+ * }
+ * ```
+ */
+export const ThrottleEndpoint = (
+  limit: number,
+  ttl: number,
+  keyGenerator?: (context: any) => string,
+) =>
+  RateLimit({
+    limit,
+    windowMs: ttl,
+    type: keyGenerator ? RateLimitType.IP_AND_USER : RateLimitType.IP_AND_USER,
+    keyGenerator,
+    message: 'Rate limit exceeded. Please try again later.',
   });

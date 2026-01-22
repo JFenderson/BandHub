@@ -30,6 +30,28 @@ export const RATE_LIMIT_CONFIGS = {
   } as RateLimitConfig,
 
   /**
+   * Upload-specific rate limits
+   * Very restrictive to prevent abuse
+   */
+  uploadEndpoint: {
+    limit: 3,
+    windowMs: 60 * 1000, // 1 minute
+    type: RateLimitType.IP_AND_USER,
+    message: 'Too many upload requests. Please slow down.',
+  } as RateLimitConfig,
+
+  /**
+   * Search-specific rate limits  
+   * Moderate restrictions
+   */
+  searchEndpoint: {
+    limit: 20,
+    windowMs: 60 * 1000, // 1 minute
+    type: RateLimitType.IP_AND_USER,
+    message: 'Too many search requests. Please slow down.',
+  } as RateLimitConfig,
+
+  /**
    * Authentication endpoints (login, register, password reset)
    * Very restrictive to prevent brute force and credential stuffing attacks
    */

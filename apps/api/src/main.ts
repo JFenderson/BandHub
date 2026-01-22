@@ -19,6 +19,7 @@ import { VersioningType } from '@nestjs/common';
 import compression from 'compression';
 import { MetricsService } from './metrics/metrics.service';
 import { VersionDeprecationMiddleware } from './common/middleware/version-deprecation.middleware';
+import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 
 async function bootstrap() {
   startTracing('api');
@@ -69,6 +70,10 @@ const app = await NestFactory.create<NestExpressApplication>(AppModule, {
 
   app.use(correlationIdMiddleware as never);
   app.use(createHttpLogger());
+
+  // Apply security headers middleware
+  const securityHeadersMiddleware = new SecurityHeadersMiddleware();
+  app.use(securityHeadersMiddleware.use.bind(securityHeadersMiddleware));
 
   // Add version deprecation middleware
   const versionDeprecationMiddleware = new VersionDeprecationMiddleware();

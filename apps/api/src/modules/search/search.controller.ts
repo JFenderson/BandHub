@@ -2,6 +2,7 @@ import { Controller, Get, Query, Headers, Post, HttpStatus, HttpCode, Body } fro
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { SearchService, SearchFilters } from './search.service';
 import { ApiErrorDto } from '../../common/dto/api-error.dto';
+import { ThrottleEndpoint } from '../../common/decorators/rate-limit.decorator';
 
 @ApiTags('search')
 @Controller({ path: 'search', version: '1' })
@@ -9,9 +10,17 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Advanced search', description: 'Full-text search across videos with extensive filtering capabilities.' })
+  @ThrottleEndpoint(20, 60 * 1000, (context) => {
+    const req = context.request;
+    const userId = req.user?.id;
+    const ip = req.realIp || req.ip;
+    // Higher limits for authenticated users
+    return userId ? `search:${userId}` : `search:${ip}`;
+  })
+  @ApiOperation({ summary: 'Advanced search', description: 'Full-text search across videos with extensive filtering capabilities. Rate limit: 20 requests per minute (IP-based for anonymous, user-based for authenticated).' })
  @ApiResponse({ status: 200, description: 'Search results retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Invalid search parameters', type: ApiErrorDto })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded', type: ApiErrorDto })
   @ApiQuery({ name: 'q', required: false, description: 'Search query' })
   @ApiQuery({ name: 'bandIds', required: false, description: 'Comma-separated band IDs' })
   @ApiQuery({ name: 'categoryIds', required: false, description: 'Comma-separated category IDs' })
