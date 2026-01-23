@@ -80,7 +80,7 @@ async function findDuplicateBands() {
         videoCount: band._count.videos,
         favoriteCount: band._count.userFavorites,
         shareCount: band._count.shares,
-        hasMetrics: !!band.metrics,
+        hasMetrics: band.metrics !== null,
         createdAt: band.createdAt,
       };
 

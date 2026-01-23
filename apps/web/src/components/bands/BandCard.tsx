@@ -12,14 +12,23 @@ export function BandCard({ band }: BandCardProps) {
     ? `${band.city}, ${band.state}`
     : band.state || '';
 
+  // Validate and sanitize color values (must be valid hex colors)
+  const isValidHexColor = (color: string | undefined | null): boolean => {
+    if (!color) return false;
+    return /^#[0-9A-Fa-f]{6}$/.test(color);
+  };
+
+  const validPrimaryColor = isValidHexColor(band.primaryColor) ? band.primaryColor! : null;
+  const validSecondaryColor = isValidHexColor(band.secondaryColor) ? band.secondaryColor! : null;
+
   // Define colors with fallbacks
-  const hasBandColors = band.primaryColor && band.secondaryColor;
-  const primaryColor = band.primaryColor || '#0ea5e9';
-  const secondaryColor = band.secondaryColor || '#38bdf8';
+  const hasBandColors = validPrimaryColor && validSecondaryColor;
+  const primaryColor = validPrimaryColor || '#0ea5e9';
+  const secondaryColor = validSecondaryColor || '#38bdf8';
 
   // Define gradient background style
   const gradientStyle = hasBandColors
-    ? { background: `linear-gradient(135deg, ${band.primaryColor} 0%, ${band.secondaryColor} 100%)` }
+    ? { background: `linear-gradient(135deg, ${validPrimaryColor} 0%, ${validSecondaryColor} 100%)` }
     : {};
 
   return (
