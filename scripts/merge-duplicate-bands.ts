@@ -92,7 +92,7 @@ async function mergeDuplicateBands() {
     let mergedCount = 0;
     let totalDuplicatesRemoved = 0;
 
-    for (const [schoolName, bandsList] of bandsBySchool.entries()) {
+    for (const [schoolName, bandsList] of Array.from(bandsBySchool.entries())) {
       if (bandsList.length > 1) {
         console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
         console.log(`🎵 Merging: ${schoolName}`);

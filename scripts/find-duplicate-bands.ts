@@ -93,7 +93,7 @@ async function findDuplicateBands() {
     // Find duplicates
     const duplicates: DuplicateGroup[] = [];
 
-    for (const [schoolName, bandsList] of bandsBySchool.entries()) {
+    for (const [schoolName, bandsList] of Array.from(bandsBySchool.entries())) {
       if (bandsList.length > 1) {
         // Sort by completeness: bands with more data first
         const sorted = bandsList.sort((a, b) => {
