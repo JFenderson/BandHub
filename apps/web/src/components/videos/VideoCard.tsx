@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import type { Video } from '@/types/api';
 import { VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
+import { VideoThumbnail } from '@/components/images';
 
 interface VideoCardProps {
   video: Video;
@@ -22,12 +22,12 @@ export function VideoCard({ video }: VideoCardProps) {
       <Link href={`/videos/${video.id}`}>
         {/* Thumbnail */}
         <div className="relative aspect-video bg-gray-900">
-          <Image
-            src={video.thumbnailUrl || '/placeholder-video.jpg'}
+          <VideoThumbnail
+            src={video.thumbnailUrl}
             alt={video.title}
-            fill
             className="object-cover group-hover:opacity-90 transition-opacity"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            width={480}
+            height={270}
           />
           
           {/* Duration Badge - convert seconds to MM:SS */}

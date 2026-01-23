@@ -20,5 +20,7 @@ export function getUploadsBaseUrl(): string {
 export function getFullImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   if (url.startsWith('http')) return url;
+  // Local static assets from public directory (e.g., /band-logos/) are served directly by Next.js
+  if (url.startsWith('/band-logos/')) return url;
   return `${getUploadsBaseUrl()}${url}`;
 }

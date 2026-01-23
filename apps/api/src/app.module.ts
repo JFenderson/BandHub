@@ -109,18 +109,18 @@ import { MetricsService } from './metrics/metrics.service';
     MetricsModule,
     ObservabilityModule,
   ],
-providers: [
-// API-specific database service with business logic
-DatabaseService,
-// Rate limiting service (used by guard)
-RedisRateLimiterService,
-{
-  provide: APP_GUARD,, metrics: MetricsService) => {
-    return new RateLimitingGuard(reflector, rateLimiter, metrics);
-  },
-  inject: [Reflector, RedisRateLimiterService, Metrics
-  inject: [Reflector, RedisRateLimiterService],
-},
+  providers: [
+    // API-specific database service with business logic
+    DatabaseService,
+    // Rate limiting service (used by guard)
+    RedisRateLimiterService,
+    {
+      provide: APP_GUARD,
+      useFactory: (reflector: Reflector, rateLimiter: RedisRateLimiterService, metrics: MetricsService) => {
+        return new RateLimitingGuard(reflector, rateLimiter, metrics);
+      },
+      inject: [Reflector, RedisRateLimiterService, MetricsService],
+    },
     // Global filters
     {
       provide: APP_FILTER,

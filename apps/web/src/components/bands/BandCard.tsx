@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import type { Band } from '@/types/api';
-import { getFullImageUrl } from '@/lib/utils/image-url';
+import { BandLogo } from '@/components/images';
 
 interface BandCardProps {
   band: Band;
@@ -12,8 +11,6 @@ export function BandCard({ band }: BandCardProps) {
   const locationText = band.city && band.state
     ? `${band.city}, ${band.state}`
     : band.state || '';
-
-  const imageUrl = getFullImageUrl(band.logoUrl);
 
   // 1. Define the dynamic style
   const gradientStyle = band.primaryColor && band.secondaryColor
@@ -33,22 +30,12 @@ export function BandCard({ band }: BandCardProps) {
         className={`relative aspect-video ${!band.primaryColor ? 'bg-gradient-to-br from-primary-100 to-secondary-100' : ''}`}
         style={gradientStyle}
       >
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={band.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-white/90">
-             {/* 3. Update text color to be white/transparent since background is now colored */}
-            <span className="text-4xl font-bold drop-shadow-md">
-              {band.name.substring(0, 2).toUpperCase()}
-            </span>
-          </div>
-        )}
+        <BandLogo
+          src={band.logoUrl}
+          alt={band.name}
+          className="w-full h-full object-cover"
+          size={300}
+        />
       </div>
 
       {/* Band Info */}

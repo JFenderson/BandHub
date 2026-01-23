@@ -7,6 +7,7 @@ import clsx from 'clsx';
 import { SearchBar } from './SearchBar';
 import { useUser } from '@/contexts/UserContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserAvatar } from '@/components/images';
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -89,15 +90,11 @@ export function Header() {
                   href="/profile"
                   className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-primary-600"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
-                    ) : (
-                      <span className="text-white text-sm font-bold">
-                        {user.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
+                  <UserAvatar 
+                    src={user.avatar} 
+                    alt={user.name} 
+                    size={32} 
+                  />
                   <span>{user.name.split(' ')[0]}</span>
                 </Link>
                 <button
