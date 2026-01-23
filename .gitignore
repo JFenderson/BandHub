@@ -66,3 +66,7 @@ secrets/
 # Backups
 backups/prometheus-*.tar.gz
 prometheus-*/
+
+# Database maintenance scripts output
+duplicate-bands-report.json
+backup_*.sql

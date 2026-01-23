@@ -233,6 +233,9 @@ model Band {
   lastFullSync       DateTime?           @map("last_full_sync")
   latestVideoDate    DateTime?           @map("latest_video_date")
   totalVideoCount    Int                 @default(0) @map("total_video_count")
+  // Band colors for enhanced UI display (hex color codes, e.g., "#660000")
+  primaryColor       String?             @map("primary_color")
+  secondaryColor     String?             @map("secondary_color")
   
   // Relations
   metrics                   BandMetrics?
