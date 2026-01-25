@@ -5,6 +5,9 @@ import { apiClient } from '@/lib/api-client';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { Pagination } from '@/components/ui/Pagination';
 
+// Force dynamic rendering to always fetch fresh data
+export const dynamic = 'force-dynamic';
+
 interface CreatorPageProps {
   params: {
     id: string;

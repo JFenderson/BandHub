@@ -30,7 +30,7 @@ const prisma = new PrismaService();
 
 // Load all-star configuration
 const allStarConfig = JSON.parse(
-  fs.readFileSync(path.resolve('./allstar-config.json'), 'utf-8')
+  fs.readFileSync(path.resolve('../../allstar-config.json'), 'utf-8')
 );
 
 // Parse command line arguments
@@ -480,12 +480,15 @@ async function main() {
       stats.matchedHBCU++;
     }
 
-    // Check for battle
+    // Check for battle and determine opponent band
     const isBattle = isBattleVideo(searchText);
+    let opponentBandId: string | null = null;
+
     if (isBattle && matches.length >= 2) {
       const secondMatch = matches.find((m) => m.bandId !== topMatch.bandId);
       if (secondMatch && secondMatch.score >= minConfidence) {
         stats.battleVideos++;
+        opponentBandId = secondMatch.bandId;
       } else {
         stats.singleBand++;
       }
@@ -503,6 +506,7 @@ async function main() {
           data: {
             bandId: topMatch.bandId,
             qualityScore: topMatch.score,
+            opponentBandId: opponentBandId,
           },
         });
       } catch (error) {

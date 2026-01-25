@@ -197,7 +197,7 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     city: "Winston-Salem",
     state: "North Carolina",
     conference: "CIAA",
-    keywords: ["wssu", "red sea of sound", "ciaa", "winston-salem", "rams"]
+    keywords: ["wssu", "red sea of sound", "ciaa", "winston-salem", "rams", "winston salem state", "winston-salem state", "winston salem state university"]
   },
   {
     name: "Bowie State Symphony of Soul",
@@ -382,7 +382,7 @@ export const HBCU_BANDS: BandChannelConfig[] = [
     state: "North Carolina",
     conference: "CAA",
     channelHandle: "@NCATBand",
-    keywords: ["nc a&t", "blue and gold", "marching machine", "caa", "bgmm"]
+    keywords: ["nc a&t", "blue and gold", "marching machine", "caa", "bgmm", "north carolina a&t university", "north carolina a&t", "nc a&t state", "a&t state", "aggies"]
   },
   {
     name: "Hampton University Marching Force",

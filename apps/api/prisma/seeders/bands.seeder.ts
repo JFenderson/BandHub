@@ -134,6 +134,8 @@ async function upsertBand(
   if (band.nickname) bandData.nickname = band.nickname;
   if (band.conference) bandData.conference = band.conference;
   if (band.foundedYear) bandData.foundedYear = band.foundedYear;
+  if (band.primaryColor) bandData.primaryColor = band.primaryColor;
+  if (band.secondaryColor) bandData.secondaryColor = band.secondaryColor;
 
   // Upsert the band
   await prisma.band.upsert({

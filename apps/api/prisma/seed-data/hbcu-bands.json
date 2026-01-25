@@ -641,7 +641,9 @@
     "searchKeywords": ["Allen", "Yellow Jackets", "AU"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#00539B",
+    "secondaryColor": "#C4A912"
   },
   {
     "name": "Benedict College Marching Tiger Band of Distinction",
@@ -656,7 +658,9 @@
     "searchKeywords": ["Benedict", "Tigers", "MTBD"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#800080",
+    "secondaryColor": "#FFD700"
   },
   {
     "name": "Bluefield State Marching Band",
@@ -671,7 +675,9 @@
     "searchKeywords": ["Bluefield", "Big Blues", "BSU"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#0F1D44",
+    "secondaryColor": "#C0AD72"
   },
   {
     "name": "Edward Waters Marching Tigers",
@@ -686,7 +692,9 @@
     "searchKeywords": ["Edward Waters", "EWU", "Tigers"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#772583",
+    "secondaryColor": "#E87722"
   },
   {
     "name": "Fisk University Marching Band",
@@ -701,7 +709,9 @@
     "searchKeywords": ["Fisk", "Bulldogs"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#2A56DF",
+    "secondaryColor": "#F4BA13"
   },
   {
     "name": "Florida Memorial Roaring Lions Marching Band",
@@ -716,7 +726,9 @@
     "searchKeywords": ["Florida Memorial", "FMU", "Lions", "Roaring Lions"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#24469A",
+    "secondaryColor": "#F6891F"
   },
   {
     "name": "Johnson C. Smith Golden Bulls Marching Band",
@@ -731,7 +743,9 @@
     "searchKeywords": ["JCSU", "Johnson C. Smith", "Golden Bulls"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#062849",
+    "secondaryColor": "#FCCB06"
   },
   {
     "name": "Kentucky State Marching Thorobreds",
@@ -746,7 +760,9 @@
     "searchKeywords": ["Kentucky State", "KSU", "Thorobreds"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#056839",
+    "secondaryColor": "#FFDE16"
   },
   {
     "name": "Lane College Marching Band",
@@ -761,7 +777,9 @@
     "searchKeywords": ["Lane", "Dragons", "Lane College"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#C51F33",
+    "secondaryColor": "#0C314C"
   },
   {
     "name": "Lincoln University Marching Band",
@@ -776,7 +794,9 @@
     "searchKeywords": ["Lincoln", "Lions", "LU", "Lincoln University"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#172642",
+    "secondaryColor": "#FFFFFF"
   },
   {
     "name": "Livingstone College Marching Band",
@@ -791,7 +811,9 @@
     "searchKeywords": ["Livingstone", "Blue Bears", "LC"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#8CB0BF",
+    "secondaryColor": "#000000"
   },
   {
     "name": "Rust College Marching Band",
@@ -806,7 +828,9 @@
     "searchKeywords": ["Rust", "Bearcats", "Rust College"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#2C3192",
+    "secondaryColor": "#FFFFFF"
   },
   {
     "name": "Shaw University Marching Band",
@@ -821,7 +845,9 @@
     "searchKeywords": ["Shaw", "Bears", "Shaw University"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#960A2C",
+    "secondaryColor": "#FFFFFF"
   },
   {
     "name": "Talladega College Marching Tornadoes",
@@ -836,7 +862,9 @@
     "searchKeywords": ["Talladega", "Tornadoes", "TC"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#AA0534",
+    "secondaryColor": "#72CDF4"
   },
   {
     "name": "Texas College Marching Band",
@@ -851,7 +879,9 @@
     "searchKeywords": ["Texas College", "Steers", "TC"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#4A1E59",
+    "secondaryColor": "#FFA32A"
   },
   {
     "name": "Tougaloo College Marching Band",
@@ -866,7 +896,9 @@
     "searchKeywords": ["Tougaloo", "Bulldogs"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#002A85",
+    "secondaryColor": "#AD1D20"
   },
   {
     "name": "Wiley College Marching Band",
@@ -881,6 +913,8 @@
     "searchKeywords": ["Wiley", "Wildcats", "Wiley College"],
     "bandType": "HBCU",
     "isActive": true,
-    "isFeatured": false
+    "isFeatured": false,
+    "primaryColor": "#3D2C68",
+    "secondaryColor": "#414042"
   }
 ]

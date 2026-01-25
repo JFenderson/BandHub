@@ -29,8 +29,9 @@ dotenv.config();
 const prisma = new PrismaService();
 
 // Load all-star configuration
+const allStarConfigPath = path.resolve(__dirname, '../../src/config/allstar-config.json');
 const allStarConfig = JSON.parse(
-  fs.readFileSync(path.resolve('./allstar-config.json'), 'utf-8')
+  fs.readFileSync(allStarConfigPath, 'utf-8')
 );
 
 // Parse command line arguments
@@ -133,46 +134,7 @@ function shouldExclude(text: string): { exclude: boolean; reason?: string } {
   return { exclude: false };
 }
 
-/**
- * Calculate Levenshtein distance for fuzzy matching
- */
-function levenshteinDistance(a: string, b: string): number {
-  const matrix: number[][] = [];
-
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
-
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
-      }
-    }
-  }
-
-  return matrix[b.length][a.length];
-}
-
-/**
- * Check if two strings are similar (fuzzy match)
- */
-function isSimilar(str1: string, str2: string, threshold: number = 2): boolean {
-  if (str1.length < 5 || str2.length < 5) return false;
-  const distance = levenshteinDistance(str1, str2);
-  const maxLength = Math.max(str1.length, str2.length);
-  return distance <= threshold && distance / maxLength <= 0.3;
-}
+// Fuzzy matching removed for performance - use simple includes() instead
 
 
 /**
@@ -285,6 +247,29 @@ function generateAllStarAliases(bandName: string): string[] {
 }
 
 /**
+ * Known HBCU band abbreviations - these are reliable matches even though short
+ */
+const KNOWN_HBCU_ABBREVIATIONS = new Set([
+  // SWAC
+  'jsu', 'tsu', 'gsu', 'asu', 'su', 'pv', 'pvamu', 'aamu', 'mvsu', 'uapb',
+  // MEAC
+  'nccu', 'nsu', 'scsu', 'dsu', 'famu', 'bcu', 'ncat',
+  // CIAA
+  'wssu', 'vsu', 'vuu', 'jcsu', 'ecsu', 'fsu',
+  // SIAC
+  'cau', 'fvsu', 'tuskeegee', 'bcsc', 'miles', 'lane',
+  // Other
+  'hbcu', 'swac', 'meac', 'ciaa', 'siac',
+]);
+
+/**
+ * Check if an alias is a known HBCU abbreviation
+ */
+function isKnownHBCUAbbreviation(alias: string): boolean {
+  return KNOWN_HBCU_ABBREVIATIONS.has(alias.toLowerCase());
+}
+
+/**
  * Check if text contains battle keywords
  */
 function isBattleVideo(text: string): boolean {
@@ -293,66 +278,39 @@ function isBattleVideo(text: string): boolean {
 }
 
 /**
- * Find matches for a video
+ * Find matches for a video (optimized for performance)
  */
 function findMatches(searchText: string, bandsWithAliases: BandWithAliases[]): MatchResult[] {
   const matches: MatchResult[] = [];
   const lowerText = searchText.toLowerCase();
-  
-  // Extract words for better matching
-  const words = lowerText.split(/\s+/);
-  const firstWords = lowerText.substring(0, 200).toLowerCase();
+  const first200 = lowerText.substring(0, 200);
 
   for (const band of bandsWithAliases) {
     let bestScore = 0;
     let bestAlias = '';
     let bestMatchType: MatchResult['matchType'] = 'abbreviation';
+    let matchCount = 0;
 
     for (const alias of band.aliases) {
       if (alias.length < 3) continue;
 
       let found = false;
-      let score = 0;
-      let matchType: MatchResult['matchType'] = 'abbreviation';
 
-      // 1. Exact match (case-insensitive)
+      // Simple matching - fast path
       if (alias.length <= 4) {
+        // Short alias - use word boundary regex
         const regex = new RegExp(`\\b${escapeRegex(alias)}\\b`, 'i');
         found = regex.test(lowerText);
       } else {
+        // Longer alias - simple includes is fast
         found = lowerText.includes(alias);
       }
 
-      // 2. Fuzzy match for longer keywords (typos, misspellings)
-      if (!found && alias.length >= 6) {
-        for (const word of words) {
-          if (word.length >= 6 && isSimilar(alias, word)) {
-            found = true;
-            score = 40; // Lower score for fuzzy match
-            matchType = 'partial';
-            break;
-          }
-        }
-      }
+      if (found) {
+        matchCount++;
+        let score = 0;
+        let matchType: MatchResult['matchType'] = 'abbreviation';
 
-      // 3. Multi-word keyword matching (e.g., "human jukebox")
-      if (!found && alias.includes(' ')) {
-        const aliasWords = alias.split(' ');
-        if (aliasWords.length >= 2) {
-          // Check if consecutive words match
-          for (let i = 0; i <= words.length - aliasWords.length; i++) {
-            const consecutive = words.slice(i, i + aliasWords.length).join(' ');
-            if (consecutive === alias) {
-              found = true;
-              score = 75; // High score for multi-word match
-              matchType = 'partial';
-              break;
-            }
-          }
-        }
-      }
-
-      if (found && score === 0) {
         // Score based on match type and band type
         if (band.bandType === 'ALL_STAR') {
           if (alias === band.name.toLowerCase()) {
@@ -379,6 +337,10 @@ function findMatches(searchText: string, bandsWithAliases: BandWithAliases[]): M
           } else if (alias.length >= 5) {
             score = 50;
             matchType = 'partial';
+          } else if (isKnownHBCUAbbreviation(alias)) {
+            // Known HBCU abbreviations get higher score
+            score = 55;
+            matchType = 'abbreviation';
           } else {
             score = 30;
             matchType = 'abbreviation';
@@ -386,24 +348,21 @@ function findMatches(searchText: string, bandsWithAliases: BandWithAliases[]): M
         }
 
         // Boost if in first 200 chars (title area)
-        if (firstWords.includes(alias)) {
+        if (first200.includes(alias)) {
           score += 15;
         }
 
-        // Boost if multiple keywords from same band are found
-        const keywordMatches = band.aliases.filter(a => 
-          a.length >= 4 && lowerText.includes(a)
-        ).length;
-        if (keywordMatches >= 2) {
-          score += 10 * Math.min(keywordMatches - 1, 3);
+        if (score > bestScore) {
+          bestScore = score;
+          bestAlias = alias;
+          bestMatchType = matchType;
         }
       }
+    }
 
-      if (score > bestScore) {
-        bestScore = score;
-        bestAlias = alias;
-        bestMatchType = matchType;
-      }
+    // Apply multi-keyword bonus after all aliases checked (avoids re-scanning)
+    if (bestScore > 0 && matchCount >= 2) {
+      bestScore += 10 * Math.min(matchCount - 1, 3);
     }
 
     if (bestScore > 0) {
@@ -586,12 +545,15 @@ async function main() {
       stats.matchedHBCU++;
     }
 
-    // Check for battle
+    // Check for battle and determine opponent band
     const isBattle = isBattleVideo(searchText);
+    let opponentBandId: string | null = null;
+
     if (isBattle && matches.length >= 2) {
       const secondMatch = matches.find((m) => m.bandId !== topMatch.bandId);
       if (secondMatch && secondMatch.score >= minConfidence) {
         stats.battleVideos++;
+        opponentBandId = secondMatch.bandId;
       } else {
         stats.singleBand++;
       }
@@ -609,6 +571,7 @@ async function main() {
           data: {
             bandId: topMatch.bandId,
             qualityScore: topMatch.score,
+            opponentBandId: opponentBandId,
           },
         });
       } catch (error) {

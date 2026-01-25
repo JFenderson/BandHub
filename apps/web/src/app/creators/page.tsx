@@ -3,6 +3,9 @@ import { apiClient } from '@/lib/api-client';
 import { CreatorCard } from '@/components/creators/CreatorCard';
 import { Pagination } from '@/components/ui/Pagination';
 
+// Force dynamic rendering to always fetch fresh data
+export const dynamic = 'force-dynamic';
+
 interface CreatorsPageProps {
   searchParams: {
     search?: string;

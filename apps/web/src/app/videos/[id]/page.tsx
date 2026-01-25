@@ -1,30 +1,12 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { format } from 'date-fns';
 import { apiClient } from '@/lib/api-client';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { BandLogo } from '@/components/images';
+import { YouTubeEmbed } from '@/components/videos/YouTubeEmbed';
 import type { Video } from '@/types/api';
 import { VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
-
-// Lazy load YouTube embed to reduce initial bundle
-const YouTubeEmbed = dynamic(
-  () => import('@/components/videos/YouTubeEmbed').then((mod) => ({ default: mod.YouTubeEmbed })),
-  { 
-    ssr: true,
-    loading: () => (
-      <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden animate-pulse">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block h-12 w-12 border-4 border-gray-600 border-t-white rounded-full animate-spin mb-4"></div>
-            <p className="text-white text-sm">Loading video player...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-);
 
 interface VideoPageProps {
   params: {

@@ -43,7 +43,7 @@ export function BandCard({ band }: BandCardProps) {
     >
       {/* Band Image with color gradient background */}
       <div 
-        className={`relative aspect-video ${!hasBandColors ? 'bg-gradient-to-br from-blue-100 to-cyan-100' : ''}`}
+        className={`relative aspect-video ${!hasBandColors ? 'bg-gradient-to-br from-primary-100 to-secondary-100' : ''}`}
         style={gradientStyle}
       >
         <BandLogo

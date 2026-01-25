@@ -1,0 +1,82 @@
+{
+  "allStarBands": [
+    {
+      "name": "Georgia All-Star Mass Band",
+      "aliases": ["aamb", "georgia mass band", "gmb", "atlanta all-star", "atlanta mass band", "georgia all-star", "ga mass band", "gamb", "georgia mass"]
+    },
+    {
+      "name": "New Orleans All-Star Band",
+      "aliases": ["noasb", "new orleans all-star", "nola all-star", "new orleans all star", "nola allstar", "nola all star"]
+    },
+    {
+      "name": "Mississippi All-Star Alumni Band",
+      "aliases": ["maab", "mississippi all-star alumni", "mississippi all-star", "ms all-star", "mississippi mass"]
+    },
+    {
+      "name": "Dallas Legion All-Star Band",
+      "aliases": ["dlasb", "the legion", "dallas legion", "dallas all-star", "dallas all star", "dfw all-star"]
+    },
+    {
+      "name": "Broward All-Star Band",
+      "aliases": ["broward all-star", "broward all star", "south florida all-star"]
+    },
+    {
+      "name": "Austin All-Star Band",
+      "aliases": ["austin all-star", "austin all star", "atx all-star"]
+    },
+    {
+      "name": "Alabama Mass Band",
+      "aliases": ["alabama all-star", "alabama mass band", "bama mass band", "alabama mass"]
+    },
+    {
+      "name": "Magic City All-Star Band",
+      "aliases": ["magic city all-star", "magic city", "birmingham all-star", "bham all-star", "birmingham mass"]
+    },
+    {
+      "name": "Memphis Mass Band",
+      "aliases": ["memphis mass", "mmb", "memphis mass band", "memphis all-star", "real memphis mass"]
+    },
+    {
+      "name": "The Regulators",
+      "aliases": ["regulators", "the regulators"]
+    },
+    {
+      "name": "North Carolina Mass Band",
+      "aliases": ["nc mass band", "north carolina all-star", "nc all-star", "north carolina mass band", "carolina mass"]
+    },
+    {
+      "name": "LLI All-Star Band",
+      "aliases": ["lli", "lli all-star"]
+    },
+    {
+      "name": "Houston All-Star Band",
+      "aliases": ["houston all-star", "houston all star", "htx all-star", "houston mass"]
+    },
+    {
+      "name": "Charlotte All-Star Band",
+      "aliases": ["charlotte all-star", "clt all star", "queen city all-star", "charlotte mass"]
+    }
+  ],
+  "exclusionPatterns": {
+    "highSchool": [
+      "high school", "hs band", "h.s.", "highschool",
+      "freshman", "sophomore", "junior band", "senior band",
+      "varsity band", "jv band", "pep band"
+    ],
+    "middleSchool": [
+      "middle school", "ms band", "m.s.", "elementary",
+      "junior high", "jr high", "jr. high", "6th grade",
+      "7th grade", "8th grade", "youth band", "kids band"
+    ],
+    "podcasts": [
+      "podcast", "interview", "talk show", "q&a", "reaction",
+      "review", "commentary", "discussion", "debate", "live stream",
+      "vlog", "behind the scenes", "day in the life"
+    ],
+    "generic": [
+      "tutorial", "how to", "lesson", "practice", "warm up",
+      "exercise", "drill", "fundamentals", "technique", "tips",
+      "beginner", "learn to play"
+    ]
+  }
+}
