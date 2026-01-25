@@ -49,6 +49,7 @@ const logoFilenameMapping: Record<string, string> = {
   'shaw-university.jpg': 'shaw.png',
   'south-carolina-state.png': 'south-carolina-state.png',
   'southern-university.jpg': 'southern.png',
+  'stillman-college.jpg': 'stillman.png',
   'talladega-college.jpg': 'talladega.png',
   'tennessee-state.jpg': 'tennessee-state.png',
   'texas-college.jpg': 'texas-college.png',

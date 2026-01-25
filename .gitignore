@@ -32,6 +32,7 @@ out
 # OS
 .DS_Store
 Thumbs.db
+nul
 
 # Testing
 coverage

@@ -6,6 +6,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import Redis from 'ioredis';
 
 const prisma = new PrismaClient();
 
@@ -18,6 +19,7 @@ const bandLogoMapping: Record<string, string> = {
   'purple-marching-machine': 'miles.png',
   'marching-crimson-pipers': 'tuskegee.png',
   'marching-tornadoes': 'talladega.png',
+  'blue-pride': 'stillman.png',
 
   // Arkansas
   'm4': 'arkansas-pine-bluff.png',
@@ -154,6 +156,57 @@ async function updateBandLogos() {
   console.log(`   Already set: ${skipped}`);
   console.log(`   Not found: ${notFound}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+  // Clear Redis cache if any bands were updated
+  if (updated > 0) {
+    await clearBandCaches();
+  }
+}
+
+/**
+ * Clear all band-related caches from Redis
+ */
+async function clearBandCaches() {
+  console.log('🗑️  Clearing band caches from Redis...\n');
+
+  const redisHost = process.env.REDIS_HOST || 'localhost';
+  const redisPort = parseInt(process.env.REDIS_PORT || '6379', 10);
+  const redisPassword = process.env.REDIS_PASSWORD;
+
+  const redis = new Redis({
+    host: redisHost,
+    port: redisPort,
+    password: redisPassword || undefined,
+    maxRetriesPerRequest: 3,
+  });
+
+  try {
+    // Patterns to clear - covers all band-related cache keys
+    const patterns = [
+      'bands:*',
+      'band:*',
+      'popular:bands:*',
+      'search:*',
+    ];
+
+    let totalDeleted = 0;
+
+    for (const pattern of patterns) {
+      const keys = await redis.keys(pattern);
+      if (keys.length > 0) {
+        await redis.del(...keys);
+        console.log(`   Deleted ${keys.length} keys matching "${pattern}"`);
+        totalDeleted += keys.length;
+      }
+    }
+
+    console.log(`\n✅ Cache cleared: ${totalDeleted} keys deleted`);
+  } catch (error) {
+    console.error('⚠️  Failed to clear Redis cache:', error);
+    console.log('   You may need to restart the API server to see updates.');
+  } finally {
+    await redis.quit();
+  }
 }
 
 updateBandLogos()
