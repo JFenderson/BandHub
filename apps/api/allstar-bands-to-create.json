@@ -154,5 +154,137 @@
     ],
     "isActive": true,
     "isFeatured": false
+  },
+  {
+    "name": "Broward All-Star Band",
+    "schoolName": "Broward All-Star Band",
+    "city": "Broward County",
+    "state": "FL",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Broward All-Star Band is an all-star marching band featuring talented musicians from the Broward County, FL region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "BAB"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "Austin All-Star Band",
+    "schoolName": "Austin All-Star Band",
+    "city": "Austin",
+    "state": "TX",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Austin All-Star Band is an all-star marching band featuring talented musicians from the Austin, TX region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "Austin All-Star"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "Mississippi All-Star Alumni Band",
+    "schoolName": "Mississippi All-Star Alumni Band",
+    "city": "Mississippi",
+    "state": "",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Mississippi All-Star Alumni Band is an all-star marching band featuring talented musicians from the Mississippi region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "MAAB",
+      "Mississippi All-Star Alumni"
+    ],
+    "isActive": true,
+    "isFeatured": false
+  },
+  {
+    "name": "Port City All-Star Band",
+    "schoolName": "Port City All-Star Band",
+    "city": "Mobile",
+    "state": "AL",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Port City All-Star Band is an all-star marching band featuring talented musicians from the Mobile, AL region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "PCASB",
+      "Port City All-Star"
+    ],
+    "isActive": true,
+    "isFeatured": false 
+  },
+  {
+    "name": "Nashville All-Star Band",
+    "schoolName": "Nashville All-Star Band",
+    "city": "Nashville",
+    "state": "TN",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Nashville All-Star Band is an all-star marching band featuring talented musicians from the Nashville, TN region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "Nashville All-Star"
+    ],
+    "isActive": true,
+    "isFeatured": false 
+  },
+  {
+    "name": "Greater Houston All-Star Band",
+    "schoolName": "Greater Houston All-Star Band",
+    "city": "Houston",
+    "state": "TX",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Greater Houston All-Star Band is an all-star marching band featuring talented musicians from the Houston, TX region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "GHASB",
+      "Greater Houston All-Star"
+    ],
+    "isActive": true,
+    "isFeatured": false 
+  },
+  {
+    "name": "Houston United Mass Band",
+    "schoolName": "Houston United Mass Band",
+    "city": "Houston",
+    "state": "TX",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "Houston United Mass Band is an all-star marching band featuring talented musicians from the Houston, TX region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "HUMB",
+      "Houston United Mass"
+    ],
+    "isActive": true,
+    "isFeatured": false 
+  },
+  {
+    "name": "337 All-Star Band",
+    "schoolName": "337 All-Star Band",
+    "city": "Lafayette",
+    "state": "LA",
+    "bandType": "ALL_STAR",
+    "conference": null,
+    "description": "337 All-Star Band is an all-star marching band featuring talented musicians from the Lafayette, LA region.",
+    "foundedYear": null,
+    "youtubeChannelId": null,
+    "searchKeywords": [
+      "337 All-Star"
+    ],
+    "isActive": true,
+    "isFeatured": false
   }
 ]

@@ -3,12 +3,12 @@ import { apiClient } from '@/lib/api-client';
 import { BandCard } from '@/components/bands/BandCard';
 import { BandFilters } from '@/components/bands/BandFilters';
 import { Pagination } from '@/components/ui/Pagination';
-import BandLogo from '@/components/bands/BandLogo';
 
 interface BandsPageProps {
   searchParams: {
     search?: string;
     state?: string;
+    conference?: string;
     page?: string;
   };
 }
@@ -20,6 +20,7 @@ export default async function BandsPage({ searchParams }: BandsPageProps) {
   const { data: bands, meta } = await apiClient.getBands({
     search: searchParams.search,
     state: searchParams.state,
+    conference: searchParams.conference,
     page,
     limit,
   });

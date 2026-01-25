@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { BandCard } from '@/components/bands/BandCard';
 import { VideoCard } from '@/components/videos/VideoCard';
+import { TrendingVideoCard } from '@/components/videos/TrendingVideoCard';
 import FeaturedBandsCarousel from '@/components/home/FeaturedBandsCarousel';
 
 export const dynamic = 'force-dynamic';
@@ -9,21 +10,25 @@ export const revalidate = 0;
 
 export default async function HomePage() {
   // Fetch featured content - using try/catch for resilience
-  const [bandsResult, videosResult, recentlyAddedResult, categoriesResult] = await Promise.allSettled([
-    apiClient.getBands({ limit: 10 }),
-    apiClient.getVideos({ limit: 10, sortBy: 'publishedAt', sortOrder: 'desc' }),
-    apiClient.getVideos({ limit: 8, sortBy: 'createdAt', sortOrder: 'desc' }),
-    apiClient.getCategories(),
-  ]);
-
+  const [bandsResult, videosResult, recentlyAddedResult, categoriesResult, trendingResult] =
+    await Promise.allSettled([
+      apiClient.getBands({ limit: 10 }),
+      apiClient.getVideos({ limit: 10, sortBy: 'publishedAt', sortOrder: 'desc' }),
+      apiClient.getVideos({ limit: 8, sortBy: 'createdAt', sortOrder: 'desc' }),
+      apiClient.getCategories(),
+      apiClient.getTrendingVideos({ timeframe: 'week', limit: 8 }),
+    ]);
 
   const bands = bandsResult.status === 'fulfilled' ? bandsResult.value.data : [];
   const videos = videosResult.status === 'fulfilled' ? videosResult.value.data : [];
-  const recentlyAddedVideos = recentlyAddedResult.status === 'fulfilled' ? recentlyAddedResult.value.data : [];
-  const categories = categoriesResult.status === 'fulfilled' 
-    ? categoriesResult.value.slice(0, 6)  // Limit to 6 for display
-    : [];
-
+  const recentlyAddedVideos =
+    recentlyAddedResult.status === 'fulfilled' ? recentlyAddedResult.value.data : [];
+  const categories =
+    categoriesResult.status === 'fulfilled'
+      ? categoriesResult.value.slice(0, 6) // Limit to 6 for display
+      : [];
+  const trendingVideos =
+    trendingResult.status === 'fulfilled' ? trendingResult.value : [];
 
   return (
     <div className="bg-white">
@@ -35,14 +40,20 @@ export default async function HomePage() {
               Celebrate the Excellence of HBCU Marching Bands
             </h1>
             <p className="text-xl md:text-2xl text-primary-100 mb-8">
-              Discover performances, explore band profiles, and experience the rich tradition 
-              of Historically Black College and University marching bands.
+              Discover performances, explore band profiles, and experience the rich tradition of
+              Historically Black College and University marching bands.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/bands" className="btn-primary bg-white text-primary-700 hover:bg-gray-100">
+              <Link
+                href="/bands"
+                className="btn-primary bg-white text-primary-700 hover:bg-gray-100"
+              >
                 Explore Bands
               </Link>
-              <Link href="/videos" className="btn-secondary bg-transparent text-white border-white hover:bg-white/10">
+              <Link
+                href="/videos"
+                className="btn-secondary bg-transparent text-white border-white hover:bg-white/10"
+              >
                 Watch Videos
               </Link>
             </div>
@@ -52,6 +63,35 @@ export default async function HomePage() {
 
       {/* Featured Bands Carousel */}
       <FeaturedBandsCarousel />
+
+      {/* Trending Videos Section */}
+      {trendingVideos.length > 0 && (
+        <section className="py-16 bg-gradient-to-br from-orange-50 to-red-50">
+          <div className="container-custom">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🔥</span>
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900">Trending This Week</h2>
+                  <p className="text-gray-600 mt-1">The hottest performances right now</p>
+                </div>
+              </div>
+              <Link
+                href="/videos?sortBy=viewCount"
+                className="text-orange-600 hover:text-orange-700 font-medium"
+              >
+                View All →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {trendingVideos.map((video, index) => (
+                <TrendingVideoCard key={video.id} video={video} rank={index + 1} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* All Bands Section */}
       <section className="py-16 bg-gray-50">
@@ -82,7 +122,7 @@ export default async function HomePage() {
 
       {/* Recent Videos Section */}
       <section className="py-16 bg-white">
-        <div className="container-custom">
+        {/* <div className="container-custom">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-3xl font-bold text-gray-900">Recent Performances</h2>
@@ -104,7 +144,7 @@ export default async function HomePage() {
               <p className="text-gray-500">No videos available yet. Check back soon!</p>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Recently Added to BandHub Section */}
         {recentlyAddedVideos.length > 0 && (
@@ -114,7 +154,10 @@ export default async function HomePage() {
                 <h2 className="text-3xl font-bold text-gray-900">Recently Added to BandHub</h2>
                 <p className="text-gray-600 mt-2">New videos added to our platform</p>
               </div>
-              <Link href="/videos?sortBy=createdAt" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link
+                href="/videos?sortBy=createdAt"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
                 View All →
               </Link>
             </div>
@@ -128,24 +171,24 @@ export default async function HomePage() {
         )}
 
         {/* Categories Preview */}
-  {categories.length > 0 && (
-    <div className="mt-16">
-      <h3 className="text-2xl font-bold text-gray-900 mb-6">Browse by Category</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {categories.map((category) => (
-          <Link
-            key={category. slug}
-            href={`/videos?category=${category.slug}`}
-            className="bg-gradient-to-br from-gray-50 to-gray-100 hover:from-primary-50 hover:to-primary-100 border border-gray-200 hover:border-primary-300 rounded-lg p-6 text-center transition-all group"
-          >
-            <p className="font-medium text-gray-900 group-hover:text-primary-700">
-              {category.name}
-            </p>
-          </Link>
-        ))}
-      </div>
-    </div>
-  )}
+        {categories.length > 0 && (
+          <div className="mt-16">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Browse by Category</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {categories.map((category) => (
+                <Link
+                  key={category.slug}
+                  href={`/videos?category=${category.slug}`}
+                  className="bg-gradient-to-br from-gray-50 to-gray-100 hover:from-primary-50 hover:to-primary-100 border border-gray-200 hover:border-primary-300 rounded-lg p-6 text-center transition-all group"
+                >
+                  <p className="font-medium text-gray-900 group-hover:text-primary-700">
+                    {category.name}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Stats Section */}

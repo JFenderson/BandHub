@@ -36,6 +36,7 @@ async function fetchVideosPage(
   const params = new URLSearchParams();
 
   if (filters.bandId) params.append('bandId', filters.bandId);
+  if (filters.conference) params.append('conference', filters.conference);
   if (filters.category) params.append('category', filters.category);
   if (filters.year) params.append('eventYear', filters.year.toString());
   if (filters.search) params.append('search', filters.search);

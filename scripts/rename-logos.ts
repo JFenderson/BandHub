@@ -60,6 +60,18 @@ const logoFilenameMapping: Record<string, string> = {
   'virginia-union.jpg': 'virginia-union.png',
   'wiley.jpg': 'wiley.png',
   'winston-salem-state.png': 'winston-salem-state.png',
+  '337-all-star.jpg': '337-all-star.png',
+  'alabama-mass.jpg': 'alabama-mass.png',
+  'dallas-legion-all-star.jpg': 'dallas-legion-all-star.png',
+  'georgia-all-star.jpg': 'georgia-all-star.png',
+  'greater-houston-all-star.jpg': 'greater-houston-all-star.png',
+  'houston-united-mass.jpg': 'houston-united-mass.png',
+  'memphis-mass.jpg': 'memphis-mass.png',
+  'mississippi-all-star.jpg': 'mississippi-all-star.png',
+  'nashville-mass.jpg': 'nashville-mass.png',
+  'new-orleans-all-star.jpg': 'new-orleans-all-star.png',
+  'north-carolina-mass.jpg': 'north-carolina-mass.png',
+  'port-city-all-star.jpg': 'port-city-all-star.png',
 };
 
 async function renameLogos() {

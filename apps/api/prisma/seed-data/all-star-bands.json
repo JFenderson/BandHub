@@ -237,5 +237,93 @@
       "LLI Band"
     ],
     "isActive": true
+  },
+  {
+    "name": "Port City All-Star Band",
+    "slug": "port-city-all-star-band",
+    "aliases": [
+      "Port City All-Star",
+      "PCA"
+    ],
+    "city": "Mobile",
+    "state": "AL",
+    "region": "Mobile, AL",
+    "bandType": "ALL_STAR",
+    "description": "The Port City All-Star Band represents the vibrant HBCU band community in Mobile.",
+    "searchKeywords": [
+      "Port City All-Star",
+      "PCA",
+      "Mobile"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Nashville All-Star Band",
+    "slug": "nashville-all-star-band",
+    "aliases": [
+      "Nashville All-Star",
+      "Nashville ASB"
+    ],
+    "city": "Nashville",
+    "state": "TN",
+    "region": "Nashville, TN",
+    "bandType": "ALL_STAR",
+    "description": "The Nashville All-Star Band showcases the rich musical heritage of Nashville's HBCU bands.",
+    "searchKeywords": [
+      "Nashville All-Star",
+      "Nashville ASB"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Greater Houston All-Star Band",
+    "slug": "greater-houston-all-star-band",
+    "aliases": [
+      "GHASB",
+      "Houston All-Star"
+    ],
+    "city": "Houston",
+    "state": "TX",
+    "region": "Houston, TX",
+    "bandType": "ALL_STAR",
+    "description": "The Greater Houston All-Star Band unites talented musicians from Houston's HBCU band programs.",
+    "searchKeywords": [
+      "GHASB",
+      "Houston All-Star"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Houston United Mass Band",
+    "slug": "houston-united-mass-band",
+    "aliases": [
+      "HUMB",
+      "Houston United"
+    ],
+    "city": "Houston",
+    "state": "TX",
+    "region": "Houston, TX",
+    "bandType": "ALL_STAR",
+    "description": "The Houston United Mass Band brings together the best talent from Houston's HBCU band community.",
+    "searchKeywords": [
+      "HUMB",
+      "Houston United"
+    ],
+    "isActive": true
+  },
+  {
+    "name": "337 All-Star Band",
+    "slug": "337-all-star-band",
+    "aliases": [
+      "337 All-Star"
+    ],
+    "city": "Lafayette",
+    "state": "LA",
+    "bandType": "ALL_STAR",
+    "description": "337 All-Star Band is an all-star marching band featuring talented musicians from the Lafayette, LA region.",
+    "searchKeywords": [
+      "337 All-Star"
+    ],
+    "isActive": true
   }
 ]

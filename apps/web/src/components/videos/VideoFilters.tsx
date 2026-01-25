@@ -5,6 +5,7 @@ import { useTransition, useEffect, useState } from 'react';
 import type { Band } from '@/types/api';
 import { VideoCategory, VIDEO_CATEGORIES, VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
 import { apiClient } from '@/lib/api-client';
+import { HBCU_CONFERENCES } from '@/lib/constants';
 
 interface VideoFiltersProps {
   bands?: Band[];
@@ -21,9 +22,10 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [categories, setCategories] = useState<any[]>([]);
- 
+
   const currentSearch = searchParams.get('search') || '';
   const currentBandId = searchParams.get('bandId') || '';
+  const currentConference = searchParams.get('conference') || '';
   const currentCategory = searchParams.get('category') || '';
   const currentEventYear = searchParams.get('eventYear') || '';
   const currentSortBy = searchParams.get('sortBy') || 'publishedAt';
@@ -37,13 +39,13 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
-    
+
     if (value) {
       params.set(key, value);
     } else {
       params.delete(key);
     }
-    
+
     // Reset to page 1 when filters change
     params.delete('page');
 
@@ -62,11 +64,11 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
   const currentYearNum = new Date().getFullYear();
   const years = Array.from({ length: currentYearNum - 2009 }, (_, i) => currentYearNum - i);
 
-  const hasActiveFilters = currentSearch || currentBandId || currentCategory || currentEventYear || currentSortBy !== 'publishedAt';
+  const hasActiveFilters = currentSearch || currentBandId || currentConference || currentCategory || currentEventYear || currentSortBy !== 'publishedAt';
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         {/* Search Input */}
         <div>
           <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
@@ -94,9 +96,29 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="">All Bands</option>
-            {bands.map((band) => (
+            {bands?.map((band) => (
               <option key={band.id} value={band.id}>
                 {band.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Conference Filter */}
+        <div>
+          <label htmlFor="conference" className="block text-sm font-medium text-gray-700 mb-1">
+            Conference
+          </label>
+          <select
+            id="conference"
+            value={currentConference}
+            onChange={(e) => updateFilter('conference', e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">All Conferences</option>
+            {HBCU_CONFERENCES.map((conf) => (
+              <option key={conf.value} value={conf.value}>
+                {conf.value}
               </option>
             ))}
           </select>
@@ -167,28 +189,35 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-medium text-gray-700">Active filters:</span>
-              
+
               {currentSearch && (
                 <FilterChip
                   label={`Search: ${currentSearch}`}
                   onRemove={() => updateFilter('search', '')}
                 />
               )}
-              
+
               {currentBandId && (
                 <FilterChip
-                  label={`Band: ${bands.find(b => b.id === currentBandId)?.name || 'Unknown'}`}
+                  label={`Band: ${bands?.find(b => b.id === currentBandId)?.name || 'Unknown'}`}
                   onRemove={() => updateFilter('bandId', '')}
                 />
               )}
-              
+
+              {currentConference && (
+                <FilterChip
+                  label={`Conference: ${currentConference}`}
+                  onRemove={() => updateFilter('conference', '')}
+                />
+              )}
+
               {currentCategory && (
                 <FilterChip
                   label={`Category: ${VIDEO_CATEGORY_LABELS[currentCategory as VideoCategory]}`}
                   onRemove={() => updateFilter('category', '')}
                 />
               )}
-              
+
               {currentEventYear && (
                 <FilterChip
                   label={`Year: ${currentEventYear}`}

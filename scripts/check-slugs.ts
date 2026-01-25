@@ -3,19 +3,18 @@ const prisma = new PrismaClient();
 
 async function checkSlugs() {
   const schools = [
-    'Tuskegee University',
-    'Stillman College', 
-    'University of Arkansas at Pine Bluff',
-    'Howard University',
-    'Clark Atlanta University',
-    'Bowie State University',
-    'Alcorn State University',
-    'Mississippi Valley State University',
-    'Fayetteville State University',
-    'Central State University',
-    'South Carolina State University',
-    'Hampton University',
-    'Virginia Union University'
+    'Dallas Legion All-Star Band',
+    'Alabama Mass Band',
+    'Georgia All-Star Mass Band',
+    'Greater Houston All-Star Band',
+    'Houston United Mass Band',
+    'Memphis Mass Band',
+    'Mississippi All-Star Alumni Band',
+    'Nashville Mass Band',
+    'New Orleans All-Star Band',
+    'Port City All-Star Band',
+    'North Carolina Mass Band',
+    '337 All-Star Band',
   ];
 
   console.log('Checking database for these schools...\n');

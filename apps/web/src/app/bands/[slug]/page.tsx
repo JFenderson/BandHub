@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
-import { VideoCard } from '@/components/videos/VideoCard';
 import BandLogo from '@/components/bands/BandLogo';
+import { BandVideosSection } from '@/components/bands/BandVideosSection';
 
 interface BandPageProps {
   params: {
@@ -13,17 +12,19 @@ interface BandPageProps {
 export default async function BandPage({ params }: BandPageProps) {
   let band;
   let videos;
+  let totalVideos;
 
   try {
     band = await apiClient.getBand(params.slug);
-    const videosResult = await apiClient.getVideos({ 
-      bandId: band.id, 
-       page: 1,
+    const videosResult = await apiClient.getVideos({
+      bandId: band.id,
+      page: 1,
       limit: 12,
       sortBy: 'publishedAt',
       sortOrder: 'desc'
     });
     videos = videosResult.data;
+    totalVideos = videosResult.meta.total;
   } catch (error) {
     notFound();
   }
@@ -102,7 +103,7 @@ export default async function BandPage({ params }: BandPageProps) {
         <div className="container-custom py-6">
           <div className="flex gap-8">
             <div>
-              <div className="text-2xl font-bold text-gray-900">{videos.length}</div>
+              <div className="text-2xl font-bold text-gray-900">{totalVideos}</div>
               <div className="text-sm text-gray-600">Videos</div>
             </div>
             {band.foundedYear && (
@@ -115,29 +116,14 @@ export default async function BandPage({ params }: BandPageProps) {
         </div>
       </div>
 
-      {/* Videos Section */}
+      {/* Videos Section with Infinite Scroll and Filtering */}
       <div className="container-custom py-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Recent Performances</h2>
-          <Link 
-            href={`/videos?bandId=${band.id}`}
-            className="text-primary-600 hover:text-primary-700 font-medium text-sm"
-          >
-            View All Videos →
-          </Link>
-        </div>
-
-        {videos.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {videos.map((video) => (
-              <VideoCard key={video.id} video={video} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <p className="text-gray-500">No videos available for this band yet.</p>
-          </div>
-        )}
+        <BandVideosSection
+          bandId={band.id}
+          bandName={band.name}
+          initialVideos={videos}
+          initialTotal={totalVideos}
+        />
       </div>
     </div>
   );

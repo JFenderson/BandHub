@@ -104,6 +104,20 @@ const bandLogoMapping: Record<string, string> = {
 
   // West Virginia
   'bluefield-state-marching-band': 'bluefield-state.png',
+
+  //All Star Bands
+  'alabama-mass-band': 'alabama-mass.png',
+  'dallas-legion-all-star-band': 'dallas-legion-all-stars.png',
+  'georgia-all-star-mass-band': 'georgia-all-star.png',
+  'greater-houston-all-star-band': 'greater-houston-all-star.png',
+  'houston-united-mass-band': 'houston-united-mass.png',
+  'memphis-mass-band': 'memphis-mass.png',
+  'mississippi-all-star-alumni-band': 'mississippi-all-star.png',
+  'nashville-all-star-band': 'nashville-mass.png',
+  'new-orleans-all-star-band': 'new-orleans-all-star.png',
+  'port-city-all-star-band': 'port-city-all-star.png',
+  'north-carolina-mass-band': 'north-carolina-mass.png',
+  '337-all-star-band': '337-all-star.png',
 };
 
 async function updateBandLogos() {
@@ -157,10 +171,8 @@ async function updateBandLogos() {
   console.log(`   Not found: ${notFound}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-  // Clear Redis cache if any bands were updated
-  if (updated > 0) {
-    await clearBandCaches();
-  }
+  // Always clear Redis cache to ensure fresh data is served
+  await clearBandCaches();
 }
 
 /**
@@ -173,14 +185,21 @@ async function clearBandCaches() {
   const redisPort = parseInt(process.env.REDIS_PORT || '6379', 10);
   const redisPassword = process.env.REDIS_PASSWORD;
 
+  console.log(`   Connecting to Redis at ${redisHost}:${redisPort}...`);
+
   const redis = new Redis({
     host: redisHost,
     port: redisPort,
     password: redisPassword || undefined,
     maxRetriesPerRequest: 3,
+    connectTimeout: 5000,
   });
 
   try {
+    // Test connection
+    await redis.ping();
+    console.log('   ✓ Connected to Redis\n');
+
     // Patterns to clear - covers all band-related cache keys
     const patterns = [
       'bands:*',
@@ -197,13 +216,27 @@ async function clearBandCaches() {
         await redis.del(...keys);
         console.log(`   Deleted ${keys.length} keys matching "${pattern}"`);
         totalDeleted += keys.length;
+      } else {
+        console.log(`   No keys found matching "${pattern}"`);
       }
     }
 
-    console.log(`\n✅ Cache cleared: ${totalDeleted} keys deleted`);
-  } catch (error) {
-    console.error('⚠️  Failed to clear Redis cache:', error);
-    console.log('   You may need to restart the API server to see updates.');
+    if (totalDeleted > 0) {
+      console.log(`\n✅ Cache cleared: ${totalDeleted} keys deleted`);
+    } else {
+      console.log('\n⚠️  No cache keys found. Cache may already be empty.');
+      console.log('   If logos still don\'t appear, try restarting the API server.');
+    }
+  } catch (error: any) {
+    if (error.code === 'ECONNREFUSED') {
+      console.error('⚠️  Could not connect to Redis (connection refused)');
+      console.log('   Redis may not be running. Please restart the API server to clear caches.');
+    } else {
+      console.error('⚠️  Failed to clear Redis cache:', error.message || error);
+    }
+    console.log('\n📋 Manual cache clear options:');
+    console.log('   1. Restart the API server');
+    console.log('   2. Run: redis-cli FLUSHDB');
   } finally {
     await redis.quit();
   }
