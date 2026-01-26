@@ -11,6 +11,7 @@ export interface VideoQueryDto {
   cursor?: string;
   bandId?: string;
   bandSlug?: string;
+  conference?: string;  // Filter by band conference (e.g., SWAC, MEAC)
   category?: string;  // Category enum value like 'FIFTH_QUARTER'
   categoryId?: string;
   categorySlug?: string;
@@ -61,6 +62,7 @@ export class VideosRepository {
       cursor,
       bandId,
       bandSlug,
+      conference,
       category,
       categoryId,
       categorySlug,
@@ -87,6 +89,9 @@ export class VideosRepository {
       where.bandId = bandId;
     } else if (bandSlug) {
       where.band = { slug: bandSlug };
+    } else if (conference) {
+      // Filter videos by band's conference
+      where.band = { conference: conference };
     }
 
     // Handle category filtering by searching video titles for keywords

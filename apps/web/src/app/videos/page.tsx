@@ -11,6 +11,7 @@ interface VideosPageProps {
   searchParams: {
     search?: string;
     bandId?: string;
+    conference?: string;
     category?: VideoCategory;
     eventYear?: string;
     sortBy?: 'publishedAt' | 'viewCount' | 'title';
@@ -25,6 +26,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
   const { data: videos, meta } = await apiClient.getVideos({
     search: searchParams.search,
     bandId: searchParams.bandId,
+    conference: searchParams.conference,
     category: searchParams.category,
     year: searchParams.eventYear ? parseInt(searchParams.eventYear) : undefined,
     sortBy: searchParams.sortBy || 'publishedAt',
@@ -40,6 +42,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
   const filters = {
     search: searchParams.search,
     bandId: searchParams.bandId,
+    conference: searchParams.conference,
     category: searchParams.category,
     year: searchParams.eventYear ? parseInt(searchParams.eventYear) : undefined,
     sortBy: searchParams.sortBy || 'publishedAt',

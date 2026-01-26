@@ -24,6 +24,12 @@ export class VideoQueryDto {
   @IsString()
   bandSlug?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by conference (e.g., SWAC, MEAC, SIAC, CIAA)' })
+  @SanitizeText()
+  @IsOptional()
+  @IsString()
+  conference?: string;
+
 @ApiPropertyOptional({ description: 'Filter by category ID' })
 @SanitizeText()
 @IsOptional()

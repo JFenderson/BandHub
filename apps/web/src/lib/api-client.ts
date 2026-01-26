@@ -24,6 +24,8 @@ import type {
   VideoTrend,
   CategoryDistribution,
   TopBand,
+  TrendingVideo,
+  TrendingVideoFilters,
 } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/types/auth';
@@ -246,6 +248,7 @@ export class ApiClient {
     const params = new URLSearchParams();
     if (filters?.search) params.append('search', filters.search);
     if (filters?.state) params.append('state', filters.state);
+    if (filters?.conference) params.append('conference', filters.conference);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
@@ -351,8 +354,9 @@ export class ApiClient {
   async getVideos(filters?: VideoFilters): Promise<PaginatedResponse<Video>> {
     const params = new URLSearchParams();
     if (filters?.bandId) params.append('bandId', filters.bandId);
-    if (filters?.category) params.append('category', filters.category); // Changed from categoryId
+    if (filters?.category) params.append('category', filters.category);
     if (filters?.year) params.append('eventYear', filters.year.toString());
+    if (filters?.conference) params.append('conference', filters.conference);
     if (filters?.search) params.append('search', filters.search);
     if (filters?.sortBy) params.append('sortBy', filters.sortBy);
     if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
@@ -360,11 +364,9 @@ export class ApiClient {
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
     const query = params.toString();
-console.log('🔍 getVideos query:', query);
     const result = await this.request<PaginatedResponse<Video>>(
       `/videos${query ? `?${query}` : ''}`,
     );
-    console.log('🔍 getVideos result:', result);
 
     return result;
   }
@@ -376,6 +378,22 @@ console.log('🔍 getVideos query:', query);
   async searchVideos(query: string): Promise<Video[]> {
     const params = new URLSearchParams({ q: query });
     return this.request<Video[]>(`/videos/search?${params}`);
+  }
+
+  // ============ TRENDING VIDEOS METHODS ============
+
+  /**
+   * Get trending videos based on weighted algorithm with time decay
+   * Score = (recentViews * 0.4) + (recency * 0.3) + (quality * 0.2) + (engagement * 0.1)
+   */
+  async getTrendingVideos(filters?: TrendingVideoFilters): Promise<TrendingVideo[]> {
+    const params = new URLSearchParams();
+    if (filters?.timeframe) params.append('timeframe', filters.timeframe);
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const query = params.toString();
+    return this.request<TrendingVideo[]>(`/videos/trending${query ? `?${query}` : ''}`);
   }
 
   // Creator methods

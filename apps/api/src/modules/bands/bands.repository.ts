@@ -32,6 +32,7 @@ export class BandsRepository {
     const {
       search,
       state,
+      conference,
       page = 1,
       limit = 20,
       bandType,
@@ -61,6 +62,10 @@ export class BandsRepository {
 
     if (state) {
       where.state = state;
+    }
+
+    if (conference) {
+      where.conference = conference;
     }
 
     // Handle cursor-based pagination
@@ -165,6 +170,7 @@ export class BandsRepository {
     const {
       search,
       state,
+      conference,
       limit = 20,
       bandType,
       isFeatured,
@@ -193,6 +199,10 @@ export class BandsRepository {
 
     if (state) {
       where.state = state;
+    }
+
+    if (conference) {
+      where.conference = conference;
     }
 
     return this.findManyWithCursor(where, cursor || '', limit, sortBy, sortOrder);

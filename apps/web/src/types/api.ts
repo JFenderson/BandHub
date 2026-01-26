@@ -88,6 +88,7 @@ export interface VideoFilters {
   bandId?: string;
   category?: VideoCategory;
   year?: number;
+  conference?: string;
   search?: string;
   sortBy?: 'publishedAt' | 'viewCount' | 'title' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
@@ -98,6 +99,7 @@ export interface VideoFilters {
 export interface BandFilters {
   search?: string;
   state?: string;
+  conference?: string;
   page?: number;
   limit?: number;
 }
@@ -278,4 +280,38 @@ export interface TopBand {
   name: string;
   videoCount: number;
   schoolName: string;
+}
+
+// ============ TRENDING VIDEO TYPES ============
+
+export type TrendingTimeframe = 'today' | 'week' | 'month' | 'all-time';
+
+export interface TrendingVideoFilters {
+  timeframe?: TrendingTimeframe;
+  category?: string;
+  limit?: number;
+}
+
+export interface TrendingVideo {
+  id: string;
+  youtubeId: string;
+  title: string;
+  thumbnailUrl: string;
+  duration: number;
+  publishedAt: string;
+  viewCount: number;
+  likeCount: number;
+  qualityScore: number;
+  trendingScore: number;
+  band: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+  };
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
 }
