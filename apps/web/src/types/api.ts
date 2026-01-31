@@ -315,3 +315,99 @@ export interface TrendingVideo {
     slug: string;
   } | null;
 }
+
+// ============ WATCH HISTORY TYPES ============
+
+export type WatchHistoryFilter = 'all' | 'completed' | 'incomplete';
+export type WatchHistorySortBy = 'recentlyWatched' | 'oldest' | 'mostViewed' | 'longestDuration';
+
+export interface WatchHistoryFilters {
+  page?: number;
+  limit?: number;
+  filter?: WatchHistoryFilter;
+  sortBy?: WatchHistorySortBy;
+}
+
+export interface TrackWatchDto {
+  videoId: string;
+  watchDuration: number;
+  completed: boolean;
+}
+
+export interface WatchHistoryEntry {
+  id: string;
+  userId: string;
+  videoId: string;
+  watchedAt: string;
+  watchDuration: number | null;
+  completed: boolean;
+  video: {
+    id: string;
+    youtubeId: string;
+    title: string;
+    thumbnailUrl: string;
+    duration: number;
+    viewCount: number;
+    band: {
+      id: string;
+      name: string;
+      slug: string;
+      logoUrl: string | null;
+    } | null;
+    category: {
+      id: string;
+      name: string;
+      slug: string;
+    } | null;
+  };
+}
+
+export interface WatchStats {
+  totalWatchTimeSeconds: number;
+  totalWatchTimeMinutes: number;
+  totalWatchTimeHours: number;
+  videosWatched: number;
+  videosCompleted: number;
+}
+
+// ============ RELATED VIDEOS TYPES ============
+
+export interface RelatedVideo {
+  id: string;
+  youtubeId: string;
+  title: string;
+  thumbnailUrl: string;
+  duration: number;
+  publishedAt: string;
+  viewCount: number;
+  likeCount: number;
+  qualityScore: number;
+  similarityScore: number;
+  matchReason: string;
+  band: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+  };
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+}
+
+export interface BecauseYouWatchedSection {
+  sourceVideo: {
+    id: string;
+    title: string;
+    thumbnailUrl: string;
+  };
+  videos: RelatedVideo[];
+}
+
+export interface RelatedVideosResponse {
+  videos: RelatedVideo[];
+  becauseYouWatched?: BecauseYouWatchedSection[];
+  fallbackReason?: string;
+}

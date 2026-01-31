@@ -2,9 +2,9 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { apiClient } from '@/lib/api-client';
-import { VideoCard } from '@/components/videos/VideoCard';
 import { BandLogo } from '@/components/images';
 import { YouTubeEmbed } from '@/components/videos/YouTubeEmbed';
+import { RelatedVideosSidebar } from '@/components/video/RelatedVideosSidebar';
 import type { Video } from '@/types/api';
 import { VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
 
@@ -16,20 +16,9 @@ interface VideoPageProps {
 
 export default async function VideoPage({ params }: VideoPageProps) {
   let video: Video;
-  let relatedVideos: Video[] = [];
 
   try {
     video = await apiClient.getVideo(params.id);
-    
-    if (video.band) {
-      const relatedResult = await apiClient.getVideos({
-        bandId: video.band.id,
-        limit: 4,
-        sortBy: 'publishedAt',
-        sortOrder: 'desc',
-      });
-      relatedVideos = relatedResult.data.filter((v) => v.id !== video.id).slice(0, 3);
-    }
   } catch (error) {
     notFound();
   }
@@ -96,18 +85,7 @@ export default async function VideoPage({ params }: VideoPageProps) {
               </div>
             </div>
           </div>
-          <div className="lg:col-span-1">
-            {relatedVideos.length > 0 && (
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4">More from {video.band?.name}</h3>
-                <div className="space-y-4">
-                  {relatedVideos.map((relatedVideo) => (
-                    <VideoCard key={relatedVideo.id} video={relatedVideo} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <RelatedVideosSidebar videoId={params.id} currentBandName={video.band?.name} />
         </div>
       </div>
     </div>

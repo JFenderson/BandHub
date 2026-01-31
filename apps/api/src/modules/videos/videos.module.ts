@@ -5,13 +5,22 @@ import { VideosRepository } from './videos.repository';
 import { TrendingController } from './controllers/trending.controller';
 import { TrendingService } from './services/trending.service';
 import { TrendingScheduler } from './services/trending.scheduler';
+import { VideoRecommendationsService } from './services/recommendations.service';
+import { OptionalUserAuthGuard } from '../users/guards/optional-user-auth.guard';
 import { PrismaModule } from '@bandhub/database';
 import { CacheModule } from '@bandhub/cache';
 
 @Module({
   imports: [PrismaModule, CacheModule],
   controllers: [VideosController, TrendingController],
-  providers: [VideosService, VideosRepository, TrendingService, TrendingScheduler],
-  exports: [VideosService, VideosRepository, TrendingService],
+  providers: [
+    VideosService,
+    VideosRepository,
+    TrendingService,
+    TrendingScheduler,
+    VideoRecommendationsService,
+    OptionalUserAuthGuard,
+  ],
+  exports: [VideosService, VideosRepository, TrendingService, VideoRecommendationsService],
 })
 export class VideosModule {}

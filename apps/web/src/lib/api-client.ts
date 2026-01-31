@@ -26,6 +26,11 @@ import type {
   TopBand,
   TrendingVideo,
   TrendingVideoFilters,
+  WatchHistoryFilters,
+  TrackWatchDto,
+  WatchHistoryEntry,
+  WatchStats,
+  RelatedVideosResponse,
 } from '@/types/api';
 import type { CreateBandDto, UpdateBandDto } from '@hbcu-band-hub/shared-types';
 import type { LoginCredentials, LoginResponse, RefreshTokenResponse } from '@/types/auth';
@@ -394,6 +399,93 @@ export class ApiClient {
 
     const query = params.toString();
     return this.request<TrendingVideo[]>(`/videos/trending${query ? `?${query}` : ''}`);
+  }
+
+  // ============ RELATED VIDEOS METHODS ============
+
+  /**
+   * Get related videos for a specific video
+   * Uses content-based filtering with weighted similarity scoring:
+   * - Same Band: 40%
+   * - Same Category: 30%
+   * - Same Event: 20%
+   * - Matching Tags: 10%
+   *
+   * If authenticated, excludes already watched videos and includes "Because you watched" sections
+   */
+  async getRelatedVideos(videoId: string, limit?: number): Promise<RelatedVideosResponse> {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+
+    const query = params.toString();
+    return this.request<RelatedVideosResponse>(`/videos/${videoId}/related${query ? `?${query}` : ''}`);
+  }
+
+  // ============ WATCH HISTORY METHODS ============
+
+  /**
+   * Track a watch event for the current user
+   */
+  async trackWatchHistory(dto: TrackWatchDto): Promise<WatchHistoryEntry> {
+    return this.request<WatchHistoryEntry>('/watch-history/track', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
+  }
+
+  /**
+   * Get watch history for the current user
+   */
+  async getWatchHistory(filters?: WatchHistoryFilters): Promise<PaginatedResponse<WatchHistoryEntry>> {
+    const params = new URLSearchParams();
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.filter) params.append('filter', filters.filter);
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+
+    const query = params.toString();
+    return this.request<PaginatedResponse<WatchHistoryEntry>>(`/watch-history${query ? `?${query}` : ''}`);
+  }
+
+  /**
+   * Get recently watched videos for the current user
+   */
+  async getRecentlyWatched(limit?: number): Promise<WatchHistoryEntry[]> {
+    const params = limit ? `?limit=${limit}` : '';
+    return this.request<WatchHistoryEntry[]>(`/watch-history/recently-watched${params}`);
+  }
+
+  /**
+   * Get videos to continue watching for the current user
+   */
+  async getContinueWatching(limit?: number): Promise<WatchHistoryEntry[]> {
+    const params = limit ? `?limit=${limit}` : '';
+    return this.request<WatchHistoryEntry[]>(`/watch-history/continue-watching${params}`);
+  }
+
+  /**
+   * Get watch statistics for the current user
+   */
+  async getWatchStats(): Promise<WatchStats> {
+    return this.request<WatchStats>('/watch-history/stats');
+  }
+
+  /**
+   * Clear all watch history for the current user
+   */
+  async clearWatchHistory(): Promise<{ message: string; count: number }> {
+    return this.request<{ message: string; count: number }>('/watch-history', {
+      method: 'DELETE',
+    });
+  }
+
+  /**
+   * Remove a specific video from watch history
+   */
+  async removeFromWatchHistory(videoId: string): Promise<{ message: string; count: number }> {
+    return this.request<{ message: string; count: number }>(`/watch-history/${videoId}`, {
+      method: 'DELETE',
+    });
   }
 
   // Creator methods

@@ -12,13 +12,15 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { VideosService } from './videos.service';
+import { VideoRecommendationsService } from './services/recommendations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../../common/decorators/current-user.decorator';
-import { VideoQueryDto } from './dto/video-query.dto';
+import { OptionalUserAuthGuard } from '../users/guards/optional-user-auth.guard';
+import { VideoQueryDto, GetRelatedVideosQueryDto } from './dto';
 import { ApiErrorDto } from '../../common/dto/api-error.dto';
 
 // Import AdminRole from generated Prisma client
@@ -27,7 +29,10 @@ import { AdminRole } from '@prisma/client';
 @ApiTags('Videos')
 @Controller({ path: 'videos', version: '1' })
 export class VideosController {
-  constructor(private readonly videosService: VideosService) {}
+  constructor(
+    private readonly videosService: VideosService,
+    private readonly recommendationsService: VideoRecommendationsService,
+  ) {}
 
   // ========================================
   // PUBLIC ROUTES (No authentication required)
@@ -47,6 +52,27 @@ export class VideosController {
   @ApiResponse({ status: 404, description: 'Video not found', type: ApiErrorDto })
   async findOne(@Param('id') id: string) {
     return this.videosService.findById(id);
+  }
+
+  @Get(':id/related')
+  @UseGuards(OptionalUserAuthGuard)
+  @ApiOperation({
+    summary: 'Get related videos',
+    description: 'Returns videos related to the specified video based on similarity scoring (same band 40%, same category 30%, same event 20%, matching tags 10%). If authenticated, excludes already watched videos and includes "Because you watched" sections.',
+  })
+  @ApiParam({ name: 'id', description: 'The unique identifier of the video' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Maximum number of related videos (default: 10, max: 50)' })
+  @ApiResponse({ status: 200, description: 'Related videos retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Video not found', type: ApiErrorDto })
+  async getRelatedVideos(
+    @Param('id') videoId: string,
+    @Query() query: GetRelatedVideosQueryDto,
+    @CurrentUser() user: CurrentUserData | null,
+  ) {
+    return this.recommendationsService.getRelatedVideos(videoId, {
+      limit: query.limit,
+      userId: user?.userId,
+    });
   }
 
   // ========================================
