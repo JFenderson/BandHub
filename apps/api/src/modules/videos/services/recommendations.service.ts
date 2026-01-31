@@ -79,11 +79,13 @@ interface VideoForScoring {
  * VideoRecommendationsService - Calculates related videos using content-based
  * and collaborative filtering algorithms
  *
- * Similarity Score Formula:
- * - Same Band: 40%
- * - Same Category: 30%
- * - Same Event: 20%
- * - Matching Tags: 10%
+ * Similarity Score Formula (prioritizes discovering different bands):
+ * - Same Category: 40%
+ * - Same Event/Year: 30%
+ * - Matching Tags: 20%
+ * - Quality Bonus: 10%
+ *
+ * Same-band videos are EXCLUDED by default to encourage discovery
  */
 @Injectable()
 export class VideoRecommendationsService {
@@ -96,12 +98,12 @@ export class VideoRecommendationsService {
 
   private readonly CACHE_KEY_PREFIX = 'videos:related:';
 
-  // Weights for similarity calculation
+  // Weights for similarity calculation (excludes same band)
   private readonly SIMILARITY_WEIGHTS = {
-    sameBand: 0.4,
-    sameCategory: 0.3,
-    sameEvent: 0.2,
-    matchingTags: 0.1,
+    sameCategory: 0.4,
+    sameEvent: 0.3,
+    matchingTags: 0.2,
+    qualityBonus: 0.1,
   };
 
   constructor(
@@ -201,6 +203,8 @@ export class VideoRecommendationsService {
 
   /**
    * Calculate similarity score between two videos
+   * Prioritizes content similarity (category, event, tags) over same-band
+   * Same-band videos should be excluded before calling this method
    */
   private calculateSimilarityScore(
     sourceVideo: VideoForScoring,
@@ -209,45 +213,40 @@ export class VideoRecommendationsService {
     let score = 0;
     const reasons: string[] = [];
 
-    // Same band (40%)
-    if (sourceVideo.bandId === candidateVideo.bandId) {
-      score += this.SIMILARITY_WEIGHTS.sameBand * 100;
-      reasons.push('Same band');
-    }
-
-    // Same category (30%)
+    // Same category (40%) - highest weight for content similarity
     if (
       sourceVideo.categoryId &&
       candidateVideo.categoryId &&
       sourceVideo.categoryId === candidateVideo.categoryId
     ) {
       score += this.SIMILARITY_WEIGHTS.sameCategory * 100;
-      reasons.push('Same category');
+      reasons.push('Similar style');
     }
 
-    // Same event (20%)
-    const sameEvent =
-      (sourceVideo.eventName &&
-        candidateVideo.eventName &&
-        sourceVideo.eventName.toLowerCase() === candidateVideo.eventName.toLowerCase()) ||
-      (sourceVideo.eventYear &&
-        candidateVideo.eventYear &&
-        sourceVideo.eventYear === candidateVideo.eventYear);
+    // Same event or year (30%)
+    const exactEventMatch =
+      sourceVideo.eventName &&
+      candidateVideo.eventName &&
+      sourceVideo.eventName.toLowerCase() === candidateVideo.eventName.toLowerCase();
 
-    if (sameEvent) {
+    const sameYear =
+      sourceVideo.eventYear &&
+      candidateVideo.eventYear &&
+      sourceVideo.eventYear === candidateVideo.eventYear;
+
+    if (exactEventMatch) {
       score += this.SIMILARITY_WEIGHTS.sameEvent * 100;
-      if (sourceVideo.eventName === candidateVideo.eventName) {
-        reasons.push('Same event');
-      } else {
-        reasons.push('Same year');
-      }
+      reasons.push('Same event');
+    } else if (sameYear) {
+      score += this.SIMILARITY_WEIGHTS.sameEvent * 70; // Partial credit for same year
+      reasons.push('Same year');
     }
 
-    // Matching tags (10%)
+    // Matching tags (20%)
     if (sourceVideo.tags.length > 0 && candidateVideo.tags.length > 0) {
       const sourceTags = new Set(sourceVideo.tags.map(t => t.toLowerCase()));
       const matchingTags = candidateVideo.tags.filter(t =>
-        sourceTags.has(t.toLowerCase())
+        sourceTags.has(t.toLowerCase()),
       );
 
       if (matchingTags.length > 0) {
@@ -257,32 +256,67 @@ export class VideoRecommendationsService {
       }
     }
 
+    // Quality bonus (10%) - reward high quality videos
+    if (candidateVideo.qualityScore >= 7) {
+      score += this.SIMILARITY_WEIGHTS.qualityBonus * 100;
+      reasons.push('High quality');
+    } else if (candidateVideo.qualityScore >= 5) {
+      score += this.SIMILARITY_WEIGHTS.qualityBonus * 50;
+    }
+
     return {
       score: Math.round(score * 100) / 100,
-      reason: reasons.length > 0 ? reasons.join(', ') : 'Popular video',
+      reason: reasons.length > 0 ? reasons.join(', ') : 'Discover new bands',
     };
   }
 
   /**
    * Calculate related videos using content-based filtering
+   * EXCLUDES same-band videos to encourage discovery of new bands
    */
   private async calculateRelatedVideos(
     sourceVideo: VideoForScoring,
     limit: number,
     excludeVideoIds: Set<string>,
   ): Promise<RelatedVideo[]> {
-    // Fetch candidate videos from same band, category, or with similar tags
+    // Build OR conditions for finding similar content from DIFFERENT bands
+    const orConditions: any[] = [];
+
+    // Same category (different band)
+    if (sourceVideo.categoryId) {
+      orConditions.push({ categoryId: sourceVideo.categoryId });
+    }
+
+    // Same event name (different band)
+    if (sourceVideo.eventName) {
+      orConditions.push({
+        eventName: { contains: sourceVideo.eventName, mode: 'insensitive' as const },
+      });
+    }
+
+    // Same event year (different band)
+    if (sourceVideo.eventYear) {
+      orConditions.push({ eventYear: sourceVideo.eventYear });
+    }
+
+    // Matching tags (different band)
+    if (sourceVideo.tags.length > 0) {
+      orConditions.push({ tags: { hasSome: sourceVideo.tags } });
+    }
+
+    // If no matching criteria, fall back to any popular video from different band
+    if (orConditions.length === 0) {
+      orConditions.push({ isHidden: false }); // Match any visible video
+    }
+
+    // Fetch candidate videos from DIFFERENT bands with similar content
     const candidates = await this.readReplica.executeRead((client) =>
       client.video.findMany({
         where: {
           isHidden: false,
           id: { not: sourceVideo.id },
-          OR: [
-            { bandId: sourceVideo.bandId },
-            ...(sourceVideo.categoryId ? [{ categoryId: sourceVideo.categoryId }] : []),
-            ...(sourceVideo.eventName ? [{ eventName: { contains: sourceVideo.eventName, mode: 'insensitive' as const } }] : []),
-            ...(sourceVideo.tags.length > 0 ? [{ tags: { hasSome: sourceVideo.tags } }] : []),
-          ],
+          bandId: { not: sourceVideo.bandId }, // EXCLUDE same band
+          OR: orConditions,
         },
         select: {
           id: true,
@@ -316,6 +350,7 @@ export class VideoRecommendationsService {
           },
         },
         orderBy: [
+          { qualityScore: 'desc' },
           { viewCount: 'desc' },
           { publishedAt: 'desc' },
         ],
@@ -337,7 +372,6 @@ export class VideoRecommendationsService {
           matchReason: reason,
         };
       })
-      .filter(v => v.similarityScore > 0)
       .sort((a, b) => {
         // Sort by similarity score first, then by view count
         if (b.similarityScore !== a.similarityScore) {
@@ -346,7 +380,10 @@ export class VideoRecommendationsService {
         return b.viewCount - a.viewCount;
       });
 
-    return scoredVideos.slice(0, limit).map(v => ({
+    // Diversify results - avoid too many videos from same band
+    const diversifiedVideos = this.diversifyByBand(scoredVideos, limit);
+
+    return diversifiedVideos.map(v => ({
       id: v.id,
       youtubeId: v.youtubeId,
       title: v.title,
@@ -361,6 +398,31 @@ export class VideoRecommendationsService {
       band: v.band,
       category: v.category,
     }));
+  }
+
+  /**
+   * Diversify results to avoid too many videos from the same band
+   * Limits to max 2 videos per band in the results
+   */
+  private diversifyByBand<T extends { bandId: string }>(
+    videos: T[],
+    limit: number,
+    maxPerBand: number = 2,
+  ): T[] {
+    const result: T[] = [];
+    const bandCounts = new Map<string, number>();
+
+    for (const video of videos) {
+      if (result.length >= limit) break;
+
+      const currentCount = bandCounts.get(video.bandId) || 0;
+      if (currentCount < maxPerBand) {
+        result.push(video);
+        bandCounts.set(video.bandId, currentCount + 1);
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -436,7 +498,7 @@ export class VideoRecommendationsService {
 
   /**
    * Get "Because you watched" sections based on user's watch history
-   * Implements collaborative filtering
+   * Implements collaborative filtering - finds similar content from DIFFERENT bands
    */
   private async getBecauseYouWatchedSections(
     userId: string,
@@ -463,6 +525,7 @@ export class VideoRecommendationsService {
               bandId: true,
               categoryId: true,
               eventName: true,
+              eventYear: true,
               tags: true,
             },
           },
@@ -484,21 +547,36 @@ export class VideoRecommendationsService {
 
     const sections: BecauseYouWatchedSection[] = [];
     const usedVideoIds = new Set<string>([currentVideoId, ...watchedVideoIds]);
+    const usedBandIds = new Set<string>(); // Track bands already shown in sections
 
-    // Create sections for top watched videos
+    // Create sections for top watched videos - find similar content from DIFFERENT bands
     for (const [, sourceVideo] of uniqueWatched) {
       if (sections.length >= maxSections) break;
 
-      // Find related videos for this watched video
+      // Build OR conditions for similar content
+      const orConditions: any[] = [];
+      if (sourceVideo.categoryId) {
+        orConditions.push({ categoryId: sourceVideo.categoryId });
+      }
+      if (sourceVideo.eventName) {
+        orConditions.push({
+          eventName: { contains: sourceVideo.eventName, mode: 'insensitive' as const },
+        });
+      }
+      if (sourceVideo.tags && sourceVideo.tags.length > 0) {
+        orConditions.push({ tags: { hasSome: sourceVideo.tags } });
+      }
+
+      if (orConditions.length === 0) continue;
+
+      // Find related videos from DIFFERENT bands
       const relatedVideos = await this.readReplica.executeRead((client) =>
         client.video.findMany({
           where: {
             isHidden: false,
             id: { notIn: Array.from(usedVideoIds) },
-            OR: [
-              { bandId: sourceVideo.bandId },
-              ...(sourceVideo.categoryId ? [{ categoryId: sourceVideo.categoryId }] : []),
-            ],
+            bandId: { not: sourceVideo.bandId }, // EXCLUDE same band
+            OR: orConditions,
           },
           select: {
             id: true,
@@ -512,6 +590,7 @@ export class VideoRecommendationsService {
             qualityScore: true,
             bandId: true,
             categoryId: true,
+            eventName: true,
             band: {
               select: {
                 id: true,
@@ -528,14 +607,27 @@ export class VideoRecommendationsService {
               },
             },
           },
-          orderBy: { viewCount: 'desc' },
-          take: videosPerSection,
+          orderBy: [
+            { qualityScore: 'desc' },
+            { viewCount: 'desc' },
+          ],
+          take: videosPerSection * 3, // Fetch more for diversification
         }),
       );
 
-      if (relatedVideos.length > 0) {
+      // Diversify to avoid same band repeating
+      const diversified = this.diversifyByBand(
+        relatedVideos.filter(v => !usedBandIds.has(v.bandId)),
+        videosPerSection,
+        1, // Only 1 video per band in "Because you watched" sections
+      );
+
+      if (diversified.length > 0) {
         // Add to used IDs to prevent duplicates across sections
-        relatedVideos.forEach(v => usedVideoIds.add(v.id));
+        diversified.forEach(v => {
+          usedVideoIds.add(v.id);
+          usedBandIds.add(v.bandId);
+        });
 
         sections.push({
           sourceVideo: {
@@ -543,21 +635,31 @@ export class VideoRecommendationsService {
             title: sourceVideo.title,
             thumbnailUrl: sourceVideo.thumbnailUrl,
           },
-          videos: relatedVideos.map(v => ({
-            id: v.id,
-            youtubeId: v.youtubeId,
-            title: v.title,
-            thumbnailUrl: v.thumbnailUrl,
-            duration: v.duration,
-            publishedAt: v.publishedAt,
-            viewCount: v.viewCount,
-            likeCount: v.likeCount,
-            qualityScore: v.qualityScore,
-            similarityScore: v.bandId === sourceVideo.bandId ? 40 : 30,
-            matchReason: v.bandId === sourceVideo.bandId ? 'Same band' : 'Same category',
-            band: v.band,
-            category: v.category,
-          })),
+          videos: diversified.map(v => {
+            // Determine match reason
+            let matchReason = 'Discover new band';
+            if (sourceVideo.categoryId && v.categoryId === sourceVideo.categoryId) {
+              matchReason = 'Similar style';
+            } else if (sourceVideo.eventName && v.eventName?.toLowerCase().includes(sourceVideo.eventName.toLowerCase())) {
+              matchReason = 'Same event';
+            }
+
+            return {
+              id: v.id,
+              youtubeId: v.youtubeId,
+              title: v.title,
+              thumbnailUrl: v.thumbnailUrl,
+              duration: v.duration,
+              publishedAt: v.publishedAt,
+              viewCount: v.viewCount,
+              likeCount: v.likeCount,
+              qualityScore: v.qualityScore,
+              similarityScore: 40,
+              matchReason,
+              band: v.band,
+              category: v.category,
+            };
+          }),
         });
       }
     }

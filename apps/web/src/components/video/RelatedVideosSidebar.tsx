@@ -9,7 +9,6 @@ import type { RelatedVideo, RelatedVideosResponse, BecauseYouWatchedSection } fr
 
 interface RelatedVideosSidebarProps {
   videoId: string;
-  currentBandName?: string;
 }
 
 function formatDuration(seconds: number): string {
@@ -116,7 +115,7 @@ function LoadingSkeleton() {
   );
 }
 
-export function RelatedVideosSidebar({ videoId, currentBandName }: RelatedVideosSidebarProps) {
+export function RelatedVideosSidebar({ videoId }: RelatedVideosSidebarProps) {
   const [data, setData] = useState<RelatedVideosResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -184,8 +183,11 @@ export function RelatedVideosSidebar({ videoId, currentBandName }: RelatedVideos
       {hasRelatedVideos && (
         <div>
           <h3 className="text-lg font-bold text-gray-900 mb-4">
-            {currentBandName ? `More from ${currentBandName}` : 'Related Videos'}
+            Discover Similar Bands
           </h3>
+          <p className="text-xs text-gray-500 mb-3">
+            Videos from other bands with similar content
+          </p>
           {data.fallbackReason && (
             <p className="text-xs text-gray-500 mb-3">{data.fallbackReason}</p>
           )}

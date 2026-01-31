@@ -85,7 +85,7 @@ export default async function VideoPage({ params }: VideoPageProps) {
               </div>
             </div>
           </div>
-          <RelatedVideosSidebar videoId={params.id} currentBandName={video.band?.name} />
+          <RelatedVideosSidebar videoId={params.id} />
         </div>
       </div>
     </div>
