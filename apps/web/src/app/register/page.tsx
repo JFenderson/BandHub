@@ -25,7 +25,7 @@ export default function RegisterPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      const redirect = searchParams.get('redirect') || '/profile';
+      const redirect = searchParams?.get('redirect') || '/profile';
       router.push(redirect);
     }
   }, [isAuthenticated, isLoading, router, searchParams]);

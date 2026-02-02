@@ -101,7 +101,7 @@ export default function SyncProgressModal({
   };
 
   const progress = status.videosFound
-    ? ((status.videosAdded + status.videosUpdated) / status.videosFound) * 100
+    ? (((status.videosAdded ?? 0) + (status.videosUpdated ?? 0)) / status.videosFound) * 100
     : 0;
 
   return (
@@ -186,7 +186,7 @@ export default function SyncProgressModal({
             )}
 
             {/* Stats */}
-            {status.videosFound > 0 && (
+            {(status.videosFound ?? 0) > 0 && (
               <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-gray-900">{status.videosFound}</p>

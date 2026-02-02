@@ -31,9 +31,11 @@ export function useSearchFilters(initialQuery?: VideoSearchQuery) {
    * Update URL when query changes
    */
   useEffect(() => {
+    if (!pathname) return;
+
     const urlString = encodeSearchToURL(query);
     const newUrl = urlString ? `${pathname}?${urlString}` : pathname;
-    
+
     // Only update if URL actually changed (prevents infinite loops)
     if (newUrl !== `${pathname}?${searchParams?.toString() || ''}`) {
       router.replace(newUrl, { scroll: false });

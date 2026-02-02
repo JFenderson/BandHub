@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import { AdvancedVideoSearch } from '@/components/search/AdvancedVideoSearch';
 import { getPopularSearches } from '@/lib/api/search';
 import { decodeSearchFromURL } from '@/lib/utils/searchParams';
+import type { PopularSearch } from '@/types/search';
 
 export const metadata: Metadata = {
   title: 'Search HBCU Band Videos | HBCU Band Hub',
@@ -20,7 +21,7 @@ interface SearchPageProps {
 
 async function SearchContent({ searchParams }: SearchPageProps) {
   // Fetch popular searches server-side
-  let popularSearches = [];
+  let popularSearches: PopularSearch[] = [];
   try {
     popularSearches = await getPopularSearches(10);
   } catch (error) {

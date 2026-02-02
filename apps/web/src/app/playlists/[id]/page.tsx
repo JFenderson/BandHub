@@ -27,7 +27,7 @@ import type { Playlist, PlaylistVideo } from '@/lib/api/playlists';
 export default function PlaylistDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const playlistId = params.id as string;
+  const playlistId = params?.id as string;
   
   const { getPlaylist, removeVideoFromPlaylist, reorderPlaylistVideos, deletePlaylist } = usePlaylists(false);
   const [playlist, setPlaylist] = useState<Playlist | null>(null);

@@ -13,14 +13,14 @@ export function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps
   const searchParams = useSearchParams();
 
   const createPageUrl = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('page', page.toString());
     return `${baseUrl}?${params.toString()}`;
   };
 
   if (totalPages <= 1) return null;
 
-  const pages = [];
+  const pages: number[] = [];
   const showEllipsis = totalPages > 7;
 
   if (showEllipsis) {

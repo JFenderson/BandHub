@@ -90,6 +90,13 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "overrides": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "styled-jsx": {
+      "react": "^18.3.1"
+    }
+  },
   "prisma": {
     "seed": "ts-node apps/api/prisma/seed.ts",
     "schema": "packages/database/prisma/schema.prisma"

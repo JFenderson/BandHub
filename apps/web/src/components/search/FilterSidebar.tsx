@@ -65,24 +65,24 @@ export function FilterSidebar({ onFiltersChange, className = '' }: FilterSidebar
 
   // State for filters
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
-    const param = searchParams.get('categoryIds');
+    const param = searchParams?.get('categoryIds');
     return param ? param.split(',') : [];
   });
   const [selectedBands, setSelectedBands] = useState<string[]>(() => {
-    const param = searchParams.get('bandIds');
+    const param = searchParams?.get('bandIds');
     return param ? param.split(',') : [];
   });
   const [datePreset, setDatePreset] = useState<DatePreset>(() => {
-    if (searchParams.get('dateFrom') || searchParams.get('dateTo')) return 'custom';
+    if (searchParams?.get('dateFrom') || searchParams?.get('dateTo')) return 'custom';
     return '';
   });
-  const [customDateFrom, setCustomDateFrom] = useState(searchParams.get('dateFrom') || '');
-  const [customDateTo, setCustomDateTo] = useState(searchParams.get('dateTo') || '');
-  const [duration, setDuration] = useState(searchParams.get('duration') || '');
-  const [viewCountMin, setViewCountMin] = useState(searchParams.get('viewCountMin') || '');
-  const [viewCountMax, setViewCountMax] = useState(searchParams.get('viewCountMax') || '');
+  const [customDateFrom, setCustomDateFrom] = useState(searchParams?.get('dateFrom') || '');
+  const [customDateTo, setCustomDateTo] = useState(searchParams?.get('dateTo') || '');
+  const [duration, setDuration] = useState(searchParams?.get('duration') || '');
+  const [viewCountMin, setViewCountMin] = useState(searchParams?.get('viewCountMin') || '');
+  const [viewCountMax, setViewCountMax] = useState(searchParams?.get('viewCountMax') || '');
   const [hasOpponent, setHasOpponent] = useState<boolean | null>(() => {
-    const param = searchParams.get('hasOpponent');
+    const param = searchParams?.get('hasOpponent');
     if (param === 'true') return true;
     if (param === 'false') return false;
     return null;
@@ -167,7 +167,7 @@ export function FilterSidebar({ onFiltersChange, className = '' }: FilterSidebar
   };
 
   const applyFilters = () => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams?.toString() || '');
 
     // Clear existing filter params
     ['categoryIds', 'bandIds', 'dateFrom', 'dateTo', 'durationMin', 'durationMax', 'viewCountMin', 'viewCountMax', 'hasOpponent'].forEach(
@@ -230,7 +230,7 @@ export function FilterSidebar({ onFiltersChange, className = '' }: FilterSidebar
     setHasOpponent(null);
 
     const params = new URLSearchParams();
-    const q = searchParams.get('q');
+    const q = searchParams?.get('q');
     if (q) params.set('q', q);
 
     const queryString = params.toString();

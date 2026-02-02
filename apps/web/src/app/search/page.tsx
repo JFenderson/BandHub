@@ -61,12 +61,12 @@ function SearchPageContent() {
   const [meta, setMeta] = useState<SearchMeta | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [view, setView] = useState<ViewMode>('grid');
-  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'relevance');
-  const [sortOrder, setSortOrder] = useState(searchParams.get('sortOrder') || 'desc');
+  const [sortBy, setSortBy] = useState(searchParams?.get('sortBy') || 'relevance');
+  const [sortOrder, setSortOrder] = useState(searchParams?.get('sortOrder') || 'desc');
   const [popularSearches, setPopularSearches] = useState<PopularSearch[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  const query = searchParams.get('q') || '';
+  const query = searchParams?.get('q') || '';
 
   // Fetch popular searches on mount
   useEffect(() => {
@@ -90,7 +90,7 @@ function SearchPageContent() {
     setIsLoading(true);
 
     try {
-      const params = new URLSearchParams(searchParams);
+      const params = new URLSearchParams(searchParams?.toString() || '');
       
       // Ensure sort params are set
       if (!params.has('sortBy')) params.set('sortBy', sortBy);
@@ -118,7 +118,7 @@ function SearchPageContent() {
   // Fetch results when search params change
   useEffect(() => {
     // Only fetch if there's a query or filters
-    if (searchParams.toString()) {
+    if (searchParams?.toString()) {
       fetchResults();
     } else {
       setResults([]);
@@ -127,7 +127,7 @@ function SearchPageContent() {
   }, [searchParams, fetchResults]);
 
   const handleSearch = (searchQuery: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams?.toString() || '');
     if (searchQuery.trim()) {
       params.set('q', searchQuery.trim());
     } else {
@@ -138,7 +138,7 @@ function SearchPageContent() {
   };
 
   const handleSortChange = (newSortBy: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('sortBy', newSortBy);
     params.set('sortOrder', sortOrder);
     params.delete('page');
@@ -147,7 +147,7 @@ function SearchPageContent() {
   };
 
   const handleSortOrderChange = (newSortOrder: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('sortBy', sortBy);
     params.set('sortOrder', newSortOrder);
     params.delete('page');
@@ -157,14 +157,14 @@ function SearchPageContent() {
 
   const handleLoadMore = () => {
     if (meta && meta.page < meta.totalPages) {
-      const params = new URLSearchParams(searchParams);
+      const params = new URLSearchParams(searchParams?.toString() || '');
       params.set('page', (meta.page + 1).toString());
       router.push(`/search?${params.toString()}`);
     }
   };
 
   const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('page', page.toString());
     router.push(`/search?${params.toString()}`);
   };
@@ -269,7 +269,7 @@ function SearchPageContent() {
             )}
 
             {/* Search Results or Landing State */}
-            {!searchParams.toString() ? (
+            {!searchParams?.toString() ? (
               <div className="text-center py-12">
                 <svg
                   className="mx-auto h-16 w-16 text-gray-400"

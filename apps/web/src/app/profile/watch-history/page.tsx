@@ -32,9 +32,6 @@ function WatchHistoryContent() {
     if (tokens?.accessToken) {
       apiClient.setAccessToken(tokens.accessToken);
     }
-    if (tokens?.refreshToken) {
-      apiClient.setRefreshToken(tokens.refreshToken);
-    }
   }, []);
 
   const fetchHistory = useCallback(async (page = 1) => {

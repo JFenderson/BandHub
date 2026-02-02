@@ -21,7 +21,7 @@ export default function LoginPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      const redirect = searchParams.get('redirect') || '/profile';
+      const redirect = searchParams?.get('redirect') || '/profile';
       router.push(redirect);
     }
   }, [isAuthenticated, isLoading, router, searchParams]);
@@ -60,7 +60,7 @@ export default function LoginPage() {
         rememberMe: formData.rememberMe,
       });
       // Redirect will happen via useEffect when isAuthenticated changes
-      const redirect = searchParams.get('redirect') || '/profile';
+      const redirect = searchParams?.get('redirect') || '/profile';
       router.push(redirect);
     } catch (error) {
       setErrors({

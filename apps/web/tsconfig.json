@@ -28,7 +28,8 @@
     "allowJs": true,
     "strict": false,
     "noEmit": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "strictNullChecks": true
   },
   "include": [
     "next-env.d.ts",

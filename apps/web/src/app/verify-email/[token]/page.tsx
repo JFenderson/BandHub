@@ -10,7 +10,7 @@ type VerificationStatus = 'verifying' | 'success' | 'error';
 
 export default function VerifyEmailPage() {
   const params = useParams();
-  const token = params.token as string;
+  const token = params?.token as string;
   const { isAuthenticated, refreshUser } = useUser();
 
   const [status, setStatus] = useState<VerificationStatus>('verifying');

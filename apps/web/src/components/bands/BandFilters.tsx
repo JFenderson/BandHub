@@ -9,12 +9,12 @@ export function BandFilters() {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  const currentSearch = searchParams.get('search') || '';
-  const currentState = searchParams.get('state') || '';
-  const currentConference = searchParams.get('conference') || '';
+  const currentSearch = searchParams?.get('search') || '';
+  const currentState = searchParams?.get('state') || '';
+  const currentConference = searchParams?.get('conference') || '';
 
   const updateFilters = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams?.toString() || '');
 
     if (value) {
       params.set(key, value);

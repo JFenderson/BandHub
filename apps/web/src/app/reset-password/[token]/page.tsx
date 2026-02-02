@@ -8,7 +8,7 @@ import { PasswordStrength, isPasswordValid } from '@/components/auth/PasswordStr
 
 export default function ResetPasswordPage() {
   const params = useParams();
-  const token = params.token as string;
+  const token = params?.token as string;
   const router = useRouter();
 
   const [formData, setFormData] = useState({

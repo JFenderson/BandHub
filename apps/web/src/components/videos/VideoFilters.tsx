@@ -23,12 +23,12 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
   const [isPending, startTransition] = useTransition();
   const [categories, setCategories] = useState<any[]>([]);
 
-  const currentSearch = searchParams.get('search') || '';
-  const currentBandId = searchParams.get('bandId') || '';
-  const currentConference = searchParams.get('conference') || '';
-  const currentCategory = searchParams.get('category') || '';
-  const currentEventYear = searchParams.get('eventYear') || '';
-  const currentSortBy = searchParams.get('sortBy') || 'publishedAt';
+  const currentSearch = searchParams?.get('search') || '';
+  const currentBandId = searchParams?.get('bandId') || '';
+  const currentConference = searchParams?.get('conference') || '';
+  const currentCategory = searchParams?.get('category') || '';
+  const currentEventYear = searchParams?.get('eventYear') || '';
+  const currentSortBy = searchParams?.get('sortBy') || 'publishedAt';
 
   useEffect(() => {
     apiClient.getCategories()
@@ -38,7 +38,7 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
 
 
   const updateFilter = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams?.toString() || '');
 
     if (value) {
       params.set(key, value);
