@@ -8,3 +8,9 @@ export {
 
 export { useFocusTrap } from './useFocusTrap';
 export { useKeyboardNavigation } from './useKeyboardNavigation';
+export {
+  useAnalytics,
+  useVideoAnalytics,
+  useSearchAnalytics,
+  useInteractionAnalytics,
+} from './useAnalytics';
