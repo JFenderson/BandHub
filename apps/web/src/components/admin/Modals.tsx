@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -23,42 +24,57 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onCancel();
-      }
-    };
+  const containerRef = useFocusTrap({
+    isActive: isOpen,
+    onEscape: onCancel,
+    returnFocusOnDeactivate: true,
+  });
 
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onCancel]);
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const variantColors = {
-    danger: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-    warning: 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500',
-    info: 'bg-primary-600 hover:bg-primary-700 focus:ring-primary-500',
+    danger: 'bg-red-600 hover:bg-red-700 focus-visible:ring-red-500',
+    warning: 'bg-yellow-600 hover:bg-yellow-700 focus-visible:ring-yellow-500',
+    info: 'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500',
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-modal-title"
+    >
+      <div
+        ref={containerRef}
+        className="bg-white rounded-lg shadow-xl max-w-md w-full"
+      >
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+          <h3 id="confirm-modal-title" className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
           <p className="text-gray-600">{message}</p>
         </div>
         <div className="bg-gray-50 px-6 py-4 flex items-center justify-end space-x-3 rounded-b-lg">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 text-white rounded-lg transition-colors ${variantColors[variant]}`}
+            className={`px-4 py-2 text-white rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${variantColors[variant]}`}
           >
             {confirmText}
           </button>
@@ -95,22 +111,29 @@ export function InputModal({
 }: InputModalProps) {
   const [value, setValue] = useState('');
 
+  const containerRef = useFocusTrap({
+    isActive: isOpen,
+    onEscape: onCancel,
+    returnFocusOnDeactivate: true,
+  });
+
   useEffect(() => {
     if (!isOpen) {
       setValue('');
     }
   }, [isOpen]);
 
+  // Prevent body scroll when modal is open
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onCancel();
-      }
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
     };
-
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onCancel]);
+  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,18 +145,23 @@ export function InputModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="input-modal-title"
+    >
+      <div ref={containerRef} className="bg-white rounded-lg shadow-xl max-w-md w-full">
         <form onSubmit={handleSubmit}>
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+            <h3 id="input-modal-title" className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
             <p className="text-gray-600 mb-4">{message}</p>
 
             {inputType === 'select' ? (
               <select
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:border-transparent focus-visible:outline-none"
                 autoFocus
               >
                 <option value="">-- Select --</option>
@@ -149,7 +177,7 @@ export function InputModal({
                 onChange={(e) => setValue(e.target.value)}
                 placeholder={placeholder}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:border-transparent focus-visible:outline-none"
                 autoFocus
               />
             ) : (
@@ -158,7 +186,7 @@ export function InputModal({
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder={placeholder}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:border-transparent focus-visible:outline-none"
                 autoFocus
               />
             )}
@@ -167,14 +195,14 @@ export function InputModal({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
             >
               {cancelText}
             </button>
             <button
               type="submit"
               disabled={!value.trim()}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
             >
               {confirmText}
             </button>

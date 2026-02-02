@@ -6,6 +6,7 @@ import { useUser } from '@/contexts/UserContext';
 import { notificationsApiClient, type Notification } from '@/lib/api/notifications';
 import { NotificationItem } from './NotificationItem';
 import { getAuthTokens } from '@/lib/utils/cookies';
+import { useKeyboardNavigation } from '@/hooks';
 
 interface NotificationBellProps {
   className?: string;
@@ -18,6 +19,30 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    buttonRef.current?.focus();
+  }, []);
+
+  // Keyboard navigation for notifications + "View all" link
+  const itemCount = notifications.length + 1; // +1 for "View all" link
+  const { activeIndex, setActiveIndex, handleKeyDown: navKeyDown } = useKeyboardNavigation({
+    itemCount,
+    isActive: isOpen && !isLoading,
+    onEscape: handleClose,
+  });
+
+  const handleButtonKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      setIsOpen(true);
+      setActiveIndex(0);
+    } else if (isOpen) {
+      navKeyDown(e);
+    }
+  };
 
   // Set up token provider for the API client
   useEffect(() => {
@@ -97,17 +122,19 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+        onKeyDown={handleButtonKeyDown}
+        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-controls="notifications-dropdown"
       >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        
+
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -121,6 +148,7 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
           role="menu"
           aria-label="Notifications menu"
           className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+          onKeyDown={navKeyDown}
         >
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -128,7 +156,7 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
-                  className="text-sm text-primary-600 hover:text-primary-700"
+                  className="text-sm text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
                 >
                   Mark all as read
                 </button>
@@ -147,19 +175,24 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
-                <svg className="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 <p>No notifications yet</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {notifications.map(notification => (
-                  <NotificationItem
+                {notifications.map((notification, index) => (
+                  <div
                     key={notification.id}
-                    notification={notification}
-                    onMarkAsRead={handleMarkAsRead}
-                  />
+                    className={activeIndex === index ? 'bg-gray-100' : ''}
+                    onMouseEnter={() => setActiveIndex(index)}
+                  >
+                    <NotificationItem
+                      notification={notification}
+                      onMarkAsRead={handleMarkAsRead}
+                    />
+                  </div>
                 ))}
               </div>
             )}
@@ -168,8 +201,11 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
           <div className="p-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
             <Link
               href="/notifications"
-              className="block text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
-              onClick={() => setIsOpen(false)}
+              className={`block text-center text-sm text-primary-600 hover:text-primary-700 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded py-1 ${activeIndex === notifications.length ? 'bg-gray-200' : ''}`}
+              onClick={handleClose}
+              onMouseEnter={() => setActiveIndex(notifications.length)}
+              tabIndex={isOpen ? 0 : -1}
+              role="menuitem"
             >
               View all notifications
             </Link>

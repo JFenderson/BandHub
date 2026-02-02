@@ -100,7 +100,7 @@ export function WatchLaterButton({
             : 'text-gray-400 hover:text-primary-500'
           }
           ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}
-          focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2
           ${className}
         `}
         aria-label={isInWatchLater ? 'Remove from watch later' : 'Add to watch later'}

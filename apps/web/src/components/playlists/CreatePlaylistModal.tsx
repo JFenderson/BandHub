@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { usePlaylists } from '@/hooks/usePlaylists';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 const createPlaylistSchema = z.object({
   name: z.string().min(1, 'Playlist name is required').max(100, 'Name is too long'),
@@ -24,6 +25,17 @@ export function CreatePlaylistModal({ isOpen, onClose, onSuccess }: CreatePlayli
   const { createPlaylist } = usePlaylists(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  const containerRef = useFocusTrap({
+    isActive: isOpen,
+    onEscape: handleClose,
+    returnFocusOnDeactivate: true,
+  });
+
   const {
     register,
     handleSubmit,
@@ -37,6 +49,18 @@ export function CreatePlaylistModal({ isOpen, onClose, onSuccess }: CreatePlayli
       isPublic: false,
     },
   });
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const onSubmit = async (data: CreatePlaylistFormData): Promise<void> => {
     setIsSubmitting(true);
@@ -56,15 +80,15 @@ export function CreatePlaylistModal({ isOpen, onClose, onSuccess }: CreatePlayli
     }
   };
 
-  const handleClose = () => {
-    reset();
-    onClose();
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-playlist-title"
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50"
@@ -73,17 +97,20 @@ export function CreatePlaylistModal({ isOpen, onClose, onSuccess }: CreatePlayli
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <div
+        ref={containerRef}
+        className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+      >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 id="create-playlist-title" className="text-xl font-semibold text-gray-900 dark:text-white">
             Create New Playlist
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+            className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-lg p-1"
             aria-label="Close"
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -99,7 +126,7 @@ export function CreatePlaylistModal({ isOpen, onClose, onSuccess }: CreatePlayli
               type="text"
               id="name"
               {...register('name')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:border-primary-500 focus-visible:outline-none dark:bg-gray-700 dark:text-white"
               placeholder="My Awesome Playlist"
             />
             {errors.name && (
@@ -116,7 +143,7 @@ export function CreatePlaylistModal({ isOpen, onClose, onSuccess }: CreatePlayli
               id="description"
               {...register('description')}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:border-primary-500 focus-visible:outline-none dark:bg-gray-700 dark:text-white"
               placeholder="Describe your playlist..."
             />
             {errors.description && (
@@ -130,7 +157,7 @@ export function CreatePlaylistModal({ isOpen, onClose, onSuccess }: CreatePlayli
               type="checkbox"
               id="isPublic"
               {...register('isPublic')}
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary-600 focus-visible:ring-primary-500 border-gray-300 rounded"
             />
             <label htmlFor="isPublic" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
               Make this playlist public
@@ -142,14 +169,14 @@ export function CreatePlaylistModal({ isOpen, onClose, onSuccess }: CreatePlayli
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Creating...' : 'Create Playlist'}

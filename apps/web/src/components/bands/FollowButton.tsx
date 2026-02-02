@@ -147,7 +147,7 @@ export function FollowButton({
               : 'bg-primary-600 text-white hover:bg-primary-700'
             }
             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2
           `}
           aria-label={isFollowed ? 'Unfollow' : 'Follow'}
           aria-pressed={isFollowed}

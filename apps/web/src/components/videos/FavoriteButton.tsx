@@ -100,7 +100,7 @@ export function FavoriteButton({
             : 'text-gray-400 hover:text-red-500'
           }
           ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}
-          focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2
           ${className}
         `}
         aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}

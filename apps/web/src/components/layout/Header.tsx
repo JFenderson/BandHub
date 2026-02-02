@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 import { SearchBar } from './SearchBar';
 import { useUser } from '@/contexts/UserContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserAvatar } from '@/components/images';
+import { useKeyboardNavigation } from '@/hooks';
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -25,6 +26,9 @@ interface UserMenuProps {
 
 function UserMenu({ user, logout }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const menuItems = [
     { name: 'Profile', href: '/profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
@@ -35,11 +39,60 @@ function UserMenu({ user, logout }: UserMenuProps) {
     { name: 'Settings', href: '/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
   ];
 
+  // Total items: menu items + logout button
+  const totalItems = menuItems.length + 1;
+
+  const handleClose = () => {
+    setIsOpen(false);
+    buttonRef.current?.focus();
+  };
+
+  const { activeIndex, setActiveIndex, handleKeyDown: navKeyDown } = useKeyboardNavigation({
+    itemCount: totalItems,
+    isActive: isOpen,
+    onSelect: (index) => {
+      if (index < menuItems.length) {
+        router.push(menuItems[index].href);
+      } else {
+        logout();
+      }
+      handleClose();
+    },
+    onEscape: handleClose,
+  });
+
+  // Handle keyboard on trigger button
+  const handleButtonKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      setIsOpen(true);
+      setActiveIndex(0);
+    } else if (isOpen) {
+      navKeyDown(e);
+    }
+  };
+
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-full"
+        onKeyDown={handleButtonKeyDown}
+        className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-full"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -50,6 +103,7 @@ function UserMenu({ user, logout }: UserMenuProps) {
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
@@ -60,63 +114,78 @@ function UserMenu({ user, logout }: UserMenuProps) {
           {/* Backdrop */}
           <div
             className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             aria-hidden="true"
           />
 
           {/* Dropdown menu */}
-          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-            <div className="py-1" role="menu" aria-orientation="vertical">
-              {/* User info header */}
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                <p className="text-xs text-gray-500 mt-0.5">View your profile</p>
-              </div>
+          <div
+            className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50"
+            role="menu"
+            aria-orientation="vertical"
+            onKeyDown={navKeyDown}
+          >
+            {/* User info header */}
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-sm font-medium text-gray-900">{user.name}</p>
+              <p className="text-xs text-gray-500 mt-0.5">View your profile</p>
+            </div>
 
-              {/* Menu items */}
-              <div className="py-1">
-                {menuItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
-                    role="menuitem"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <svg
-                      className="w-5 h-5 mr-3 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
-                    </svg>
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-
-              {/* Logout */}
-              <div className="border-t border-gray-100 py-1">
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    logout();
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-red-600"
+            {/* Menu items */}
+            <div className="py-1">
+              {menuItems.map((item, index) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={clsx(
+                    'flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600 focus-visible:outline-none focus-visible:bg-gray-100',
+                    activeIndex === index && 'bg-gray-100'
+                  )}
                   role="menuitem"
+                  tabIndex={isOpen ? 0 : -1}
+                  onClick={handleClose}
+                  onMouseEnter={() => setActiveIndex(index)}
                 >
                   <svg
                     className="w-5 h-5 mr-3 text-gray-400"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    aria-hidden="true"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
                   </svg>
-                  Logout
-                </button>
-              </div>
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+
+            {/* Logout */}
+            <div className="border-t border-gray-100 py-1">
+              <button
+                onClick={() => {
+                  handleClose();
+                  logout();
+                }}
+                onMouseEnter={() => setActiveIndex(menuItems.length)}
+                className={clsx(
+                  'flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-red-600 focus-visible:outline-none focus-visible:bg-gray-100',
+                  activeIndex === menuItems.length && 'bg-gray-100'
+                )}
+                role="menuitem"
+                tabIndex={isOpen ? 0 : -1}
+              >
+                <svg
+                  className="w-5 h-5 mr-3 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
             </div>
           </div>
         </>

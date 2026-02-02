@@ -47,6 +47,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        {/* Skip to content link - first focusable element for keyboard users */}
+        <a href="#main-content" className="skip-to-content">
+          Skip to main content
+        </a>
         <QueryProvider>
           <AuthProvider>
             <UserProvider>
