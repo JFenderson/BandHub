@@ -94,10 +94,12 @@ function UserMenu({ user, logout }: UserMenuProps) {
         onKeyDown={handleButtonKeyDown}
         className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-full"
         aria-expanded={isOpen}
-        aria-haspopup="true"
+        aria-haspopup="menu"
+        aria-controls="user-menu"
+        aria-label={`User menu for ${user.name}`}
       >
         <UserAvatar src={user.avatar} alt={user.name} size={32} />
-        <span>{user.name.split(' ')[0]}</span>
+        <span aria-hidden="true">{user.name.split(' ')[0]}</span>
         <svg
           className={clsx('w-4 h-4 transition-transform', isOpen && 'rotate-180')}
           fill="none"
@@ -120,9 +122,11 @@ function UserMenu({ user, logout }: UserMenuProps) {
 
           {/* Dropdown menu */}
           <div
+            id="user-menu"
             className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50"
             role="menu"
             aria-orientation="vertical"
+            aria-label="User account menu"
             onKeyDown={navKeyDown}
           >
             {/* User info header */}
@@ -205,7 +209,7 @@ export function Header() {
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between items-center">
           {/* Logo */}
           <div className="flex items-center">
@@ -220,7 +224,7 @@ export function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-8">
+          <nav className="hidden md:flex md:items-center md:space-x-8" aria-label="Main navigation">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -231,11 +235,12 @@ export function Header() {
                     ? 'text-primary-600'
                     : 'text-gray-700 hover:text-primary-600'
                 )}
+                aria-current={pathname === item.href ? 'page' : undefined}
               >
                 {item.name}
               </Link>
             ))}
-          </div>
+          </nav>
 
           {/* Search Bar */}
           <div className="hidden lg:block flex-1 max-w-md mx-8">
@@ -303,7 +308,7 @@ export function Header() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4 space-y-1">
+          <nav className="md:hidden pb-4 space-y-1" aria-label="Mobile navigation">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -315,6 +320,7 @@ export function Header() {
                     : 'text-gray-700 hover:bg-gray-50'
                 )}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={pathname === item.href ? 'page' : undefined}
               >
                 {item.name}
               </Link>
@@ -409,9 +415,9 @@ export function Header() {
                 </>
               )}
             </div>
-          </div>
+          </nav>
         )}
-      </nav>
+      </div>
     </header>
   );
 }

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { apiClient } from '@/lib/api-client';
 import BandLogo from '@/components/bands/BandLogo';
 import { BandVideosSection } from '@/components/bands/BandVideosSection';
@@ -7,6 +8,29 @@ interface BandPageProps {
   params: {
     slug: string;
   };
+}
+
+export async function generateMetadata({ params }: BandPageProps): Promise<Metadata> {
+  try {
+    const band = await apiClient.getBand(params.slug);
+    const location = band.city && band.state ? ` from ${band.city}, ${band.state}` : '';
+    const title = `${band.name} - Videos | BandHub`;
+    const description = band.description || `Watch videos of ${band.name} marching band${location} on HBCU Band Hub`;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: band.logoUrl ? [{ url: band.logoUrl }] : undefined,
+      },
+    };
+  } catch {
+    return {
+      title: 'Band | BandHub',
+    };
+  }
 }
 
 export default async function BandPage({ params }: BandPageProps) {

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import type { Metadata } from 'next';
 import { apiClient } from '@/lib/api-client';
 import { BandLogo } from '@/components/images';
 import { YouTubeEmbed } from '@/components/videos/YouTubeEmbed';
@@ -12,6 +13,30 @@ interface VideoPageProps {
   params: {
     id: string;
   };
+}
+
+export async function generateMetadata({ params }: VideoPageProps): Promise<Metadata> {
+  try {
+    const video = await apiClient.getVideo(params.id);
+    const bandName = video.band?.name;
+    const title = bandName
+      ? `${video.title} - ${bandName} | BandHub`
+      : `${video.title} | BandHub`;
+
+    return {
+      title,
+      description: video.description || `Watch ${video.title} on HBCU Band Hub`,
+      openGraph: {
+        title,
+        description: video.description || `Watch ${video.title} on HBCU Band Hub`,
+        images: video.thumbnailUrl ? [{ url: video.thumbnailUrl }] : undefined,
+      },
+    };
+  } catch {
+    return {
+      title: 'Video | BandHub',
+    };
+  }
 }
 
 export default async function VideoPage({ params }: VideoPageProps) {

@@ -100,9 +100,10 @@ function BecauseYouWatchedCard({ section }: { section: BecauseYouWatchedSection 
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" role="status" aria-label="Loading related videos">
+      <span className="sr-only">Loading related videos...</span>
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="flex gap-3 animate-pulse">
+        <div key={i} className="flex gap-3 animate-pulse" aria-hidden="true">
           <div className="w-40 aspect-video bg-gray-200 rounded-lg flex-shrink-0" />
           <div className="flex-1 space-y-2">
             <div className="h-4 bg-gray-200 rounded w-full" />
@@ -140,19 +141,19 @@ export function RelatedVideosSidebar({ videoId }: RelatedVideosSidebarProps) {
 
   if (loading) {
     return (
-      <div className="lg:col-span-1">
+      <aside className="lg:col-span-1" aria-label="Related videos">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Related Videos</h3>
         <LoadingSkeleton />
-      </div>
+      </aside>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="lg:col-span-1">
+      <aside className="lg:col-span-1" aria-label="Related videos">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Related Videos</h3>
-        <p className="text-sm text-gray-500">{error || 'No related videos found'}</p>
-      </div>
+        <p className="text-sm text-gray-500" role="status">{error || 'No related videos found'}</p>
+      </aside>
     );
   }
 
@@ -161,15 +162,15 @@ export function RelatedVideosSidebar({ videoId }: RelatedVideosSidebarProps) {
 
   if (!hasBecauseYouWatched && !hasRelatedVideos) {
     return (
-      <div className="lg:col-span-1">
+      <aside className="lg:col-span-1" aria-label="Related videos">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Related Videos</h3>
-        <p className="text-sm text-gray-500">No related videos found</p>
-      </div>
+        <p className="text-sm text-gray-500" role="status">No related videos found</p>
+      </aside>
     );
   }
 
   return (
-    <div className="lg:col-span-1">
+    <aside className="lg:col-span-1" aria-label="Related videos">
       {/* Because You Watched Sections */}
       {hasBecauseYouWatched && (
         <div className="mb-6">
@@ -198,6 +199,6 @@ export function RelatedVideosSidebar({ videoId }: RelatedVideosSidebarProps) {
           </div>
         </div>
       )}
-    </div>
+    </aside>
   );
 }

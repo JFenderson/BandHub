@@ -20,13 +20,13 @@ const footerLinks = {
 
 export function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-gray-900 text-gray-300" aria-label="Site footer">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg flex items-center justify-center" aria-hidden="true">
                 <span className="text-white font-bold text-xl">HB</span>
               </div>
               <span className="text-xl font-bold text-white">
@@ -38,9 +38,9 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Explore */}
-          <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Explore</h3>
+          {/* Explore Navigation */}
+          <nav aria-labelledby="footer-explore-heading">
+            <h3 id="footer-explore-heading" className="text-sm font-semibold text-white mb-4">Explore</h3>
             <ul className="space-y-2">
               {footerLinks.explore.map((link) => (
                 <li key={link.name}>
@@ -53,11 +53,11 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          {/* About */}
-          <div>
-            <h3 className="text-sm font-semibold text-white mb-4">About</h3>
+          {/* About Navigation */}
+          <nav aria-labelledby="footer-about-heading">
+            <h3 id="footer-about-heading" className="text-sm font-semibold text-white mb-4">About</h3>
             <ul className="space-y-2">
               {footerLinks.about.map((link) => (
                 <li key={link.name}>
@@ -70,12 +70,12 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          {/* Social */}
+          {/* Social Links */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Connect</h3>
-            <ul className="space-y-2">
+            <h3 id="footer-connect-heading" className="text-sm font-semibold text-white mb-4">Connect</h3>
+            <ul className="space-y-2" aria-labelledby="footer-connect-heading">
               {footerLinks.social.map((link) => (
                 <li key={link.name}>
                   <a
@@ -83,6 +83,7 @@ export function Footer() {
                     className="text-sm hover:text-white transition-colors"
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={`Follow us on ${link.name} (opens in new tab)`}
                   >
                     {link.name}
                   </a>

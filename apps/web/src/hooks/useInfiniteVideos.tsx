@@ -265,7 +265,11 @@ export function LoadMoreButton({
 // Empty state component
 export function EmptyVideosState({ hasFilters }: { hasFilters: boolean }) {
   return (
-    <div className="text-center py-16 bg-white rounded-lg border-2 border-dashed border-gray-300">
+    <div
+      className="text-center py-16 bg-white rounded-lg border-2 border-dashed border-gray-300"
+      role="status"
+      aria-live="polite"
+    >
       <svg
         className="mx-auto h-12 w-12 text-gray-400"
         fill="none"
@@ -293,7 +297,7 @@ export function EmptyVideosState({ hasFilters }: { hasFilters: boolean }) {
 // End of results indicator
 export function EndOfResults({ totalCount }: { totalCount: number }) {
   return (
-    <div className="text-center py-8 text-gray-500">
+    <div className="text-center py-8 text-gray-500" role="status" aria-live="polite">
       <p className="text-sm">
         You&apos;ve reached the end - {totalCount.toLocaleString()} videos total
       </p>

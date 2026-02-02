@@ -4,6 +4,7 @@ import { UserProvider } from '@/contexts/UserContext';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { ConditionalLayout } from '@/components/layout/ConditionalLayout';
 import { PWAWrapper } from '@/components/pwa';
+import { ScreenReaderAnnouncementProvider } from '@/components/ui/ScreenReaderAnnouncement';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -54,11 +55,13 @@ export default function RootLayout({
         <QueryProvider>
           <AuthProvider>
             <UserProvider>
-              <PWAWrapper>
-                <ConditionalLayout>
-                  {children}
-                </ConditionalLayout>
-              </PWAWrapper>
+              <ScreenReaderAnnouncementProvider>
+                <PWAWrapper>
+                  <ConditionalLayout>
+                    {children}
+                  </ConditionalLayout>
+                </PWAWrapper>
+              </ScreenReaderAnnouncementProvider>
             </UserProvider>
           </AuthProvider>
         </QueryProvider>

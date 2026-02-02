@@ -1,8 +1,14 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { apiClient } from '@/lib/api-client';
 import { VideoFilters } from '@/components/videos/VideoFilters';
 import { InfiniteVideoGrid } from '@/components/videos/InfiniteVideoGrid';
 import type { VideoCategory } from '@/types/api';
+
+export const metadata: Metadata = {
+  title: 'Videos - HBCU Marching Band Performances | BandHub',
+  description: 'Browse thousands of HBCU marching band performances. Filter by band, category, and year to find your favorite shows.',
+};
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -84,8 +90,13 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
 // Skeleton loader for filters
 function FiltersSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div
+      className="bg-white rounded-lg border border-gray-200 p-4"
+      role="status"
+      aria-label="Loading video filters"
+    >
+      <span className="sr-only">Loading video filters...</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" aria-hidden="true">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
         ))}
