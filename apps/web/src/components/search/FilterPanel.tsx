@@ -72,22 +72,25 @@ export function FilterPanel({
   /**
    * Section header component
    */
-  const SectionHeader = ({ 
-    section, 
-    title, 
-    count 
-  }: { 
-    section: string; 
-    title: string; 
-    count?: number 
+  const SectionHeader = ({
+    section,
+    title,
+    count
+  }: {
+    section: string;
+    title: string;
+    count?: number
   }) => {
     const isExpanded = expandedSections.has(section);
-    
+    const sectionId = `filter-section-${section}`;
+
     return (
       <button
         onClick={() => toggleSection(section)}
-        className="w-full flex items-center justify-between p-3 hover:bg-gray-50 
+        className="w-full flex items-center justify-between p-3 hover:bg-gray-50
                  rounded-lg transition-colors"
+        aria-expanded={isExpanded}
+        aria-controls={sectionId}
       >
         <div className="flex items-center gap-2">
           <span className="font-medium text-gray-900">{title}</span>
@@ -98,9 +101,9 @@ export function FilterPanel({
           )}
         </div>
         {isExpanded ? (
-          <ChevronUp className="h-4 w-4 text-gray-500" />
+          <ChevronUp className="h-4 w-4 text-gray-500" aria-hidden="true" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-gray-500" />
+          <ChevronDown className="h-4 w-4 text-gray-500" aria-hidden="true" />
         )}
       </button>
     );
@@ -159,7 +162,8 @@ export function FilterPanel({
 
         {/* Loading state */}
         {isLoadingMetadata && !metadata && (
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-4" aria-busy="true" aria-label="Loading filters">
+            <span className="sr-only">Loading filter options...</span>
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="animate-pulse">
                 <div className="h-6 bg-gray-200 rounded w-1/3 mb-3"></div>
@@ -184,7 +188,7 @@ export function FilterPanel({
                 count={query.categoryIds?.length}
               />
               {expandedSections.has('categories') && (
-                <div className="px-3 pb-3">
+                <div className="px-3 pb-3" id="filter-section-categories">
                   <CategoryFilter
                     selected={query.categoryIds || []}
                     options={metadata.categories}
@@ -204,7 +208,7 @@ export function FilterPanel({
                 count={query.years?.length}
               />
               {expandedSections.has('years') && (
-                <div className="px-3 pb-3">
+                <div className="px-3 pb-3" id="filter-section-years">
                   <YearFilter
                     selected={query.years || []}
                     availableYears={metadata.years}
@@ -224,7 +228,7 @@ export function FilterPanel({
                 count={query.conferences?.length}
               />
               {expandedSections.has('conferences') && (
-                <div className="px-3 pb-3">
+                <div className="px-3 pb-3" id="filter-section-conferences">
                   <ConferenceFilter
                     selected={query.conferences || []}
                     options={metadata.conferences}
@@ -244,7 +248,7 @@ export function FilterPanel({
                 count={query.dateFrom || query.dateTo ? 1 : 0}
               />
               {expandedSections.has('dateRange') && (
-                <div className="px-3 pb-3">
+                <div className="px-3 pb-3" id="filter-section-dateRange">
                   <DateRangeFilter
                     dateFrom={query.dateFrom}
                     dateTo={query.dateTo}
@@ -264,7 +268,7 @@ export function FilterPanel({
                 count={(query.states?.length || 0) + (query.regions?.length || 0)}
               />
               {expandedSections.has('location') && (
-                <div className="px-3 pb-3">
+                <div className="px-3 pb-3" id="filter-section-location">
                   <LocationFilter
                     selectedStates={query.states || []}
                     selectedRegions={query.regions || []}

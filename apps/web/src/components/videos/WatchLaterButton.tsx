@@ -104,6 +104,7 @@ export function WatchLaterButton({
           ${className}
         `}
         aria-label={isInWatchLater ? 'Remove from watch later' : 'Add to watch later'}
+        aria-pressed={isInWatchLater}
         title={isInWatchLater ? 'Remove from watch later' : 'Watch later'}
       >
         <svg
@@ -127,18 +128,25 @@ export function WatchLaterButton({
       </button>
 
       {/* Toast notification */}
-      {showToast && (
-        <div
-          className={`
-            absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
-            px-3 py-1 rounded-lg text-sm whitespace-nowrap
-            ${showToast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
-            shadow-lg z-50 animate-fade-in
-          `}
-        >
-          {showToast.message}
-        </div>
-      )}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className={showToast ? '' : 'sr-only'}
+      >
+        {showToast && (
+          <div
+            className={`
+              absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
+              px-3 py-1 rounded-lg text-sm whitespace-nowrap
+              ${showToast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
+              shadow-lg z-50 animate-fade-in
+            `}
+          >
+            {showToast.message}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

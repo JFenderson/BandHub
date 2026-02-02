@@ -150,6 +150,7 @@ export function FollowButton({
             focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
           `}
           aria-label={isFollowed ? 'Unfollow' : 'Follow'}
+          aria-pressed={isFollowed}
         >
           {isLoading ? (
             <span className="flex items-center">
@@ -184,6 +185,7 @@ export function FollowButton({
             `}
             title={notificationsEnabled ? 'Turn off notifications' : 'Turn on notifications'}
             aria-label={notificationsEnabled ? 'Turn off notifications' : 'Turn on notifications'}
+            aria-pressed={notificationsEnabled}
           >
             <svg className="w-5 h-5" fill={notificationsEnabled ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -194,10 +196,16 @@ export function FollowButton({
 
       {/* Confirm Unfollow Dialog */}
       {showConfirmUnfollow && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="unfollow-dialog-title"
+          aria-describedby="unfollow-dialog-description"
+        >
           <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Unfollow Band?</h3>
-            <p className="text-gray-600 mb-4">
+            <h3 id="unfollow-dialog-title" className="text-lg font-semibold text-gray-900 mb-2">Unfollow Band?</h3>
+            <p id="unfollow-dialog-description" className="text-gray-600 mb-4">
               You will no longer receive notifications about new videos from this band.
             </p>
             <div className="flex space-x-3">
@@ -219,18 +227,25 @@ export function FollowButton({
       )}
 
       {/* Toast notification */}
-      {showToast && (
-        <div
-          className={`
-            absolute top-full left-1/2 transform -translate-x-1/2 mt-2
-            px-3 py-1 rounded-lg text-sm whitespace-nowrap
-            ${showToast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
-            shadow-lg z-50 animate-fade-in
-          `}
-        >
-          {showToast.message}
-        </div>
-      )}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className={showToast ? '' : 'sr-only'}
+      >
+        {showToast && (
+          <div
+            className={`
+              absolute top-full left-1/2 transform -translate-x-1/2 mt-2
+              px-3 py-1 rounded-lg text-sm whitespace-nowrap
+              ${showToast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}
+              shadow-lg z-50 animate-fade-in
+            `}
+          >
+            {showToast.message}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -89,11 +89,11 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="p-4 flex-1">
-        <ul className="space-y-1">
+      <nav className="p-4 flex-1" aria-label="Admin navigation">
+        <ul className="space-y-1" role="list">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
-            
+
             return (
               <li key={item.name}>
                 <Link
@@ -104,8 +104,9 @@ export function AdminSidebar() {
                       ? 'bg-primary-600 text-white'
                       : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   )}
+                  aria-current={isActive ? 'page' : undefined}
                 >
-                  <span className={clsx(isActive ? 'text-white' : 'text-gray-400')}>
+                  <span className={clsx(isActive ? 'text-white' : 'text-gray-400')} aria-hidden="true">
                     {item.icon}
                   </span>
                   <span className="font-medium">{item.name}</span>

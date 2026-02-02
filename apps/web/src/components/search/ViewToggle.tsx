@@ -10,7 +10,7 @@ interface ViewToggleProps {
 
 export function ViewToggle({ currentView, onViewChange, className = '' }: ViewToggleProps) {
   return (
-    <div className={`inline-flex rounded-lg border border-gray-200 ${className}`}>
+    <div className={`inline-flex rounded-lg border border-gray-200 ${className}`} role="group" aria-label="View options">
       <button
         onClick={() => onViewChange('grid')}
         className={`px-3 py-2 flex items-center gap-2 text-sm font-medium rounded-l-lg transition-colors ${
@@ -19,8 +19,10 @@ export function ViewToggle({ currentView, onViewChange, className = '' }: ViewTo
             : 'text-gray-600 hover:bg-gray-50'
         }`}
         title="Grid view"
+        aria-label="Grid view"
+        aria-pressed={currentView === 'grid'}
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -38,8 +40,10 @@ export function ViewToggle({ currentView, onViewChange, className = '' }: ViewTo
             : 'text-gray-600 hover:bg-gray-50'
         }`}
         title="List view"
+        aria-label="List view"
+        aria-pressed={currentView === 'list'}
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -57,8 +61,10 @@ export function ViewToggle({ currentView, onViewChange, className = '' }: ViewTo
             : 'text-gray-600 hover:bg-gray-50'
         }`}
         title="Compact view"
+        aria-label="Compact view"
+        aria-pressed={currentView === 'compact'}
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

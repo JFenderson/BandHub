@@ -47,13 +47,21 @@ export function ProfileForm({ user, onUpdate }: ProfileFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
       {success && (
-        <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-green-50 border-l-4 border-green-500 p-4 rounded"
+        >
           <p className="text-sm text-green-700">Profile updated successfully!</p>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="bg-red-50 border-l-4 border-red-500 p-4 rounded"
+        >
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}

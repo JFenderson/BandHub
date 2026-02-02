@@ -47,37 +47,51 @@ export const ReactionPicker: React.FC<ReactionPickerProps> = ({
   return (
     <div
       ref={pickerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Choose a reaction"
       className="absolute bottom-full mb-2 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2"
       style={{ minWidth: '240px' }}
     >
       {/* Tab selector */}
-      <div className="flex gap-2 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+      <div role="tablist" aria-label="Reaction categories" className="flex gap-2 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
         <button
+          role="tab"
+          id="tab-standard"
+          aria-selected={activeTab === 'standard'}
+          aria-controls="tabpanel-standard"
           onClick={() => setActiveTab('standard')}
           className={`px-3 py-1 text-sm rounded ${
             activeTab === 'standard'
               ? 'bg-blue-500 text-white'
               : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
           }`}
-          aria-label="Standard reactions"
         >
           Standard
         </button>
         <button
+          role="tab"
+          id="tab-band"
+          aria-selected={activeTab === 'band'}
+          aria-controls="tabpanel-band"
           onClick={() => setActiveTab('band')}
           className={`px-3 py-1 text-sm rounded ${
             activeTab === 'band'
               ? 'bg-blue-500 text-white'
               : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
           }`}
-          aria-label="Band reactions"
         >
           Band
         </button>
       </div>
 
       {/* Reaction grid */}
-      <div className="grid grid-cols-6 gap-2">
+      <div
+        role="tabpanel"
+        id={`tabpanel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+        className="grid grid-cols-6 gap-2"
+      >
         {reactions.map((emoji) => (
           <button
             key={emoji}

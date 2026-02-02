@@ -35,7 +35,8 @@ export function VideoModerationTable({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" aria-busy="true" aria-label="Loading videos">
+        <span className="sr-only">Loading videos...</span>
         {[...Array(5)].map((_, i) => (
           <div key={i} className="bg-white rounded-lg shadow p-4 animate-pulse">
             <div className="flex items-start space-x-4">
@@ -91,6 +92,7 @@ export function VideoModerationTable({
           }}
           onChange={handleSelectAll}
           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+          aria-label={allSelected ? 'Deselect all videos on page' : 'Select all videos on page'}
         />
         <span className="text-sm font-medium text-gray-700">
           {allSelected
@@ -124,6 +126,7 @@ export function VideoModerationTable({
                   onChange={() => onSelectVideo(video.id)}
                   onClick={(e) => e.stopPropagation()}
                   className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  aria-label={`Select ${video.title}`}
                 />
               </div>
 
