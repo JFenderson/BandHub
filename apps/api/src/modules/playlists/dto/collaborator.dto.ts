@@ -19,7 +19,7 @@ export class AddCollaboratorDto {
   })
   @IsOptional()
   @IsEnum(PlaylistCollaboratorRole)
-  role?: PlaylistCollaboratorRole = PlaylistCollaboratorRole.EDITOR;
+  role?: PlaylistCollaboratorRole;
 }
 
 export class UpdateCollaboratorDto {

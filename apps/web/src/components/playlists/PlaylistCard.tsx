@@ -117,7 +117,7 @@ export function PlaylistCard({ playlist, onEdit, showOwnerInfo = false }: Playli
             {isCollaborative && (
               <div className="flex items-center gap-1" title="Collaborative playlist">
                 <Users className="w-3.5 h-3.5" />
-                <span>{collaboratorCount + 1} editors</span>
+                <span>{collaboratorCount + 1} collaborators</span>
               </div>
             )}
             {followerCount > 0 && (
