@@ -1,160 +1,74 @@
 # HBCU Band Hub
 
-A platform for managing and showcasing HBCU marching band videos and profiles.
+A comprehensive platform for managing and showcasing HBCU marching band videos and profiles. Features automated video syncing from YouTube, intelligent matching algorithms, user accounts with social features, and a Progressive Web App experience.
+
+## Quick Links
+
+📚 **[Complete Documentation](docs/README.md)** - Full documentation in the `docs/` folder  
+🚀 **[Setup Guide](docs/SETUP.md)** - Get started with local development  
+🔌 **[API Reference](docs/API.md)** - Complete API documentation  
+🏗️ **[Architecture](docs/ARCHITECTURE.md)** - Technical architecture and project structure  
+🧪 **[Testing Guide](docs/TESTING.md)** - Testing documentation  
 
 ## Features
 
-- **Band Management**: Create and manage HBCU marching band profiles
-- **Video Library**: Organize and filter band performance videos
-- **Categories**: Categorize videos by performance type
+- **Automated Video Sync**: Daily pipeline syncs videos from 110+ YouTube channels
+- **Intelligent Matching**: 85-90% match rate with event detection and battle recognition
+- **Band Management**: HBCU band profiles with colors, logos, and rich metadata
+- **Video Library**: 50k+ videos with filtering, sorting, and categorization
+- **User Accounts**: Registration, favorites, playlists, reviews, and social features
+- **Progressive Web App**: Installable with offline support
+- **Admin Dashboard**: Content management, job monitoring, and analytics
 - **Search**: Full-text search across bands and videos
-- **Admin Panel**: Administrative tools for content management
-- **JWT Authentication**: Secure authentication system for admin users
+- **JWT Authentication**: Secure authentication for admin and public users
 
 ## Prerequisites
 
 - Node.js >= 20.0.0
-- PostgreSQL database
-- Redis (for caching and queues)
-- YouTube API key (optional, for video syncing)
+- PostgreSQL 14+
+- Redis 6+
+- YouTube API key (for video syncing)
+- PNPM package manager
 
-## Installation
+## Quick Start
 
-1. Clone the repository:
+For detailed setup instructions, see **[docs/SETUP.md](docs/SETUP.md)**.
+
 ```bash
+# 1. Clone and install
 git clone https://github.com/JFenderson/BandHub.git
 cd BandHub
-```
-
-2. Install dependencies:
-```bash
 pnpm install
-```
 
-3. Set up environment variables:
-```bash
+# 2. Set up environment
 cp .env.example .env
-# Edit .env with your configuration
-```
+# Edit .env with your database and API keys
 
-4. Set up the database:
-```bash
-# Generate Prisma client
-pnpm prisma generate --schema=./apps/api/prisma/schema.prisma
+# 3. Start infrastructure
+docker compose up -d  # PostgreSQL + Redis
 
-# Run migrations
+# 4. Set up database
 pnpm db:migrate
-
-# Seed database (optional)
 pnpm db:seed
+
+# 5. Start development servers
+pnpm dev:api     # API at http://localhost:3001
+pnpm dev:web     # Web at http://localhost:3000
+pnpm dev:worker  # Background jobs
 ```
 
-5. Build shared types:
-```bash
-pnpm build:shared
-```
+## Documentation
 
-## Development
+All comprehensive documentation is located in the **[docs/](docs/)** folder:
 
-Start the development server:
-```bash
-# Start API only
-pnpm dev:api
-
-# Or start all services
-pnpm dev
-```
-
-The API will be available at `http://localhost:3001`
-Swagger documentation at `http://localhost:3001/api/docs`
-
-## Authentication
-
-The API uses JWT (JSON Web Token) for authentication. Admin users can register and login to access protected endpoints.
-
-### Create/Reset Admin User
-
-To create or reset an admin user with known credentials:
-
-```bash
-pnpm tsx apps/api/prisma/seed-admin.ts
-```
-
-Default credentials:
-- Email: admin@bandhub.com  
-- Password: SecurePass123!
-
-### Register a New Admin User
-
-```bash
-curl -X POST http://localhost:3001/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@bandhub.com",
-    "password": "SecurePass123!",
-    "name": "John Doe"
-  }'
-```
-
-### Login
-
-```bash
-curl -X POST http://localhost:3001/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@bandhub.com",
-    "password": "SecurePass123!"
-  }'
-```
-
-Response:
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": "clx...",
-    "email": "admin@bandhub.com",
-    "name": "John Doe",
-    "role": "MODERATOR"
-  }
-}
-```
-
-### Using the JWT Token
-
-Include the token in the Authorization header for protected endpoints:
-
-```bash
-curl -X GET http://localhost:3001/api/auth/me \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
-### Password Requirements
-
-- Minimum 8 characters
-- At least one uppercase letter
-- At least one lowercase letter
-- At least one number
-- At least one symbol (for registration)
-
-### Account Security
-
-- Accounts are automatically locked after 5 failed login attempts
-- Locked accounts remain locked for 15 minutes
-- Failed login attempts are reset upon successful login
-
-## Environment Variables
-
-### Required
-- `DATABASE_URL`: PostgreSQL connection string
-- `JWT_SECRET`: Secret key for JWT token signing (change in production!)
-
-### Optional
-- `REDIS_HOST`: Redis server host (default: localhost)
-- `REDIS_PORT`: Redis server port (default: 6379)
-- `YOUTUBE_API_KEY`: YouTube Data API v3 key for video syncing
-- `PORT` or `API_PORT`: API server port (default: 3001)
-- `NODE_ENV`: Environment (development|production)
+- **[SETUP.md](docs/SETUP.md)** - Installation, configuration, and deployment
+- **[API.md](docs/API.md)** - Complete API reference with examples
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical architecture and project structure
+- **[FEATURES.md](docs/FEATURES.md)** - Feature documentation (video sync, user accounts, PWA)
+- **[SECURITY_NEW.md](docs/SECURITY_NEW.md)** - Security best practices and authentication
+- **[TESTING.md](docs/TESTING.md)** - Unit, integration, and E2E testing
+- **[MONITORING.md](docs/MONITORING.md)** - Observability, health checks, and alerting
+- **[CACHING.md](docs/CACHING.md)** - Caching strategies and Redis usage
 
 ## API Endpoints
 
@@ -231,325 +145,64 @@ curl -X GET http://localhost:3001/api/auth/me \
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
 | `GET` | `/api/health` | Check API, database, and cache health | ❌ No |
-| `GET` | `/api/health/database` | Check database connection | ❌ No |
-| `GET` | `/api/health/cache` | Check cache (Redis) connection | ❌ No |
+| `GET`& Services
 
----
+- **API**: `http://localhost:3001`
+- **Web**: `http://localhost:3000`
+- **Swagger API Docs**: `http://localhost:3001/api/docs`
 
-### 👥 Admin (`/api/admin`)
+For complete API reference, see **[docs/API.md](docs/API.md)**.Technology Stack
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| `GET` | `/api/admin` | Admin dashboard | 🚧 Coming Soon |
+- **Backend**: NestJS (TypeScript), Prisma ORM, PostgreSQL, Redis
+- **Frontend**: Next.js 14 (App Router), React 18, Tailwind CSS
+- **Worker**: BullMQ for background job processing
+- **Testing**: Jest, React Testing Library, Playwright
+- **Monitoring**: Sentry, Prometheus, Grafana
+- **DevOps**: Docker, Kubernetes, GitHub Actions
 
----
+For complete architecture details, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
-### 🔍 Search (`/api/search`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| `GET` | `/api/search` | Search across bands and videos | 🚧 Coming Soon |
-
----
-
-### Query Parameters
-
-#### `GET /api/bands`
-- `page` (number): Page number for pagination (default: 1)
-- `limit` (number): Results per page (default: 20)
-- `search` (string): Search bands by name
-
-**Example:**
-```bash
-GET /api/bands?page=1&limit=10&search=grambling
-```
-
-#### `GET /api/videos`
-- `bandId` (string): Filter videos by band ID
-- `categoryId` (string): Filter videos by category ID
-- `year` (number): Filter videos by event year
-- `search` (string): Search videos by title
-- `page` (number): Page number for pagination (default: 1)
-- `limit` (number): Results per page (default: 20)
-- `sortBy` (string): Sort field - `publishedAt`, `viewCount`, `title`, or `createdAt` (default: `publishedAt`)
-- `sortOrder` (string): Sort order - `asc` or `desc` (default: `desc`)
-
-**Example:**
-```bash
-GET /api/videos?bandId=clx...&categoryId=clx...&year=2024&page=1&limit=20&sortBy=viewCount&sortOrder=desc
-```
-
----
-
-### Authentication & Authorization
-
-The API uses **JWT (JSON Web Token)** for authentication with three role levels:
-
-- **`SUPER_ADMIN`**: Full access to all endpoints, including delete operations and API key management
-- **`MODERATOR`**: Can create and update bands, videos, and manage content (hide/unhide videos)
-- **`VIEWER`**: Read-only access to public endpoints
-
-**Example: Using JWT Token**
-```bash
-# Get your JWT token from login
-curl -X POST http://localhost:3001/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "admin@bandhub.com", "password": "SecurePass123"}'
-
-# Use the token in Authorization header
-curl -X POST http://localhost:3001/api/bands \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -d '{"name": "Grambling State University", "slug": "grambling"}'
-```
-
----
-
-### CORS Configuration
-
-The API is configured with CORS to allow cross-origin requests from the frontend:
-
-- **Allowed Origins:** `http://localhost:3000` (configurable via `FRONTEND_URL` environment variable)
-- **Credentials:** Enabled (`true`)
-- **Allowed Methods:** `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`
-- **Allowed Headers:** `Content-Type`, `Authorization`, `x-session-token`
-
-## Building for Production
+## Scripts
 
 ```bash
-pnpm build
-```
+# Development
+pnpm dev           # Start all services
+pnpm dev:api       # Start API only
+pnpm dev:web       # Start web only
+pnpm dev:worker    # Start worker only
 
-## Testing
+# Database
+pnpm db:migrate    # Run migrations
+pnpm db:seed       # Seed database
+pnpm db:studio     # Open Prisma Studio
 
-The project uses **Jest** for unit and integration tests, with comprehensive coverage requirements.
+# Testing
+pnpm test          # Run all tests
+pnpm test:cov      # Run tests with coverage
+pnpm test:e2e      # Run E2E tests
 
-### Prerequisites
-- Node.js 20+
-- PostgreSQL database (for integration tests)
-- Redis (for caching tests)
+# Build
+pnpm build         # Build all apps
+pnpm build:api     # Build API only
+pnpm build:web     # Build web only
 
-### Running Tests
+# Linting
+pnpm lint          # Lint all code
+pnpm format        # Format with Prettier
+```Contributing
 
-**Unit Tests Only**
-```bash
-cd apps/api
-npx jest --config jest.config.ts --testMatch='**/test/unit/**/*.spec.ts'
-```
+Contributions are welcome! Please:
 
-**Integration Tests Only**
-```bash
-cd apps/api
-npx jest --config jest.config.ts --testMatch='**/test/integration/**/*.spec.ts'
-```
-
-**All Tests**
-```bash
-pnpm test
-# Or with coverage
-pnpm test:cov
-```
-
-**Watch Mode** (re-run tests on file changes)
-```bash
-pnpm test:watch
-```
-
-**E2E Tests**
-```bash
-pnpm test:e2e
-```
-
-### Coverage Reports
-
-After running tests with `--coverage` flag:
-
-- **HTML Report**: Open `apps/api/test/coverage/index.html` in your browser
-- **Terminal Summary**: Displayed automatically after test run
-- **LCOV Report**: Available at `apps/api/test/coverage/lcov.info`
-
-### Coverage Thresholds
-
-The project enforces **minimum 80% coverage** across all metrics:
-
-| Metric       | Threshold |
-|--------------|-----------|
-| **Branches** | 80%       |
-| **Functions**| 80%       |
-| **Lines**    | 80%       |
-| **Statements**| 80%      |
-
-⚠️ **CI will fail** if coverage drops below these thresholds.
-
-### Test Organization
-
-Tests are organized by type:
-
-- **`test/unit/`**: Unit tests with mocked dependencies
-  - Mock all external services (database, cache, APIs)
-  - Fast execution
-  - Test individual methods and logic
-
-- **`test/integration/`**: Integration tests with real dependencies
-  - Use test database (configure via `DATABASE_URL_TEST`)
-  - Test full request/response cycles
-  - Test controller endpoints with authentication
-
-- **`test/e2e/`**: End-to-end tests
-  - Test complete user flows
-  - Use Playwright for browser automation
-
-### Test Helpers
-
-Test utilities are available in `apps/api/test/helpers/`:
-
-- **`factories.ts`**: Build test data (bands, videos, categories, etc.)
-- **`youtube-mocks.ts`**: Mock YouTube API responses
-- **`auth-helpers.ts`**: Authentication utilities for tests
-
-**Example: Using Test Factories**
-```typescript
-import { buildBand, buildVideo, createMockPagination } from '../helpers/factories';
-
-const band = buildBand({ name: 'Test Band', slug: 'test-band' });
-const video = buildVideo({ title: 'Test Video' });
-const response = createMockPagination([band], 1);
-```
-
-### Writing Tests
-
-**Unit Test Example**
-```typescript
-import { Test, TestingModule } from '@nestjs/testing';
-import { BandsService } from './bands.service';
-
-describe('BandsService', () => {
-  let service: BandsService;
-  let mockRepository: jest.Mocked<any>;
-
-  beforeEach(async () => {
-    mockRepository = { findMany: jest.fn() };
-    
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        BandsService,
-        { provide: 'BandsRepository', useValue: mockRepository },
-      ],
-    }).compile();
-
-    service = module.get<BandsService>(BandsService);
-  });
-
-  it('should find all bands', async () => {
-    const bands = [{ id: '1', name: 'Test Band' }];
-    mockRepository.findMany.mockResolvedValue(bands);
-
-    const result = await service.findAll({});
-    expect(result).toEqual(bands);
-  });
-});
-```
-
-**Integration Test Example**
-```typescript
-import request from 'supertest';
-import { INestApplication } from '@nestjs/common';
-import { generateJwtToken } from '../helpers/auth-helpers';
-
-describe('BandsController (Integration)', () => {
-  let app: INestApplication;
-
-  beforeAll(async () => {
-    // Setup test app
-  });
-
-  it('GET /bands should return paginated bands', async () => {
-    const response = await request(app.getHttpServer())
-      .get('/bands')
-      .expect(200);
-
-    expect(response.body).toHaveProperty('data');
-    expect(response.body).toHaveProperty('meta');
-  });
-
-  it('POST /bands should require authentication', async () => {
-    await request(app.getHttpServer())
-      .post('/bands')
-      .send({ name: 'New Band' })
-      .expect(401);
-  });
-});
-```
-
-### Continuous Integration
-
-Tests run automatically on:
-- Every push to `main` branch
-- Every pull request
-
-**GitHub Actions Workflow** (`.github/workflows/tests.yml`):
-- Installs dependencies
-- Builds shared packages
-- Runs all tests with coverage
-- Uploads coverage reports
-- Comments PR with coverage changes
-- **Fails if coverage drops below 80%**
-
-### Coverage Reports in PRs
-
-Coverage reports are automatically posted as PR comments, showing:
-- Coverage % for each file changed
-- Overall coverage change (increase/decrease)
-- Link to detailed coverage report
-
-## Building for Production
-
-```bash
-pnpm lint
-```
-
-## Project Structure
-
-```
-BandHub/
-├── apps/
-│   ├── api/              # NestJS backend API
-│   │   ├── src/
-│   │   │   ├── modules/
-│   │   │   │   ├── auth/      # Authentication module
-│   │   │   │   ├── bands/     # Bands module
-│   │   │   │   ├── videos/    # Videos module
-│   │   │   │   ├── categories/# Categories module
-│   │   │   │   ├── search/    # Search module
-│   │   │   │   ├── admin/     # Admin module
-│   │   │   │   └── sync/      # YouTube sync module
-│   │   │   ├── database/      # Database config & seeds
-│   │   │   ├── cache/         # Redis cache
-│   │   │   ├── queue/         # BullMQ queues
-│   │   │   └── main.ts
-│   │   └── prisma/       # Prisma schema
-│   ├── web/              # Frontend app
-│   └── worker/           # Background workers
-├── libs/
-│   ├── prisma/           # Shared Prisma module
-│   └── shared/           # Shared types & utilities
-└── package.json
-```
-
-## Security
-
-- Passwords are hashed using bcrypt with 10 salt rounds
-- JWT tokens expire after 7 days
-- Input validation using class-validator
-- SQL injection protection via Prisma ORM
-- CORS enabled for specified frontend origin
-
-⚠️ **Important**: Change the `JWT_SECRET` in your `.env` file before deploying to production!
+1. Read the documentation in the [docs/](docs/) folder
+2. Follow the existing code style
+3. Write tests for new features
+4. Ensure all tests pass and coverage remains above 80%
+5. Submit a Pull Request with a clear description
 
 ## License
 
 ISC
 
-## Contributing
+---
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+**For complete documentation**, see the **[docs/](docs/)** folder
