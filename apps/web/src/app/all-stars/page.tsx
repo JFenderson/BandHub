@@ -34,7 +34,7 @@ export default async function AllStarBandsPage() {
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
           All-Star Bands
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl">
+        <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl">
           During the summer months when school is out, elite musicians from various HBCU programs 
           come together to form regional all-star bands. These summer ensembles represent their 
           cities in battles and showcases from May through August.
@@ -66,7 +66,7 @@ export default async function AllStarBandsPage() {
               </div>
               
               <div className="p-4">
-                <h3 className="text-xl font-semibold mb-2 group-hover:text-blue-600 transition-colors">
+                <h3 className="text-xl text-gray-300 font-semibold mb-2 group-hover:text-blue-600 transition-colors">
                   {band.name}
                 </h3>
                 
@@ -91,14 +91,14 @@ export default async function AllStarBandsPage() {
 
       {/* Educational Section */}
       <section className="mt-16 bg-gray-50 dark:bg-gray-800 rounded-lg p-8">
-        <h2 className="text-2xl font-bold mb-4">About All-Star Bands</h2>
+        <h2 className="text-2xl font-bold mb-4 text-white">About All-Star Bands</h2>
         <div className="prose dark:prose-invert max-w-none">
-          <p>
+          <p className='text-gray-300'>
             All-star bands emerged around 2011 as a way for talented musicians to continue 
             performing during the summer break. These bands typically operate from May through 
             August, with most major events happening in June and July.
           </p>
-          <p>
+          <p className='text-gray-300'>
             Unlike school bands, all-star bands are community-driven and volunteer-based. 
             They represent regional pride, with fans supporting their city's ensemble. 
             Battles between all-star bands (like GAMB vs. Memphis All-Stars) are highly 

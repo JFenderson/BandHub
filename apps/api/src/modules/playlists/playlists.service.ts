@@ -4,15 +4,22 @@ import {
   BadRequestException,
   ForbiddenException,
   ConflictException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '@bandhub/database';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 import { GetPlaylistsQueryDto, AddVideoToPlaylistDto } from './dto/playlist-query.dto';
+import { AchievementTrackerService } from '../achievements/achievement-tracker.service';
 
 @Injectable()
 export class PlaylistsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => AchievementTrackerService))
+    private achievementTracker: AchievementTrackerService,
+  ) {}
 
   /**
    * Create a new playlist
@@ -32,6 +39,9 @@ export class PlaylistsService {
         },
       },
     });
+
+    // Track achievement progress
+    this.achievementTracker.trackPlaylistCreated(userId).catch(() => {});
 
     return {
       ...playlist,

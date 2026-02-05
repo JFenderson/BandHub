@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useUser } from '@/contexts/UserContext';
 import { userApiClient } from '@/lib/api/users';
 import type { UserSession, UserPreferences } from '@/types/user';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { ProfileForm } from '@/components/profile/ProfileForm';
-import { SessionsList } from '@/components/profile/SessionsList';
-import { PreferencesForm } from '@/components/profile/PreferencesForm';
+import { ProfileForm, SessionsList, PreferencesForm } from '@/components/profile';
 import { PasswordStrength, isPasswordValid } from '@/components/auth/PasswordStrength';
 
 type TabType = 'profile' | 'sessions' | 'preferences' | 'security';
@@ -137,24 +136,36 @@ function ProfileContent() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
-              {user.avatar ? (
-                <img src={user.avatar} alt={user.name} className="w-16 h-16 rounded-full object-cover" />
-              ) : (
-                <span className="text-white text-2xl font-bold">
-                  {user.name.charAt(0).toUpperCase()}
-                </span>
-              )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-16 h-16 rounded-full object-cover" />
+                ) : (
+                  <span className="text-white text-2xl font-bold">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
+                <p className="text-gray-600">{user.email}</p>
+                {!user.emailVerified && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
+                    Email not verified
+                  </span>
+                )}
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
-              <p className="text-gray-600">{user.email}</p>
-              {!user.emailVerified && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
-                  Email not verified
-                </span>
-              )}
+            {/* Quick Links */}
+            <div className="flex items-center gap-3">
+              <Link
+                href="/profile/achievements"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg"
+              >
+                <TrophyIcon className="w-5 h-5" />
+                <span className="font-medium">Achievements</span>
+              </Link>
             </div>
           </div>
         </div>
@@ -404,6 +415,14 @@ function ShieldIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  );
+}
+
+function TrophyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
     </svg>
   );
 }

@@ -782,6 +782,8 @@ model User {
   following                UserFollower[]            @relation("UserFollowers")
   watchHistory             WatchHistory[]
   contentShares            ContentShare[]
+  achievements             UserAchievement[]
+  points                   UserPoints?
 
   @@index([email])
   @@index([username])
@@ -1168,4 +1170,80 @@ enum TrendDirection {
   DOWN
   STABLE
   NEW
+}
+
+// ============ GAMIFICATION / ACHIEVEMENTS ============
+
+enum AchievementCategory {
+  WATCHING      // Video watching achievements
+  COLLECTING    // Favorites and following achievements
+  COMMUNITY     // Comments, reviews, social achievements
+  SPECIAL       // Early adopter, milestones, etc.
+}
+
+enum AchievementRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+model Achievement {
+  id              String              @id @default(cuid())
+  slug            String              @unique
+  name            String
+  description     String
+  icon            String              // Icon name or URL
+  category        AchievementCategory
+  rarity          AchievementRarity   @default(COMMON)
+  points          Int                 @default(10)
+  criteriaType    String              @map("criteria_type")   // e.g., "videos_watched", "bands_favorited"
+  criteriaValue   Int                 @map("criteria_value")  // e.g., 100, 10
+  isActive        Boolean             @default(true) @map("is_active")
+  isSecret        Boolean             @default(false) @map("is_secret")  // Hidden until unlocked
+  sortOrder       Int                 @default(0) @map("sort_order")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  userAchievements UserAchievement[]
+
+  @@index([category])
+  @@index([isActive])
+  @@index([rarity])
+  @@index([sortOrder])
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String      @map("user_id")
+  achievementId String      @map("achievement_id")
+  progress      Int         @default(0)           // Current progress towards goal
+  unlockedAt    DateTime?   @map("unlocked_at")   // Null if not yet unlocked
+  notified      Boolean     @default(false)       // Whether user was notified
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId, unlockedAt])
+  @@index([achievementId])
+  @@index([unlockedAt(sort: Desc)])
+  @@map("user_achievements")
+}
+
+model UserPoints {
+  id           String   @id @default(cuid())
+  userId       String   @unique @map("user_id")
+  totalPoints  Int      @default(0) @map("total_points")
+  currentLevel Int      @default(1) @map("current_level")
+  levelTitle   String   @default("Rookie") @map("level_title")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([totalPoints(sort: Desc)])
+  @@index([currentLevel])
+  @@map("user_points")
 }

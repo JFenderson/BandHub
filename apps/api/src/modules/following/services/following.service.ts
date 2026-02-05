@@ -1,15 +1,22 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ConflictException, 
-  BadRequestException 
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '@bandhub/database';
 import { GetFollowersQueryDto } from '../dto';
+import { AchievementTrackerService } from '../../achievements/achievement-tracker.service';
 
 @Injectable()
 export class FollowingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => AchievementTrackerService))
+    private achievementTracker: AchievementTrackerService,
+  ) {}
 
   async followUser(followerId: string, followingId: string) {
     // Prevent self-follow
@@ -57,6 +64,9 @@ export class FollowingService {
         },
       },
     });
+
+    // Track achievement progress
+    this.achievementTracker.trackUserFollowed(followerId).catch(() => {});
 
     return follow;
   }

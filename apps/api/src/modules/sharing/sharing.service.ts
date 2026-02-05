@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '@bandhub/database';
 import { CreateShareDto, GetSharesQueryDto, ContentType, SharePlatform } from './dto/sharing.dto';
 import { ConfigService } from '@nestjs/config';
+import { AchievementTrackerService } from '../achievements/achievement-tracker.service';
 
 @Injectable()
 export class SharingService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    @Inject(forwardRef(() => AchievementTrackerService))
+    private achievementTracker: AchievementTrackerService,
   ) {}
 
   async trackShare(userId: string | null, dto: CreateShareDto) {
@@ -27,6 +30,11 @@ export class SharingService {
 
     // Increment share counts
     await this.incrementShareCount(dto.contentType, dto.contentId, dto.platform);
+
+    // Track achievement progress if user is logged in
+    if (userId) {
+      this.achievementTracker.trackContentShared(userId).catch(() => {});
+    }
 
     return {
       id: share.id,

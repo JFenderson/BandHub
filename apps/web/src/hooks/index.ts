@@ -14,3 +14,4 @@ export {
   useSearchAnalytics,
   useInteractionAnalytics,
 } from './useAnalytics';
+export { useAchievements, useLeaderboard } from './useAchievements';

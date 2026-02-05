@@ -3,15 +3,22 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '@bandhub/database';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { GetCommentsQueryDto } from './dto/get-comments-query.dto';
+import { AchievementTrackerService } from '../achievements/achievement-tracker.service';
 
 @Injectable()
 export class CommentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => AchievementTrackerService))
+    private achievementTracker: AchievementTrackerService,
+  ) {}
 
   /**
    * Create a new comment
@@ -70,6 +77,9 @@ export class CommentsService {
         },
       },
     });
+
+    // Track achievement progress
+    this.achievementTracker.trackCommentPosted(userId).catch(() => {});
 
     return {
       ...comment,

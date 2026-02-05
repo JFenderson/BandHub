@@ -9,6 +9,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserAvatar } from '@/components/images';
 import { useKeyboardNavigation } from '@/hooks';
+import { useAchievements } from '@/hooks/useAchievements';
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -29,9 +30,19 @@ function UserMenu({ user, logout }: UserMenuProps) {
   const router = useRouter();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  
+  // Fetch user badges for the achievement indicator
+  const { userBadges, fetchUserBadges } = useAchievements(false);
+  
+  useEffect(() => {
+    if (user) {
+      fetchUserBadges();
+    }
+  }, [user, fetchUserBadges]);
 
   const menuItems = [
     { name: 'Profile', href: '/profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+    { name: 'Achievements', href: '/profile/achievements', icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z' },
     { name: 'Watch History', href: '/profile/watch-history', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
     { name: 'Watch Later', href: '/profile/watch-later', icon: 'M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z' },
     { name: 'Favorites', href: '/profile/favorites', icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' },
@@ -98,7 +109,13 @@ function UserMenu({ user, logout }: UserMenuProps) {
         aria-controls="user-menu"
         aria-label={`User menu for ${user.name}`}
       >
-        <UserAvatar src={user.avatar} alt={user.name} size={32} />
+        <UserAvatar 
+          src={user.avatar} 
+          alt={user.name} 
+          size={32}
+          showBadge={!!userBadges && userBadges.totalUnlocked > 0}
+          badgeCount={userBadges?.totalUnlocked}
+        />
         <span aria-hidden="true">{user.name.split(' ')[0]}</span>
         <svg
           className={clsx('w-4 h-4 transition-transform', isOpen && 'rotate-180')}

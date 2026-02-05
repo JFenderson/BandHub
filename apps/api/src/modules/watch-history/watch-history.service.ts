@@ -1,6 +1,8 @@
 import {
   Injectable,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '@bandhub/database';
 import {
@@ -9,10 +11,15 @@ import {
   WatchHistoryFilter,
   WatchHistorySortBy,
 } from './dto';
+import { AchievementTrackerService } from '../achievements/achievement-tracker.service';
 
 @Injectable()
 export class WatchHistoryService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => AchievementTrackerService))
+    private achievementTracker: AchievementTrackerService,
+  ) {}
 
   async trackWatch(userId: string, dto: TrackWatchDto) {
     const { videoId, watchDuration, completed } = dto;
@@ -136,6 +143,14 @@ export class WatchHistoryService {
 
       return watchHistory;
     });
+
+    // Track achievement progress (fire and forget)
+    if (isFirstWatch) {
+      Promise.all([
+        this.achievementTracker.trackVideoWatched(userId),
+        this.achievementTracker.trackWatchStreak(userId),
+      ]).catch(() => {});
+    }
 
     return result;
   }

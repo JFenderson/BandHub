@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '@bandhub/database';
 import {
@@ -21,10 +23,15 @@ import {
   WatchLaterFilter,
   WatchLaterSortBy,
 } from './dto/watch-later.dto';
+import { AchievementTrackerService } from '../achievements/achievement-tracker.service';
 
 @Injectable()
 export class FavoritesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => AchievementTrackerService))
+    private achievementTracker: AchievementTrackerService,
+  ) {}
 
   // ============ FAVORITE VIDEOS ============
 
@@ -49,7 +56,7 @@ export class FavoritesService {
       throw new ConflictException('Video is already in favorites');
     }
 
-    return this.prisma.favoriteVideo.create({
+    const result = await this.prisma.favoriteVideo.create({
       data: {
         userId,
         videoId,
@@ -77,6 +84,11 @@ export class FavoritesService {
         },
       },
     });
+
+    // Track achievement progress
+    this.achievementTracker.trackVideoFavorited(userId).catch(() => {});
+
+    return result;
   }
 
   async removeFavoriteVideo(userId: string, videoId: string) {
@@ -237,7 +249,7 @@ export class FavoritesService {
       throw new ConflictException('Already following this band');
     }
 
-    return this.prisma.favoriteBand.create({
+    const result = await this.prisma.favoriteBand.create({
       data: {
         userId,
         bandId,
@@ -258,6 +270,11 @@ export class FavoritesService {
         },
       },
     });
+
+    // Track achievement progress
+    this.achievementTracker.trackBandFavorited(userId).catch(() => {});
+
+    return result;
   }
 
   async unfollowBand(userId: string, bandId: string) {

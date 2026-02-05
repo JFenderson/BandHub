@@ -5,6 +5,8 @@ export enum NotificationType {
   NEW_VIDEO = 'NEW_VIDEO',
   UPCOMING_EVENT = 'UPCOMING_EVENT',
   WEEKLY_DIGEST = 'WEEKLY_DIGEST',
+  ACHIEVEMENT_UNLOCKED = 'ACHIEVEMENT_UNLOCKED',
+  LEVEL_UP = 'LEVEL_UP',
 }
 
 export enum NotificationFilter {

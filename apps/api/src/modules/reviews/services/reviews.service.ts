@@ -1,16 +1,23 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ConflictException, 
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
   ForbiddenException,
-  BadRequestException 
+  BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '@bandhub/database';
 import { CreateReviewDto, UpdateReviewDto, GetReviewsQueryDto } from '../dto';
+import { AchievementTrackerService } from '../../achievements/achievement-tracker.service';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => AchievementTrackerService))
+    private achievementTracker: AchievementTrackerService,
+  ) {}
 
   async create(bandId: string, userId: string, dto: CreateReviewDto) {
     // Verify band exists
@@ -56,6 +63,9 @@ export class ReviewsService {
         },
       },
     });
+
+    // Track achievement progress
+    this.achievementTracker.trackReviewPosted(userId).catch(() => {});
 
     return review;
   }

@@ -30,8 +30,35 @@ export class EmailService {
    */
   async sendEmail(options: EmailOptions): Promise<void> {
     const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
+    const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
+    const skipEmail = this.configService.get<string>('EMAIL_SKIP_SEND') === 'true';
 
-    // Skip SES if mailer logs "not configured"
+    // In development or when EMAIL_SKIP_SEND is true, just log emails
+    if (nodeEnv === 'development' || skipEmail) {
+      this.logger.warn(`📧 [DEV MODE] Email sending skipped in ${nodeEnv} environment`);
+      this.logger.log(`📧 [DEV MODE] Would send to: ${options.to}`);
+      this.logger.log(`📧 Subject: ${options.subject}`);
+
+      // Extract token from verification URL for easy testing
+      if (options.html.includes('verify-email')) {
+        const tokenMatch = options.html.match(/verify-email\/([^"<]+)/);
+        if (tokenMatch) {
+          this.logger.log(`📧 Verification URL: ${this.appUrl}/verify-email/${tokenMatch[1]}`);
+        }
+      }
+
+      // Extract token from password reset URL for easy testing
+      if (options.html.includes('reset-password')) {
+        const tokenMatch = options.html.match(/reset-password\/([^"<]+)/);
+        if (tokenMatch) {
+          this.logger.log(`📧 Password Reset URL: ${this.appUrl}/reset-password/${tokenMatch[1]}`);
+        }
+      }
+
+      this.logger.debug(`📧 Preview: ${options.text?.substring(0, 150) || 'HTML email'}`);
+      return;
+    }
+
     // Try Resend API if key is configured
     if (resendApiKey) {
       try {
@@ -64,20 +91,9 @@ export class EmailService {
         throw error;
       }
     } else {
-      // Log email in development mode
-      this.logger.warn(`📧 [DEV MODE] RESEND_API_KEY not configured - email NOT sent`);
-      this.logger.log(`📧 [DEV MODE] Would send to: ${options.to}`);
-      this.logger.log(`📧 Subject: ${options.subject}`);
-      
-      // Extract token from verification URL for easy testing
-      if (options.html.includes('verify-email')) {
-        const tokenMatch = options.html.match(/verify-email\/([^"<]+)/);
-        if (tokenMatch) {
-          this.logger.log(`📧 Verification URL:  ${this.appUrl}/verify-email/${tokenMatch[1]}`);
-        }
-      }
-      
-      this.logger.debug(`📧 Preview: ${options.text?. substring(0, 150) || 'HTML email'}`);
+      // Production without API key - this is a configuration error
+      this.logger.error(`❌ RESEND_API_KEY not configured in production - email NOT sent to ${options.to}`);
+      throw new Error('Email service not configured: RESEND_API_KEY is required in production');
     }
   }
 
