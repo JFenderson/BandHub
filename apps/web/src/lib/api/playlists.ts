@@ -9,12 +9,26 @@ export interface Playlist {
   description: string | null;
   isPublic: boolean;
   userId: string;
+  shareLink?: string | null;
+  isFeatured?: boolean;
+  featuredAt?: string | null;
   createdAt: string;
   updatedAt: string;
   _count?: {
-    videos: number;
+    videos?: number;
+    playlistVideos?: number;
+    followers?: number;
+    collaborators?: number;
   };
   videos?: PlaylistVideo[];
+  user?: {
+    id: string;
+    name: string;
+    username: string;
+    avatar: string | null;
+  };
+  followerCount?: number;
+  videoCount?: number;
 }
 
 export interface PlaylistVideo {

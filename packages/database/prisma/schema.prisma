@@ -784,6 +784,8 @@ model User {
   contentShares            ContentShare[]
   achievements             UserAchievement[]
   points                   UserPoints?
+  playlistCollaborators    PlaylistCollaborator[]
+  playlistFollowers        PlaylistFollower[]
 
   @@index([email])
   @@index([username])
@@ -916,21 +918,29 @@ model YouTubeVideo {
 }
 
 model Playlist {
-  id             String          @id @default(cuid())
-  userId         String          @map("user_id")
-  name           String
-  description    String?
-  coverImageUrl  String?         @map("cover_image_url")
-  isPublic       Boolean         @default(true) @map("is_public")
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  playlistVideos PlaylistVideo[]
-  contentShares  ContentShare[]
+  id                   String                 @id @default(cuid())
+  userId               String                 @map("user_id")
+  name                 String
+  description          String?
+  coverImageUrl        String?                @map("cover_image_url")
+  isPublic             Boolean                @default(true) @map("is_public")
+  shareLink            String?                @unique @map("share_link")
+  isFeatured           Boolean                @default(false) @map("is_featured")
+  featuredAt           DateTime?              @map("featured_at")
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playlistVideos       PlaylistVideo[]
+  contentShares        ContentShare[]
+  collaborators        PlaylistCollaborator[]
+  followers            PlaylistFollower[]
+  shares               PlaylistShare[]
 
   @@index([userId])
   @@index([isPublic])
   @@index([createdAt])
+  @@index([shareLink])
+  @@index([isFeatured])
   @@map("playlists")
 }
 
@@ -947,6 +957,57 @@ model PlaylistVideo {
   @@index([playlistId, position])
   @@index([videoId])
   @@map("playlist_videos")
+}
+
+model PlaylistCollaborator {
+  id         String                     @id @default(cuid())
+  playlistId String                     @map("playlist_id")
+  userId     String                     @map("user_id")
+  role       PlaylistCollaboratorRole   @default(EDITOR)
+  addedAt    DateTime                   @default(now()) @map("added_at")
+  playlist   Playlist                   @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  user       User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, userId])
+  @@index([playlistId])
+  @@index([userId])
+  @@map("playlist_collaborators")
+}
+
+model PlaylistFollower {
+  id         String   @id @default(cuid())
+  playlistId String   @map("playlist_id")
+  userId     String   @map("user_id")
+  followedAt DateTime @default(now()) @map("followed_at")
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, userId])
+  @@index([playlistId])
+  @@index([userId])
+  @@map("playlist_followers")
+}
+
+model PlaylistShare {
+  id         String   @id @default(cuid())
+  playlistId String   @map("playlist_id")
+  token      String   @unique
+  views      Int      @default(0)
+  expiresAt  DateTime? @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  revokedAt  DateTime? @map("revoked_at")
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("playlist_shares")
+}
+
+enum PlaylistCollaboratorRole {
+  VIEWER
+  EDITOR
+  OWNER
 }
 
 model Comment {

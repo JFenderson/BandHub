@@ -2,21 +2,25 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Lock, Globe, Edit2, Trash2 } from 'lucide-react';
+import { Lock, Globe, Edit2, Trash2, Users, Heart, Share2, Star } from 'lucide-react';
 import type { Playlist } from '@/lib/api/playlists';
 import { usePlaylists } from '@/hooks/usePlaylists';
 
 interface PlaylistCardProps {
   playlist: Playlist;
   onEdit?: (playlist: Playlist) => void;
+  showOwnerInfo?: boolean;
 }
 
-export function PlaylistCard({ playlist, onEdit }: PlaylistCardProps) {
+export function PlaylistCard({ playlist, onEdit, showOwnerInfo = false }: PlaylistCardProps) {
   const { deletePlaylist } = usePlaylists(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const videoCount = playlist._count?.videos || 0;
+  const videoCount = playlist._count?.videos || playlist._count?.playlistVideos || 0;
+  const followerCount = playlist._count?.followers || playlist.followerCount || 0;
+  const collaboratorCount = playlist._count?.collaborators || 0;
+  const isCollaborative = collaboratorCount > 0;
 
   const handleEdit = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -75,7 +79,12 @@ export function PlaylistCard({ playlist, onEdit }: PlaylistCardProps) {
           </div>
 
           {/* Privacy indicator */}
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-2 right-2 flex items-center gap-2">
+            {playlist.isFeatured && (
+              <div className="bg-yellow-500 rounded-full p-1.5" title="Featured Playlist">
+                <Star className="w-4 h-4 text-white fill-white" aria-label="Featured playlist" />
+              </div>
+            )}
             {playlist.isPublic ? (
               <Globe className="w-5 h-5 text-white" aria-label="Public playlist" />
             ) : (
@@ -95,6 +104,34 @@ export function PlaylistCard({ playlist, onEdit }: PlaylistCardProps) {
               {playlist.description}
             </p>
           )}
+
+          {/* Owner info and stats */}
+          {showOwnerInfo && playlist.user && (
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
+              <span>By {playlist.user.name || playlist.user.username}</span>
+            </div>
+          )}
+
+          {/* Stats row */}
+          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-3">
+            {isCollaborative && (
+              <div className="flex items-center gap-1" title="Collaborative playlist">
+                <Users className="w-3.5 h-3.5" />
+                <span>{collaboratorCount + 1} collaborators</span>
+              </div>
+            )}
+            {followerCount > 0 && (
+              <div className="flex items-center gap-1" title="Followers">
+                <Heart className="w-3.5 h-3.5" />
+                <span>{followerCount}</span>
+              </div>
+            )}
+            {playlist.shareLink && (
+              <div className="flex items-center gap-1" title="Shared">
+                <Share2 className="w-3.5 h-3.5" />
+              </div>
+            )}
+          </div>
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
