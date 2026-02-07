@@ -20,6 +20,7 @@ import compression from 'compression';
 import { MetricsService } from './metrics/metrics.service';
 import { VersionDeprecationMiddleware } from './common/middleware/version-deprecation.middleware';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
+import { HttpsRedirectMiddleware } from './common/middleware/https-redirect.middleware';
 
 async function bootstrap() {
   startTracing('api');
@@ -109,6 +110,10 @@ const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     exposedHeaders: ['set-cookie'],
     maxAge: 3600, // Cache preflight for 1 hour
   });
+
+  // Force HTTPS in production
+  const httpsRedirectMiddleware = new HttpsRedirectMiddleware();
+  app.use(httpsRedirectMiddleware.use.bind(httpsRedirectMiddleware));
 
 app.useGlobalPipes(
   new SanitizationPipe({
