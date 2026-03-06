@@ -13,6 +13,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@bandhub/database';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { EmailService } from '../../email/email.service';
 
 export interface ApiKeyUsageStats {
   totalRequests: number;
@@ -46,7 +47,10 @@ export class ApiKeyAnalyticsService {
   // In-memory cache for quota tracking (could be Redis for distributed systems)
   private readonly quotaCache = new Map<string, { daily: number; monthly: number; lastReset: Date }>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   /**
    * Track API key usage
@@ -330,9 +334,22 @@ export class ApiKeyAnalyticsService {
     };
 
     this.logger.warn(`API Key Alert [${alertType}]: ${message}`, { apiKeyId, apiKeyName: alert.apiKeyName });
-    
-    // TODO: Send email/Slack notification to admins
-    // await this.notificationService.sendAlert(alert);
+
+    // Notify all super admins by email
+    const admins = await this.prisma.adminUser.findMany({
+      where: { role: 'SUPER_ADMIN', isActive: true },
+      select: { email: true },
+    });
+    await Promise.allSettled(
+      admins.map((admin) =>
+        this.emailService.sendEmail({
+          to: admin.email,
+          subject: `[BandHub Alert] API Key ${alertType.replace(/_/g, ' ')}: ${alert.apiKeyName}`,
+          html: `<p><strong>Alert Type:</strong> ${alertType}</p><p><strong>API Key:</strong> ${alert.apiKeyName}</p><p><strong>Message:</strong> ${message}</p><p><strong>Time:</strong> ${alert.timestamp.toISOString()}</p>`,
+          text: `Alert: ${alertType}\nAPI Key: ${alert.apiKeyName}\nMessage: ${message}\nTime: ${alert.timestamp.toISOString()}`,
+        }),
+      ),
+    );
 
     return alert;
   }
@@ -418,8 +435,32 @@ export class ApiKeyAnalyticsService {
     }));
 
     this.logger.log(`Daily summary: ${summary.length} API keys used yesterday`);
-    // TODO: Send summary email to admins
-    
+
+    if (summary.length > 0) {
+      const rows = summary
+        .map(
+          (s) =>
+            `<tr><td>${s.apiKeyName}</td><td>${s.requests}</td><td>${s.errors}</td><td>${s.avgResponseTime ? Math.round(s.avgResponseTime) + 'ms' : 'N/A'}</td></tr>`,
+        )
+        .join('');
+      const html = `<h2>Daily API Key Usage Summary</h2><p>Date: ${yesterday.toDateString()}</p><table border="1" cellpadding="4"><thead><tr><th>API Key</th><th>Requests</th><th>Errors</th><th>Avg Response</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+      const admins = await this.prisma.adminUser.findMany({
+        where: { role: 'SUPER_ADMIN', isActive: true },
+        select: { email: true },
+      });
+      await Promise.allSettled(
+        admins.map((admin) =>
+          this.emailService.sendEmail({
+            to: admin.email,
+            subject: `[BandHub] Daily API Key Usage Summary — ${yesterday.toDateString()}`,
+            html,
+            text: summary.map((s) => `${s.apiKeyName}: ${s.requests} req, ${s.errors} err`).join('\n'),
+          }),
+        ),
+      );
+    }
+
     return summary;
   }
 }

@@ -6,7 +6,18 @@
       "Bash(npm run build:*)",
       "Bash(npm run type-check:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npm list qrcode)",
+      "Bash(npx jest --testPathPattern=\"trending.service.spec|bands.service.spec\" --no-coverage)",
+      "Bash(npx jest --config jest.config.ts --testPathPattern=\"trending.service.spec|bands.service.spec\" --no-coverage)",
+      "Bash(npx jest --config jest.config.ts --testPathPattern=\"trending.service.spec|bands.service.spec\" --no-coverage --forceExit)",
+      "Bash(node --max-old-space-size=512 node_modules/.bin/jest --config jest.config.ts --testPathPattern=\"trending.service.spec\" --no-coverage --forceExit --runInBand)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=512\" npx jest --config jest.config.ts --testPathPattern=\"trending.service.spec\" --no-coverage --forceExit --runInBand)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx jest --config jest.config.ts --testPathPattern=\"trending.service.spec\" --no-coverage --forceExit --runInBand)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx jest --config jest.config.ts --testPathPattern=\"bands.service.spec\" --no-coverage --forceExit --runInBand)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx jest --config jest.config.ts --testPathPattern=\"bands.service.spec\" --no-coverage --forceExit --runInBand --verbose)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx jest --config jest.config.ts --runInBand --forceExit)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx jest --config jest.config.ts --runInBand --forceExit test/unit/api-key.service.spec.ts)"
     ]
   }
 }

@@ -24,6 +24,8 @@ jobs:
           npm run build --workspace=@bandhub/cache
           npm run build --workspace=@hbcu-band-hub/observability
       - name: Run unit and integration tests with coverage
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           cd apps/api
           npx jest --config jest.config.ts --coverage --runInBand --coverageReporters=json --coverageReporters=lcov --coverageReporters=text --coverageReporters=json-summary

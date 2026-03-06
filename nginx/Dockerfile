@@ -1,10 +1,13 @@
 FROM nginx:alpine
 
+# Install gettext for envsubst
+RUN apk add --no-cache gettext
+
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy config template (DOMAIN will be substituted at startup)
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 # Create directory for Let's Encrypt ACME challenge
 RUN mkdir -p /var/www/certbot
@@ -18,4 +21,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 EXPOSE 80 443
 
-CMD ["nginx", "-g", "daemon off;"]
+# Substitute $DOMAIN at runtime, then start nginx
+CMD ["/bin/sh", "-c", "envsubst '$DOMAIN' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]

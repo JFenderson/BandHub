@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@bandhub/database';
 import * as crypto from 'crypto';
+import * as QRCode from 'qrcode';
 
 // TOTP configuration
 const TOTP_PERIOD = 30; // 30 seconds
@@ -408,16 +409,9 @@ export class MfaService {
   }
 
   /**
-   * Generate a simple QR code data URL
-   * This is a simplified implementation - in production, use a library like 'qrcode'
+   * Generate a QR code data URL from an otpauth URI
    */
   private async generateQrCodeDataUrl(data: string): Promise<string> {
-    // For now, return a placeholder that indicates QR should be generated client-side
-    // In production, install 'qrcode' package and use:
-    // const QRCode = require('qrcode');
-    // return await QRCode.toDataURL(data);
-    
-    // Return the otpauth URL encoded for client-side QR generation
-    return `data:text/plain;base64,${Buffer.from(data).toString('base64')}`;
+    return QRCode.toDataURL(data, { errorCorrectionLevel: 'M', width: 256 });
   }
 }

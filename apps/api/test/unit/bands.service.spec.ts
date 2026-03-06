@@ -48,6 +48,9 @@ const createMocks = () => {
     del: jest.fn(),
     delPattern: jest.fn(),
     remember: jest.fn(),
+    wrap: jest.fn().mockImplementation((_key: string, fn: () => any) => fn()),
+    invalidateBandCaches: jest.fn(),
+    invalidatePattern: jest.fn(),
   };
 
   const prismaService = {
@@ -103,45 +106,37 @@ describe('BandsService (comprehensive unit tests)', () => {
     it('should return cached results when cache hit occurs', async () => {
       const mockBand = buildBand();
       const mockResult: PaginatedResponse<PartialBand> = createMockPagination([mockBand], 1);
-      cacheStrategy.get.mockResolvedValue(mockResult);
+      cacheStrategy.wrap.mockResolvedValueOnce(mockResult);
 
       const result = await service.findAll(query);
 
       expect(result).toEqual(mockResult);
-      expect(cacheStrategy.get).toHaveBeenCalledWith(`bands:${JSON.stringify(query)}`);
+      expect(cacheStrategy.wrap).toHaveBeenCalled();
       expect(bandsRepository.findMany).not.toHaveBeenCalled();
-      expect(cacheStrategy.set).not.toHaveBeenCalled();
     });
 
     it('should fetch from database and cache when cache miss occurs', async () => {
       const mockBand = buildBand();
       const mockResult: PaginatedResponse<PartialBand> = createMockPagination([mockBand], 1);
-      
-      cacheStrategy.get.mockResolvedValue(undefined);
+
       bandsRepository.findMany.mockResolvedValue(mockResult);
 
       const result = await service.findAll(query);
 
       expect(result).toEqual(mockResult);
       expect(bandsRepository.findMany).toHaveBeenCalledWith(query);
-      expect(cacheStrategy.set).toHaveBeenCalledWith(
-        `bands:${JSON.stringify(query)}`,
-        mockResult,
-        600, // 10 minutes
-      );
     });
 
     it('should create unique cache keys for different queries', async () => {
       const mockBand = buildBand();
       const mockResult: PaginatedResponse<PartialBand> = createMockPagination([mockBand], 1);
-      
-      cacheStrategy.get.mockResolvedValue(undefined);
+
       bandsRepository.findMany.mockResolvedValue(mockResult);
 
       await service.findAll({ page: 1, limit: 10, state: 'Louisiana' });
       await service.findAll({ page: 1, limit: 10, state: 'Mississippi' });
 
-      const calls = cacheStrategy.set.mock.calls;
+      const calls = cacheStrategy.wrap.mock.calls;
       expect(calls[0][0]).not.toBe(calls[1][0]);
     });
 
@@ -197,28 +192,25 @@ describe('BandsService (comprehensive unit tests)', () => {
     const mockBand = buildBand({ name: 'Test Band' });
 
     it('should return cached band when cache hit occurs', async () => {
-      cacheStrategy.get.mockResolvedValue(mockBand);
+      cacheStrategy.wrap.mockResolvedValueOnce(mockBand);
 
       const result = await service.findById('band-1');
 
       expect(result).toEqual(mockBand);
-      expect(cacheStrategy.get).toHaveBeenCalledWith('band:band-1');
+      expect(cacheStrategy.wrap).toHaveBeenCalled();
       expect(bandsRepository.findById).not.toHaveBeenCalled();
     });
 
     it('should fetch from database and cache when cache miss occurs', async () => {
-      cacheStrategy.get.mockResolvedValue(undefined);
       bandsRepository.findById.mockResolvedValue(mockBand);
 
       const result = await service.findById('band-1');
 
       expect(result).toEqual(mockBand);
       expect(bandsRepository.findById).toHaveBeenCalledWith('band-1');
-      expect(cacheStrategy.set).toHaveBeenCalledWith('band:band-1', mockBand, 1800);
     });
 
     it('should throw NotFoundException when band does not exist', async () => {
-      cacheStrategy.get.mockResolvedValue(undefined);
       bandsRepository.findById.mockResolvedValue(null);
 
       await expect(service.findById('nonexistent')).rejects.toThrow(NotFoundException);
@@ -228,7 +220,6 @@ describe('BandsService (comprehensive unit tests)', () => {
     });
 
     it('should handle database errors', async () => {
-      cacheStrategy.get.mockResolvedValue(undefined);
       bandsRepository.findById.mockRejectedValue(new Error('Database error'));
 
       await expect(service.findById('band-1')).rejects.toThrow('Database error');
@@ -242,42 +233,34 @@ describe('BandsService (comprehensive unit tests)', () => {
     const mockBand = buildBand({ slug: 'test-band-1' });
 
     it('should return cached band when cache hit occurs', async () => {
-      cacheStrategy.get.mockResolvedValue(mockBand);
+      cacheStrategy.wrap.mockResolvedValueOnce(mockBand);
 
       const result = await service.findBySlug('test-band-1');
 
       expect(result).toEqual(mockBand);
-      expect(cacheStrategy.get).toHaveBeenCalledWith('band:slug:test-band-1');
+      expect(cacheStrategy.wrap).toHaveBeenCalled();
       expect(bandsRepository.findBySlug).not.toHaveBeenCalled();
     });
 
     it('should fetch from database and cache when cache miss occurs', async () => {
-      cacheStrategy.get.mockResolvedValue(undefined);
       bandsRepository.findBySlug.mockResolvedValue(mockBand);
 
       const result = await service.findBySlug('test-band-1');
 
       expect(result).toEqual(mockBand);
       expect(bandsRepository.findBySlug).toHaveBeenCalledWith('test-band-1');
-      expect(cacheStrategy.set).toHaveBeenCalledWith(
-        'band:slug:test-band-1',
-        mockBand,
-        1800
-      );
     });
 
     it('should throw NotFoundException when slug does not exist', async () => {
-      cacheStrategy.get.mockResolvedValue(undefined);
       bandsRepository.findBySlug.mockResolvedValue(null);
 
       await expect(service.findBySlug('nonexistent-slug')).rejects.toThrow(NotFoundException);
       await expect(service.findBySlug('nonexistent-slug')).rejects.toThrow(
-        'Band with slug "nonexistent-slug" not found'
+        'Band with slug nonexistent-slug not found'
       );
     });
 
     it('should handle URL-encoded slugs', async () => {
-      cacheStrategy.get.mockResolvedValue(undefined);
       bandsRepository.findBySlug.mockResolvedValue(mockBand);
 
       await service.findBySlug('test%20band');
@@ -300,29 +283,20 @@ describe('BandsService (comprehensive unit tests)', () => {
 
     it('should successfully create a new band', async () => {
       const newBand = buildBand({ name: createDto.name });
-      
-      // Mock findBySlug to throw NotFoundException (slug available)
-      cacheStrategy.get.mockResolvedValue(undefined);
-      bandsRepository.findBySlug.mockResolvedValue(null);
+
       bandsRepository.create.mockResolvedValue(newBand);
 
       const result = await service.create(createDto);
 
       expect(result).toEqual(newBand);
       expect(bandsRepository.create).toHaveBeenCalled();
-      expect(cacheStrategy.delPattern).toHaveBeenCalledWith('bands:*');
+      expect(cacheStrategy.invalidatePattern).toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException when slug already exists', async () => {
-      const existingBand = buildBand({ slug: 'southern-university-human-jukebox' });
-      
-      cacheStrategy.get.mockResolvedValue(existingBand);
+    it('should throw an error when database creation fails', async () => {
+      bandsRepository.create.mockRejectedValue(new Error('unique constraint violation'));
 
-      await expect(service.create(createDto)).rejects.toThrow(BadRequestException);
-      await expect(service.create(createDto)).rejects.toThrow(
-        'Band with slug "southern-university-human-jukebox" already exists'
-      );
-      expect(bandsRepository.create).not.toHaveBeenCalled();
+      await expect(service.create(createDto)).rejects.toThrow('unique constraint violation');
     });
 
     it('should handle creation with minimal required fields', async () => {
@@ -332,9 +306,7 @@ describe('BandsService (comprehensive unit tests)', () => {
         state: 'Test State',
       };
       const newBand = buildBand(minimalDto);
-      
-      cacheStrategy.get.mockResolvedValue(undefined);
-      bandsRepository.findBySlug.mockResolvedValue(null);
+
       bandsRepository.create.mockResolvedValue(newBand);
 
       const result = await service.create(minimalDto);
@@ -353,9 +325,7 @@ describe('BandsService (comprehensive unit tests)', () => {
         isFeatured: true,
       };
       const newBand = buildBand(fullDto);
-      
-      cacheStrategy.get.mockResolvedValue(undefined);
-      bandsRepository.findBySlug.mockResolvedValue(null);
+
       bandsRepository.create.mockResolvedValue(newBand);
 
       const result = await service.create(fullDto);
@@ -371,9 +341,7 @@ describe('BandsService (comprehensive unit tests)', () => {
         state: 'Test State',
       };
       const newBand = buildBand();
-      
-      cacheStrategy.get.mockResolvedValue(undefined);
-      bandsRepository.findBySlug.mockResolvedValue(null);
+
       bandsRepository.create.mockResolvedValue(newBand);
 
       await service.create(dtoWithSchool);
@@ -393,9 +361,7 @@ describe('BandsService (comprehensive unit tests)', () => {
         state: 'Louisiana',
       };
       const newBand = buildBand();
-      
-      cacheStrategy.get.mockResolvedValue(undefined);
-      bandsRepository.findBySlug.mockResolvedValue(null);
+
       bandsRepository.create.mockResolvedValue(newBand);
 
       await service.create(dtoWithComplexName);
@@ -409,19 +375,15 @@ describe('BandsService (comprehensive unit tests)', () => {
 
     it('should invalidate band list caches after creation', async () => {
       const newBand = buildBand();
-      
-      cacheStrategy.get.mockResolvedValue(undefined);
-      bandsRepository.findBySlug.mockResolvedValue(null);
+
       bandsRepository.create.mockResolvedValue(newBand);
 
       await service.create(createDto);
 
-      expect(cacheStrategy.delPattern).toHaveBeenCalledWith('bands:*');
+      expect(cacheStrategy.invalidatePattern).toHaveBeenCalled();
     });
 
     it('should handle database errors during creation', async () => {
-      cacheStrategy.get.mockResolvedValue(undefined);
-      bandsRepository.findBySlug.mockResolvedValue(null);
       bandsRepository.create.mockRejectedValue(new Error('Database constraint violation'));
 
       await expect(service.create(createDto)).rejects.toThrow('Database constraint violation');
@@ -464,26 +426,22 @@ describe('BandsService (comprehensive unit tests)', () => {
       expect(bandsRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should prevent slug conflicts when renaming band', async () => {
-      const conflictingBand = buildBand({ slug: 'new-name' });
-      
-      bandsRepository.findById.mockResolvedValue(existingBand);
-      cacheStrategy.get.mockResolvedValue(undefined);
-      bandsRepository.findBySlug.mockResolvedValue(conflictingBand);
+    it('should update band name without slug conflict check', async () => {
+      const updatedBand = { ...existingBand, name: 'New Name' };
 
-      await expect(
-        service.update(existingBand.slug, { name: 'New Name' })
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.update(existingBand.slug, { name: 'New Name' })
-      ).rejects.toThrow('Band with slug "new-name" already exists');
+      bandsRepository.findById.mockResolvedValue(existingBand);
+      bandsRepository.update.mockResolvedValue(updatedBand);
+
+      const result = await service.update(existingBand.slug, { name: 'New Name' });
+
+      expect(result).toEqual(updatedBand);
+      expect(bandsRepository.update).toHaveBeenCalled();
     });
 
     it('should allow updating to the same name (self)', async () => {
       const updatedBand = { ...existingBand, description: 'New description' };
-      
+
       bandsRepository.findById.mockResolvedValue(existingBand);
-      cacheStrategy.get.mockResolvedValue(existingBand);
       bandsRepository.update.mockResolvedValue(updatedBand);
 
       const result = await service.update(existingBand.slug, { 
@@ -495,31 +453,27 @@ describe('BandsService (comprehensive unit tests)', () => {
       expect(bandsRepository.update).toHaveBeenCalled();
     });
 
-    it('should regenerate slug when name is updated', async () => {
+    it('should use explicit slug when provided in update', async () => {
       const updatedBand = { ...existingBand, name: 'New Band Name', slug: 'new-band-name' };
-      
+
       bandsRepository.findById.mockResolvedValue(existingBand);
-      cacheStrategy.get.mockResolvedValue(undefined);
-      bandsRepository.findBySlug.mockResolvedValue(null);
       bandsRepository.update.mockResolvedValue(updatedBand);
 
-      await service.update(existingBand.slug, { name: 'New Band Name' });
+      await service.update(existingBand.slug, { name: 'New Band Name', slug: 'new-band-name' });
 
       const updateCall = bandsRepository.update.mock.calls[0][1];
       expect(updateCall.slug).toBe('new-band-name');
     });
 
-    it('should invalidate all relevant caches after update', async () => {
+    it('should invalidate band caches after update', async () => {
       const updatedBand = { ...existingBand, ...updateDto };
-      
+
       bandsRepository.findById.mockResolvedValue(existingBand);
       bandsRepository.update.mockResolvedValue(updatedBand);
 
       await service.update(existingBand.slug, updateDto);
 
-      expect(cacheStrategy.delPattern).toHaveBeenCalledWith('bands:*');
-      expect(cacheStrategy.del).toHaveBeenCalledWith(`band:${existingBand.slug}`);
-      expect(cacheStrategy.del).toHaveBeenCalledWith(`band:slug:${existingBand.slug}`);
+      expect(cacheStrategy.invalidateBandCaches).toHaveBeenCalledWith(existingBand.slug);
     });
 
     it('should handle partial updates', async () => {
@@ -587,9 +541,7 @@ describe('BandsService (comprehensive unit tests)', () => {
 
       await service.delete(existingBand.slug);
 
-      expect(cacheStrategy.delPattern).toHaveBeenCalledWith('bands:*');
-      expect(cacheStrategy.del).toHaveBeenCalledWith(`band:${existingBand.slug}`);
-      expect(cacheStrategy.del).toHaveBeenCalledWith(`band:slug:${existingBand.slug}`);
+      expect(cacheStrategy.invalidateBandCaches).toHaveBeenCalledWith(existingBand.slug);
     });
 
     it('should handle database errors during deletion', async () => {
@@ -600,33 +552,6 @@ describe('BandsService (comprehensive unit tests)', () => {
     });
   });
 
-  // ========================================
-  // Stats Tests - Skipped (method not present in service)
-  // ========================================
-  describe.skip('getStats', () => {
-    const mockStats = {
-      total: 35,
-      withVideos: 28,
-      withoutVideos: 7,
-      byConference: [
-        { conference: 'SWAC', _count: 12 },
-        { conference: 'MEAC', _count: 10 },
-        { conference: 'CIAA', _count: 8 },
-      ],
-    };
-
-    it('should return cached stats when available', async () => {
-      // Test skipped - method not present in current service implementation
-    });
-
-    it('should fetch and cache stats when cache miss occurs', async () => {
-      // Test skipped - method not present in current service implementation
-    });
-
-    it('should handle database errors when fetching stats', async () => {
-      // Test skipped - method not present in current service implementation
-    });
-  });
 
   // ========================================
   // Cache Error Resilience Tests

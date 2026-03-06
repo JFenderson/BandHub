@@ -7,6 +7,7 @@
 
 import { Controller, Post, Body, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { PrismaService } from '@bandhub/database';
 import { SkipRateLimit } from '../../common/decorators/rate-limit.decorator';
 
 interface CspReport {
@@ -27,6 +28,8 @@ interface CspReport {
 @Controller({ path: 'csp-report', version: '1' })
 export class CspReportController {
   private readonly logger = new Logger(CspReportController.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   @Post()
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -52,13 +55,24 @@ export class CspReportController {
       columnNumber: cspReport['column-number'],
     });
 
-    // In production, you might want to:
-    // 1. Store violations in database for analysis
-    // 2. Send alerts for critical violations
-    // 3. Track violation trends
-    
-    // TODO: Implement database storage and alerting if needed
-    // await this.cspViolationService.store(cspReport);
+    // Persist to AuditLog for trend analysis
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'CSP_VIOLATION',
+        entityType: 'csp',
+        entityId: cspReport['document-uri'] || 'unknown',
+        severity: 'warn',
+        changes: {
+          violatedDirective: cspReport['violated-directive'],
+          effectiveDirective: cspReport['effective-directive'],
+          blockedUri: cspReport['blocked-uri'],
+          sourceFile: cspReport['source-file'],
+          lineNumber: cspReport['line-number'],
+          columnNumber: cspReport['column-number'],
+          statusCode: cspReport['status-code'],
+        },
+      },
+    }).catch((err) => this.logger.error('Failed to persist CSP violation', err));
 
     return; // Return 204 No Content
   }
