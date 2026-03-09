@@ -59,6 +59,27 @@ export class HttpsRedirectMiddleware implements NestMiddleware {
       return;
     }
 
+    // Validate host against allowed domains to prevent open redirect attacks
+    const allowedHosts = [
+      'bandhub.com',
+      'www.bandhub.com',
+      'api.bandhub.com',
+      process.env.ALLOWED_HOST,
+    ].filter(Boolean) as string[];
+
+    // Strip port from host header for comparison
+    const hostname = host.split(':')[0];
+
+    const isValidHost = allowedHosts.some(
+      allowedHost => hostname === allowedHost || hostname.endsWith(`.${allowedHost}`)
+    );
+
+    if (!isValidHost) {
+      this.logger.warn(`HTTPS redirect rejected: Invalid host header "${host}"`);
+      res.status(400).send('Invalid host');
+      return;
+    }
+
     // Build HTTPS URL preserving path and query string
     const httpsUrl = `https://${host}${req.originalUrl || req.url}`;
     

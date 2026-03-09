@@ -64,8 +64,8 @@ export function sanitizeHTML(html: string): string {
     return html.replace(/<[^>]*>/g, '');
   }
   
-  const temp = document.createElement('div');
-  temp.innerHTML = html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
   
   // Recursively sanitize all nodes
   function sanitizeNode(node: Node): string {
@@ -120,7 +120,7 @@ export function sanitizeHTML(html: string): string {
     return '';
   }
   
-  return Array.from(temp.childNodes).map(node => sanitizeNode(node)).join('');
+  return Array.from(doc.body.childNodes).map(node => sanitizeNode(node)).join('');
 }
 
 /**

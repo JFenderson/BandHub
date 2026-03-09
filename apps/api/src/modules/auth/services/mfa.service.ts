@@ -11,7 +11,7 @@ import * as QRCode from 'qrcode';
 // TOTP configuration
 const TOTP_PERIOD = 30; // 30 seconds
 const TOTP_DIGITS = 6;
-const TOTP_ALGORITHM = 'SHA1';
+const TOTP_ALGORITHM = 'SHA256';
 const BACKUP_CODES_COUNT = 10;
 const BACKUP_CODE_LENGTH = 8;
 
@@ -274,7 +274,7 @@ export class MfaService {
     counterBuffer.writeBigInt64BE(BigInt(counter));
 
     const secretBuffer = this.base32Decode(secret);
-    const hmac = crypto.createHmac('sha1', secretBuffer);
+    const hmac = crypto.createHmac('sha256', secretBuffer);
     hmac.update(counterBuffer);
     const digest = hmac.digest();
 
@@ -333,26 +333,43 @@ export class MfaService {
   }
 
   /**
-   * Encrypt the TOTP secret for storage
+   * Encrypt the TOTP secret for storage using AES-256-GCM
    */
   private encryptSecret(secret: string): string {
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv('aes-256-cbc', this.encryptionKey, iv);
+    const cipher = crypto.createCipheriv('aes-256-gcm', this.encryptionKey, iv);
     let encrypted = cipher.update(secret, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    return iv.toString('hex') + ':' + encrypted;
+    const authTag = cipher.getAuthTag();
+    return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
   }
 
   /**
    * Decrypt the stored TOTP secret
+   * Supports both legacy AES-256-CBC (2 parts) and AES-256-GCM (3 parts) formats
    */
   private decryptSecret(encryptedSecret: string): string {
-    const [ivHex, encrypted] = encryptedSecret.split(':');
-    const iv = Buffer.from(ivHex, 'hex');
-    const decipher = crypto.createDecipheriv('aes-256-cbc', this.encryptionKey, iv);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
+    const parts = encryptedSecret.split(':');
+
+    if (parts.length === 3) {
+      // New GCM format: ivHex:authTagHex:encryptedHex
+      const [ivHex, authTagHex, encryptedHex] = parts;
+      const iv = Buffer.from(ivHex, 'hex');
+      const authTag = Buffer.from(authTagHex, 'hex');
+      const decipher = crypto.createDecipheriv('aes-256-gcm', this.encryptionKey, iv);
+      decipher.setAuthTag(authTag);
+      let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    } else {
+      // Legacy CBC format: ivHex:encryptedHex
+      const [ivHex, encrypted] = parts;
+      const iv = Buffer.from(ivHex, 'hex');
+      const decipher = crypto.createDecipheriv('aes-256-cbc', this.encryptionKey, iv);
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    }
   }
 
   /**

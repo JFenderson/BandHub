@@ -18,6 +18,8 @@ services:
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
       - '--web.enable-lifecycle'
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
     networks:
       - monitoring
@@ -38,6 +40,8 @@ services:
       - grafana-data:/var/lib/grafana
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./config/monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
     depends_on:
       - prometheus
@@ -56,6 +60,8 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
       - '--web.external-url=http://localhost:9093'
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
     networks:
       - monitoring
