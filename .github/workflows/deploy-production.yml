@@ -43,7 +43,7 @@ jobs:
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
         run: |
-          doppler secrets --config prd --project bandhub --silent
+          doppler secrets --config prd --project hbcubandhub --silent
           echo "Doppler connection verified"
 
       - name: Build and push API image
