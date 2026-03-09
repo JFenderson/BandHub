@@ -109,7 +109,7 @@ jobs:
       - name: Health check
         run: |
           sleep 30
-          curl -f https://staging-api.hbcubandhub.com/api/health || exit 1
+          curl -f https://staging-api.hbcubandhub.tech/api/health || exit 1
 
       - name: Notify team on failure
         if: failure() && vars.SLACK_NOTIFICATIONS_ENABLED == 'true'

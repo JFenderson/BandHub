@@ -137,12 +137,12 @@ jobs:
       - name: Health check
         run: |
           sleep 30
-          curl -f https://api.hbcubandhub.com/api/health || exit 1
+          curl -f https://api.hbcubandhub.tech/api/health || exit 1
 
       - name: Smoke tests
         run: |
-          curl -f https://api.hbcubandhub.com/api/health
-          curl -f https://api.hbcubandhub.com/api/health/ready
+          curl -f https://api.hbcubandhub.tech/api/health
+          curl -f https://api.hbcubandhub.tech/api/health/ready
           echo "Smoke tests passed"
 
       - name: Notify team on success
