@@ -7,18 +7,19 @@ import { Pagination } from '@/components/ui/Pagination';
 export const dynamic = 'force-dynamic';
 
 interface CreatorsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     search?: string;
     page?: string;
-  };
+  }>;
 }
 
 export default async function CreatorsPage({ searchParams }: CreatorsPageProps) {
-  const page = parseInt(searchParams.page || '1');
+  const { search, page: pageParam } = await searchParams;
+  const page = parseInt(pageParam || '1');
   const limit = 50;
 
   const { data: creators, meta } = await apiClient.getCreators({
-    search: searchParams.search,
+    search,
     isVerified: true,
     page,
     limit,
@@ -41,7 +42,7 @@ export default async function CreatorsPage({ searchParams }: CreatorsPageProps) 
             <input
               type="text"
               name="search"
-              defaultValue={searchParams.search}
+              defaultValue={search}
               placeholder="Search creators..."
               className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
@@ -91,7 +92,7 @@ export default async function CreatorsPage({ searchParams }: CreatorsPageProps) 
             </svg>
             <h3 className="mt-4 text-lg font-medium text-gray-900">No creators found</h3>
             <p className="mt-2 text-gray-500">
-              {searchParams.search
+              {search
                 ? 'Try adjusting your search criteria'
                 : 'Check back later for content creators'}
             </p>

@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "@bandhub/database": "*",
-    "@nestjs/common": "^10.0.0",
-    "@nestjs/config": "^3.0.0",
-    "@nestjs/schedule": "^4.0.0",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.3",
+    "@nestjs/schedule": "^6.1.0",
     "ioredis": "^5.0.0"
   },
   "devDependencies": {

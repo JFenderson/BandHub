@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 interface VideosPageProps {
-  searchParams: {
+  searchParams: Promise<{
     search?: string;
     bandId?: string;
     conference?: string;
@@ -22,21 +22,22 @@ interface VideosPageProps {
     eventYear?: string;
     sortBy?: 'publishedAt' | 'viewCount' | 'title';
     sortOrder?: 'asc' | 'desc';
-  };
+  }>;
 }
 
 export default async function VideosPage({ searchParams }: VideosPageProps) {
+  const { search, bandId, conference, category, eventYear, sortBy, sortOrder } = await searchParams;
   const limit = 16;
 
   // Fetch initial page of videos for SSR
   const { data: videos, meta } = await apiClient.getVideos({
-    search: searchParams.search,
-    bandId: searchParams.bandId,
-    conference: searchParams.conference,
-    category: searchParams.category,
-    year: searchParams.eventYear ? parseInt(searchParams.eventYear) : undefined,
-    sortBy: searchParams.sortBy || 'publishedAt',
-    sortOrder: searchParams.sortOrder || 'desc',
+    search,
+    bandId,
+    conference,
+    category,
+    year: eventYear ? parseInt(eventYear) : undefined,
+    sortBy: sortBy || 'publishedAt',
+    sortOrder: sortOrder || 'desc',
     page: 1,
     limit,
   });
@@ -46,13 +47,13 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
 
   // Build filters object for the infinite scroll component
   const filters = {
-    search: searchParams.search,
-    bandId: searchParams.bandId,
-    conference: searchParams.conference,
-    category: searchParams.category,
-    year: searchParams.eventYear ? parseInt(searchParams.eventYear) : undefined,
-    sortBy: searchParams.sortBy || 'publishedAt',
-    sortOrder: searchParams.sortOrder || 'desc',
+    search,
+    bandId,
+    conference,
+    category,
+    year: eventYear ? parseInt(eventYear) : undefined,
+    sortBy: sortBy || 'publishedAt',
+    sortOrder: sortOrder || 'desc',
   };
 
   return (

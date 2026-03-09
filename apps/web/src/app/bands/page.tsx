@@ -5,22 +5,23 @@ import { BandFilters } from '@/components/bands/BandFilters';
 import { Pagination } from '@/components/ui/Pagination';
 
 interface BandsPageProps {
-  searchParams: {
+  searchParams: Promise<{
     search?: string;
     state?: string;
     conference?: string;
     page?: string;
-  };
+  }>;
 }
 
 export default async function BandsPage({ searchParams }: BandsPageProps) {
-  const page = parseInt(searchParams.page || '1');
+  const { search, state, conference, page: pageParam } = await searchParams;
+  const page = parseInt(pageParam || '1');
   const limit = 12;
 
   const { data: bands, meta } = await apiClient.getBands({
-    search: searchParams.search,
-    state: searchParams.state,
-    conference: searchParams.conference,
+    search,
+    state,
+    conference,
     page,
     limit,
   });

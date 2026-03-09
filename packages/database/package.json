@@ -13,8 +13,8 @@
 },
 "dependencies": {
 "@prisma/client": "^5.22.0",
-"@nestjs/common": "^10.0.0",
-"@nestjs/config": "^3.0.0"
+"@nestjs/common": "^11.0.0",
+"@nestjs/config": "^4.0.3"
 },
 "devDependencies": {
 "prisma": "^5.22.0",

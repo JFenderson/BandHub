@@ -8,6 +8,10 @@
     "prebuild": "npm run clean",
     "build": "tsc",
     "watch": "tsc --watch",
-    "clean": "rm -rf dist && find src -name '*.js' -delete && find src -name '*.js.map' -delete && find src -name '*.d.ts' -delete"
+    "clean": "rimraf dist && rimraf --glob \"src/**/*.js\" \"src/**/*.js.map\" \"src/**/*.d.ts\""
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.0"
   }
 }

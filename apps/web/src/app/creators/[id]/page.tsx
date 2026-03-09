@@ -9,24 +9,26 @@ import { Pagination } from '@/components/ui/Pagination';
 export const dynamic = 'force-dynamic';
 
 interface CreatorPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     page?: string;
-  };
+  }>;
 }
 
 export default async function CreatorPage({ params, searchParams }: CreatorPageProps) {
-  const page = parseInt(searchParams.page || '1');
+  const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+  const page = parseInt(resolvedSearchParams.page || '1');
   const limit = 12;
 
   let creator;
   let videosResult;
 
   try {
-    creator = await apiClient.getCreator(params.id);
-    videosResult = await apiClient.getCreatorVideos(params.id, {
+    creator = await apiClient.getCreator(id);
+    videosResult = await apiClient.getCreatorVideos(id, {
       page,
       limit,
       sortBy: 'publishedAt',
@@ -153,7 +155,7 @@ export default async function CreatorPage({ params, searchParams }: CreatorPageP
             <Pagination
               currentPage={videosResult.meta.page}
               totalPages={videosResult.meta.totalPages}
-              baseUrl={`/creators/${params.id}`}
+              baseUrl={`/creators/${id}`}
             />
           </>
         ) : (

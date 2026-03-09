@@ -6,9 +6,6 @@ const nextConfig = {
   transpilePackages: ['@hbcu-band-hub/shared-types'],
   output: 'standalone',
 
-  // Enable SWC minification for better performance
-  swcMinify: true,
-
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -161,12 +158,9 @@ const nextConfig = {
     unoptimized: false,
   },
   
-  // Font optimization
-  optimizeFonts: true,
-  
   // Enable output file tracing for smaller serverless bundles
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../../'),
     optimizePackageImports: ['date-fns', 'lodash-es'],
   },
   

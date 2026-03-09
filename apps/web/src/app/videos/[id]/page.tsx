@@ -10,14 +10,15 @@ import type { Video } from '@/types/api';
 import { VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
 
 interface VideoPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: VideoPageProps): Promise<Metadata> {
   try {
-    const video = await apiClient.getVideo(params.id);
+    const { id } = await params;
+    const video = await apiClient.getVideo(id);
     const bandName = video.band?.name;
     const title = bandName
       ? `${video.title} - ${bandName} | BandHub`
@@ -40,10 +41,11 @@ export async function generateMetadata({ params }: VideoPageProps): Promise<Meta
 }
 
 export default async function VideoPage({ params }: VideoPageProps) {
+  const { id } = await params;
   let video: Video;
 
   try {
-    video = await apiClient.getVideo(params.id);
+    video = await apiClient.getVideo(id);
   } catch (error) {
     notFound();
   }
@@ -110,7 +112,7 @@ export default async function VideoPage({ params }: VideoPageProps) {
               </div>
             </div>
           </div>
-          <RelatedVideosSidebar videoId={params.id} />
+          <RelatedVideosSidebar videoId={id} />
         </div>
       </div>
     </div>

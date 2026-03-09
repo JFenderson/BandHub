@@ -46,6 +46,8 @@
     "rotate:jwt": "./scripts/rotate-secrets.sh"
   },
   "devDependencies": {
+    "@nestjs/cli": "^11.0.16",
+    "@nestjs/schematics": "^11.0.0",
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
@@ -74,7 +76,7 @@
     "@opentelemetry/sdk-node": "^0.55.0",
     "@opentelemetry/semantic-conventions": "^1.22.0",
     "@prisma/client": "5.22.0",
-    "@sentry/nextjs": "^8.33.1",
+    "@sentry/nextjs": "^10.42.0",
     "@sentry/node": "^8.55.0",
     "body-parser": "^2.2.2",
     "bullmq": "^5.64.0",
@@ -95,7 +97,9 @@
     "react-dom": "^18.3.1",
     "styled-jsx": {
       "react": "^18.3.1"
-    }
+    },
+    "ajv": "^8.18.0",
+    "rxjs": "7.8.2"
   },
   "prisma": {
     "seed": "ts-node apps/api/prisma/seed.ts",

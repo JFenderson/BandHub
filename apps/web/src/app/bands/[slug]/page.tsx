@@ -5,14 +5,15 @@ import BandLogo from '@/components/bands/BandLogo';
 import { BandVideosSection } from '@/components/bands/BandVideosSection';
 
 interface BandPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: BandPageProps): Promise<Metadata> {
   try {
-    const band = await apiClient.getBand(params.slug);
+    const { slug } = await params;
+    const band = await apiClient.getBand(slug);
     const location = band.city && band.state ? ` from ${band.city}, ${band.state}` : '';
     const title = `${band.name} - Videos | BandHub`;
     const description = band.description || `Watch videos of ${band.name} marching band${location} on HBCU Band Hub`;
@@ -34,12 +35,13 @@ export async function generateMetadata({ params }: BandPageProps): Promise<Metad
 }
 
 export default async function BandPage({ params }: BandPageProps) {
+  const { slug } = await params;
   let band;
   let videos;
   let totalVideos;
 
   try {
-    band = await apiClient.getBand(params.slug);
+    band = await apiClient.getBand(slug);
     const videosResult = await apiClient.getVideos({
       bandId: band.id,
       page: 1,
