@@ -361,7 +361,7 @@ export class MfaService {
       let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
       return decrypted;
-    } else {
+    } else if (parts.length === 2) {
       // Legacy CBC format: ivHex:encryptedHex
       const [ivHex, encrypted] = parts;
       const iv = Buffer.from(ivHex, 'hex');
@@ -369,6 +369,8 @@ export class MfaService {
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
       return decrypted;
+    } else {
+      throw new Error('Invalid encrypted secret format');
     }
   }
 
