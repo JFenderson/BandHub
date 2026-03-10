@@ -122,18 +122,27 @@ jobs:
             git fetch origin main
             git checkout origin/main -- docker-compose.prod.yml scripts/
 
+            # Refresh secrets file from Doppler
+            mkdir -p /secrets
+            doppler secrets download --format=env --project=hbcubandhub --config=prd /secrets/.env
+            chmod 600 /secrets/.env
+
             # Log in to GHCR and pull updated images
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose -f docker-compose.prod.yml pull api web worker
 
-            # Run migrations before swapping containers
-            doppler run -- docker compose -f docker-compose.prod.yml run --rm \
+            # Ensure infrastructure is running
+            docker compose -f docker-compose.prod.yml up -d postgres redis
+            sleep 15
+
+            # Run migrations
+            docker compose -f docker-compose.prod.yml run --rm --no-deps \
               api npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma
 
-            # Rolling restart one service at a time
+            # Rolling restart app services
             for service in api web worker; do
               docker compose -f docker-compose.prod.yml up -d --no-deps $service
-              sleep 5
+              sleep 10
             done
 
             # Prune old images
