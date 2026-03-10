@@ -86,7 +86,7 @@ services:
   # NestJS API (Production)
   # ========================================
   api:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-bandhub}/bandhub-api:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-jfenderson}/bandhub-api:latest
     environment:
       NODE_ENV: production
       # Note: When using Doppler, these values are overridden by /secrets/.env
@@ -149,7 +149,7 @@ services:
   # Next.js Frontend (Production)
   # ========================================
   web:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-bandhub}/bandhub-web:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-jfenderson}/bandhub-web:latest
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.hbcubandhub.tech}
@@ -196,7 +196,7 @@ services:
   # Background Worker (Production)
   # ========================================
   worker:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-bandhub}/bandhub-worker:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-jfenderson}/bandhub-worker:latest
     container_name: hbcu-band-hub-worker-prod
     environment:
       NODE_ENV: production
