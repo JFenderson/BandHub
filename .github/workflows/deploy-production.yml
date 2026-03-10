@@ -100,6 +100,8 @@ jobs:
           host: ${{ secrets.PRODUCTION_HOST }}
           username: ${{ secrets.PRODUCTION_SSH_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          timeout: 60s
+          command_timeout: 10m
           script: |
             cd ~/bandhub
             ./scripts/backup.sh || echo "Warning: backup failed, continuing"
@@ -110,6 +112,8 @@ jobs:
           host: ${{ secrets.PRODUCTION_HOST }}
           username: ${{ secrets.PRODUCTION_SSH_USER }}
           key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          timeout: 60s
+          command_timeout: 20m
           envs: DOPPLER_TOKEN
           script: |
             cd ~/bandhub
