@@ -103,4 +103,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the worker
-CMD ["node", "apps/worker/dist/apps/worker/src/main.js"]
+CMD ["node", "apps/worker/dist/main.js"]
