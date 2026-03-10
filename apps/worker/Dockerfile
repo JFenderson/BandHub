@@ -20,6 +20,9 @@ COPY libs/observability/package.json ./libs/observability/
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 
+# Reinstall sharp for Alpine/musl (lock file may have glibc binaries)
+RUN npm install --os=linux --libc=musl --cpu=x64 sharp
+
 # ========================================
 # Stage 2: Builder
 # ========================================
