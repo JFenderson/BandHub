@@ -10,7 +10,7 @@
         "../../libs/shared/types/src/index.ts"
       ],
       "@hbcu-band-hub/observability": [
-        "../../libs/observability/src/index.ts"
+        "../../libs/observability/dist/index.d.ts"
       ]
     },
     "plugins": [

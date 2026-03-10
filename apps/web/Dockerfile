@@ -12,6 +12,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY libs/shared/types/package.json ./libs/shared/types/
+COPY libs/observability/package.json ./libs/observability/
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
@@ -32,6 +33,9 @@ COPY . .
 
 # Build shared types first
 RUN cd libs/shared/types && npm run build
+
+# Build observability package (needed by web instrumentation)
+RUN cd libs/observability && npm run build
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -59,6 +63,8 @@ ENV HOSTNAME="0.0.0.0"
 
 # Copy necessary files from builder
 COPY --from=builder /app/apps/web/public ./apps/web/public
+COPY --from=builder /app/libs/observability/dist ./libs/observability/dist
+COPY --from=builder /app/libs/observability/package.json ./libs/observability/package.json
 
 # Set correct permissions for prerender cache
 RUN mkdir -p apps/web/.next
