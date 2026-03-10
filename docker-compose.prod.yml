@@ -100,7 +100,7 @@ services:
       YOUTUBE_API_KEY_FILE: /run/secrets/youtube_api_key
     volumes:
       - api_uploads:/app/apps/api/uploads
-      - doppler_secrets:/secrets:ro
+      - /secrets:/secrets:ro
     env_file:
       - /secrets/.env
     secrets:
@@ -154,7 +154,7 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.hbcubandhub.tech}
     volumes:
-      - doppler_secrets:/secrets:ro
+      - /secrets:/secrets:ro
     env_file:
       - /secrets/.env
     depends_on:
@@ -209,7 +209,7 @@ services:
       YOUTUBE_API_KEY_FILE: /run/secrets/youtube_api_key
       MAX_YOUTUBE_CALLS_PER_MINUTE: ${MAX_YOUTUBE_CALLS_PER_MINUTE:-60}
     volumes:
-      - doppler_secrets:/secrets:ro
+      - /secrets:/secrets:ro
     env_file:
       - /secrets/.env
     secrets:
@@ -259,7 +259,7 @@ services:
           /secrets/.env
         sleep infinity
     volumes:
-      - doppler_secrets:/secrets
+      - /secrets:/secrets
     networks:
       - hbcu-internal
     restart: always
@@ -301,8 +301,6 @@ volumes:
   redis_data:
     driver: local
   api_uploads:
-    driver: local
-  doppler_secrets:
     driver: local
 
 # ========================================
