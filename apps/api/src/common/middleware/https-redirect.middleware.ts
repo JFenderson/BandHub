@@ -35,10 +35,16 @@ export class HttpsRedirectMiddleware implements NestMiddleware {
 
     // Skip redirect for health check and metrics endpoints
     // These are often accessed by load balancers via HTTP
-    const isHealthEndpoint = req.path === '/api/health' || req.path.startsWith('/api/health/');
+    const isHealthEndpoint = req.path === '/api/health' || req.path.startsWith('/api/health/')
+      || req.path === '/api/v1/health' || req.path.startsWith('/api/v1/health/');
     const isMetricsEndpoint = req.path === '/api/metrics' || req.path.startsWith('/api/metrics/');
-    
-    if (isHealthEndpoint || isMetricsEndpoint) {
+
+    // Skip redirect for internal/localhost requests (e.g. Docker health checks)
+    const host = req.get('host') || '';
+    const hostname = host.split(':')[0];
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+
+    if (isHealthEndpoint || isMetricsEndpoint || isLocalhost) {
       next();
       return;
     }
@@ -49,9 +55,6 @@ export class HttpsRedirectMiddleware implements NestMiddleware {
       return;
     }
 
-    // Redirect HTTP to HTTPS
-    const host = req.get('host');
-    
     if (!host) {
       // If no host header, log warning and pass through
       this.logger.warn('HTTPS redirect skipped: Missing host header');
@@ -66,9 +69,6 @@ export class HttpsRedirectMiddleware implements NestMiddleware {
       'api.bandhub.com',
       process.env.ALLOWED_HOST,
     ].filter(Boolean) as string[];
-
-    // Strip port from host header for comparison
-    const hostname = host.split(':')[0];
 
     const isValidHost = allowedHosts.some(
       allowedHost => hostname === allowedHost || hostname.endsWith(`.${allowedHost}`)
