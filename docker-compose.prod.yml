@@ -248,13 +248,16 @@ services:
     container_name: hbcu-band-hub-doppler
     environment:
       DOPPLER_TOKEN: ${DOPPLER_TOKEN}
-    command: >
-      secrets download 
-      --format=env 
-      --config=${DOPPLER_CONFIG:-prd}
-      --project=hbcubandhub
-      --no-file
-      --mount=/secrets/.env
+    command:
+      - sh
+      - -c
+      - |
+        doppler secrets download \
+          --format=env \
+          --config=${DOPPLER_CONFIG:-prd} \
+          --project=hbcubandhub \
+          /secrets/.env
+        sleep infinity
     volumes:
       - doppler_secrets:/secrets
     networks:
