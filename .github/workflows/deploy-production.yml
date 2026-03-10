@@ -124,7 +124,7 @@ jobs:
 
             # Refresh secrets file from Doppler
             mkdir -p /secrets
-            doppler secrets download --format=env --project=hbcubandhub --config=prd /secrets/.env
+            doppler secrets download --no-file --format env --project=hbcubandhub --config=prd > /secrets/.env
             chmod 600 /secrets/.env
 
             # Log in to GHCR and pull updated images
