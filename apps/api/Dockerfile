@@ -39,13 +39,15 @@ COPY . .
 # Build shared types first
 RUN cd libs/shared/types && npm run build
 
-# Build other internal packages
+# Build database package first
 RUN cd packages/database && npm run build
+
+# Generate Prisma client (needed by packages/cache)
+RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
+
+# Build remaining internal packages
 RUN cd packages/cache && npm run build
 RUN cd libs/observability && npm run build
-
-# Generate Prisma client
-RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 
 # Build the NestJS application
 RUN cd apps/api && npm run build
