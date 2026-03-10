@@ -64,9 +64,9 @@ export class HttpsRedirectMiddleware implements NestMiddleware {
 
     // Validate host against allowed domains to prevent open redirect attacks
     const allowedHosts = [
-      'bandhub.com',
-      'www.bandhub.com',
-      'api.bandhub.com',
+      'hbcubandhub.tech',
+      'www.hbcubandhub.tech',
+      'api.hbcubandhub.tech',
       process.env.ALLOWED_HOST,
     ].filter(Boolean) as string[];
 

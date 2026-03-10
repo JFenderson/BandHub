@@ -29,6 +29,10 @@ const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
   });
 
+  // Trust 1 proxy hop (Traefik) so req.secure and req.ip are set correctly
+  // from X-Forwarded-Proto and X-Forwarded-For headers
+  app.set('trust proxy', 1);
+
   // Get metrics service for compression stats
   const metricsService = app.get(MetricsService);
 
@@ -42,7 +46,7 @@ const app = await NestFactory.create<NestExpressApplication>(AppModule, {
       threshold: 1024, // 1kb minimum size to compress
       filter: (req, res) => {
         // Skip compression for health and metrics endpoints
-        if (req.url?.startsWith('/api/health') || req.url?.startsWith('/api/metrics')) {
+        if (req.url?.startsWith('/api/health') || req.url?.startsWith('/api/v1/health') || req.url?.startsWith('/api/metrics') || req.url?.startsWith('/api/v1/metrics')) {
           return false;
         }
         // Use default filter for other requests (compresses JSON, text, etc.)
