@@ -73,8 +73,8 @@ ENV PORT=3001
 # Copy necessary files from builder
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/libs/shared/types/dist ./libs/shared/types/dist
 COPY --from=builder /app/libs/shared/types/package.json ./libs/shared/types/package.json

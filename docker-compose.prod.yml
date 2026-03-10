@@ -252,7 +252,7 @@ services:
       secrets download 
       --format=env 
       --config=${DOPPLER_CONFIG:-prd}
-      --project=bandhub
+      --project=hbcubandhub
       --no-file
       --mount=/secrets/.env
     volumes:
