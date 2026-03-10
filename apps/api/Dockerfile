@@ -12,6 +12,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY libs/shared/types/package.json ./libs/shared/types/
+COPY packages/database/package.json ./packages/database/
+COPY packages/cache/package.json ./packages/cache/
+COPY libs/observability/package.json ./libs/observability/
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
@@ -35,6 +38,11 @@ COPY . .
 
 # Build shared types first
 RUN cd libs/shared/types && npm run build
+
+# Build other internal packages
+RUN cd packages/database && npm run build
+RUN cd packages/cache && npm run build
+RUN cd libs/observability && npm run build
 
 # Generate Prisma client
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
@@ -68,6 +76,12 @@ COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/libs/shared/types/dist ./libs/shared/types/dist
 COPY --from=builder /app/libs/shared/types/package.json ./libs/shared/types/package.json
+COPY --from=builder /app/packages/database/dist ./packages/database/dist
+COPY --from=builder /app/packages/database/package.json ./packages/database/package.json
+COPY --from=builder /app/packages/cache/dist ./packages/cache/dist
+COPY --from=builder /app/packages/cache/package.json ./packages/cache/package.json
+COPY --from=builder /app/libs/observability/dist ./libs/observability/dist
+COPY --from=builder /app/libs/observability/package.json ./libs/observability/package.json
 
 # Copy Prisma generated client
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
