@@ -1,7 +1,8 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { randomUUID } from 'crypto';
 import type { IncomingMessage, ServerResponse } from 'http';
-import type { NextFunction } from 'express';
+
+type NextFunction = (err?: any) => void;
 
 export type RequestContext = {
   correlationId: string;
