@@ -102,7 +102,6 @@ services:
     env_file:
       - /secrets/.env
     secrets:
-      - jwt_secret
       - youtube_api_key
       - postgres_user
       - postgres_password
@@ -112,7 +111,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3

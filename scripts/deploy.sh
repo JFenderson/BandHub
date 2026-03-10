@@ -116,6 +116,33 @@ load_environment() {
     fi
 }
 
+# Write Doppler secrets to /secrets/.env for container env_file consumption
+refresh_secrets() {
+    log_info "Refreshing /secrets/.env from Doppler..."
+
+    local DOPPLER_CONFIG=""
+    case "${ENVIRONMENT}" in
+        development) DOPPLER_CONFIG="dev" ;;
+        staging)     DOPPLER_CONFIG="stg" ;;
+        production)  DOPPLER_CONFIG="prd" ;;
+        *)           DOPPLER_CONFIG="dev" ;;
+    esac
+
+    if ! command -v doppler &> /dev/null; then
+        log_warning "Doppler CLI not found, skipping /secrets/.env refresh"
+        return 0
+    fi
+
+    mkdir -p /secrets
+    if doppler secrets download --no-file --format env --config="${DOPPLER_CONFIG}" > /secrets/.env; then
+        chmod 600 /secrets/.env
+        log_success "/secrets/.env written from Doppler (config: ${DOPPLER_CONFIG})"
+    else
+        log_error "Failed to write /secrets/.env from Doppler"
+        exit 1
+    fi
+}
+
 # Pull latest code (optional - disabled by default for CI/CD pipelines)
 pull_latest_code() {
     if [ "${PULL_LATEST_CODE:-false}" = "true" ]; then
@@ -281,10 +308,11 @@ main() {
     
     check_requirements
     load_environment
-    
+    refresh_secrets
+
     # Optionally pull latest code (comment out if using CI/CD)
     # pull_latest_code
-    
+
     create_backup
     build_images
     
