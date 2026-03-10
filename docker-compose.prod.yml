@@ -92,15 +92,10 @@ services:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-jfenderson}/bandhub-api:latest
     environment:
       NODE_ENV: production
-      # Note: When using Doppler, these values are overridden by /secrets/.env
-      # For non-Doppler deployments, these use env vars from .env file or Docker secrets
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hbcu_band_hub}?schema=public
+      # DATABASE_URL comes from /secrets/.env (Doppler) via env_file below
+      # Override redis host to always use the internal service name
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      API_PORT: 3001
-      JWT_SECRET_FILE: /run/secrets/jwt_secret
-      YOUTUBE_API_KEY_FILE: /run/secrets/youtube_api_key
     volumes:
       - api_uploads:/app/apps/api/uploads
       - /secrets:/secrets:ro
@@ -199,14 +194,10 @@ services:
     container_name: hbcu-band-hub-worker-prod
     environment:
       NODE_ENV: production
-      # Note: When using Doppler, these values are overridden by /secrets/.env
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hbcu_band_hub}?schema=public
+      # DATABASE_URL comes from /secrets/.env (Doppler) via env_file below
+      # Override redis host to always use the internal service name
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-5}
-      YOUTUBE_API_KEY_FILE: /run/secrets/youtube_api_key
-      MAX_YOUTUBE_CALLS_PER_MINUTE: ${MAX_YOUTUBE_CALLS_PER_MINUTE:-60}
     volumes:
       - /secrets:/secrets:ro
     env_file:
