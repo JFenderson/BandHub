@@ -96,6 +96,9 @@ jobs:
         run: |
           ./scripts/backup.sh || echo "Warning: backup failed, continuing"
 
+      - name: Set lowercase image prefix
+        run: echo "IMAGE_PREFIX=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/bandhub" >> $GITHUB_ENV
+
       - name: Deploy to production
         working-directory: /home/bandhub/bandhub
         env:
