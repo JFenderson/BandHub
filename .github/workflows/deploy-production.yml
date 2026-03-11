@@ -96,9 +96,6 @@ jobs:
         run: |
           ./scripts/backup.sh || echo "Warning: backup failed, continuing"
 
-      - name: Set lowercase image prefix
-        run: echo "IMAGE_PREFIX=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/bandhub" >> $GITHUB_ENV
-
       - name: Deploy to production
         working-directory: /home/bandhub/bandhub
         env:
@@ -106,6 +103,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
         run: |
+          # Ensure image owner is lowercase (GHCR requirement)
+          export GITHUB_REPOSITORY_OWNER=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+
           # Pull latest compose file and scripts from main
           git fetch origin main
           git checkout origin/main -- docker-compose.prod.yml scripts/
