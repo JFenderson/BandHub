@@ -86,69 +86,52 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build-and-push
     environment: production
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Create pre-deploy backup
+        working-directory: /home/bandhub/bandhub
+        run: |
+          ./scripts/backup.sh || echo "Warning: backup failed, continuing"
 
-      - name: Create pre-deploy backup via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.PRODUCTION_HOST }}
-          username: ${{ secrets.PRODUCTION_SSH_USER }}
-          key: ${{ secrets.PRODUCTION_SSH_KEY }}
-          timeout: 60s
-          command_timeout: 10m
-          script: |
-            cd ~/bandhub
-            ./scripts/backup.sh || echo "Warning: backup failed, continuing"
-
-      - name: Deploy to production server via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.PRODUCTION_HOST }}
-          username: ${{ secrets.PRODUCTION_SSH_USER }}
-          key: ${{ secrets.PRODUCTION_SSH_KEY }}
-          timeout: 60s
-          command_timeout: 20m
-          envs: DOPPLER_TOKEN
-          script: |
-            cd ~/bandhub
-
-            # Pull latest compose file and scripts from main
-            git fetch origin main
-            git checkout origin/main -- docker-compose.prod.yml scripts/
-
-            # Refresh secrets file from Doppler
-            mkdir -p /secrets
-            doppler secrets download --no-file --format env --project=hbcubandhub --config=prd > /secrets/.env
-            chmod 600 /secrets/.env
-
-            # Log in to GHCR and pull updated images
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose -f docker-compose.prod.yml pull api web worker
-
-            # Ensure infrastructure is running
-            docker compose -f docker-compose.prod.yml up -d postgres redis
-            sleep 15
-
-            # Run migrations
-            docker compose -f docker-compose.prod.yml run --rm --no-deps \
-              api npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma
-
-            # Rolling restart app services
-            for service in api web worker; do
-              docker compose -f docker-compose.prod.yml up -d --no-deps $service
-              sleep 10
-            done
-
-            # Prune old images
-            docker image prune -f --filter "until=24h"
+      - name: Deploy to production
+        working-directory: /home/bandhub/bandhub
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          # Pull latest compose file and scripts from main
+          git fetch origin main
+          git checkout origin/main -- docker-compose.prod.yml scripts/
+
+          # Refresh secrets file from Doppler
+          mkdir -p /secrets
+          doppler secrets download --no-file --format env --project=hbcubandhub --config=prd > /secrets/.env
+          chmod 600 /secrets/.env
+
+          # Log in to GHCR and pull updated images
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker compose -f docker-compose.prod.yml pull api web worker
+
+          # Ensure infrastructure is running
+          docker compose -f docker-compose.prod.yml up -d postgres redis
+          sleep 15
+
+          # Run migrations
+          docker compose -f docker-compose.prod.yml run --rm --no-deps \
+            api npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma
+
+          # Rolling restart app services
+          for service in api web worker; do
+            docker compose -f docker-compose.prod.yml up -d --no-deps $service
+            sleep 10
+          done
+
+          # Prune old images
+          docker image prune -f --filter "until=24h"
 
       - name: Health check
         run: |
