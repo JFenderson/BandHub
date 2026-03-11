@@ -106,6 +106,7 @@ const app = await NestFactory.create<NestExpressApplication>(AppModule, {
           'Authorization',
           'x-session-token',
           'cache-control',
+          'pragma',
           'x-requested-with',
           'accept',
           'origin',
