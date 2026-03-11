@@ -42,7 +42,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 # Build-time public env vars (baked into the JS bundle by Next.js)
-ARG NEXT_PUBLIC_API_URL=https://api.hbcubandhub.tech
+ARG NEXT_PUBLIC_API_URL=https://api.hbcubandhub.tech/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Build the Next.js application

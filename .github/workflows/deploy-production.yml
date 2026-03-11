@@ -71,7 +71,7 @@ jobs:
             ${{ env.IMAGE_PREFIX }}-web:latest
             ${{ env.IMAGE_PREFIX }}-web:${{ github.sha }}
           build-args: |
-            NEXT_PUBLIC_API_URL=https://api.hbcubandhub.tech
+            NEXT_PUBLIC_API_URL=https://api.hbcubandhub.tech/api/v1
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
