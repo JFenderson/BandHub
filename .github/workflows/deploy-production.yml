@@ -115,6 +115,15 @@ jobs:
           doppler secrets download --no-file --format env --project=hbcubandhub --config=prd > /secrets/.env
           chmod 600 /secrets/.env
 
+          # Write Docker file-based secrets from Doppler
+          mkdir -p ./secrets
+          chmod 700 ./secrets
+          doppler secrets get POSTGRES_USER     --plain --project=hbcubandhub --config=prd > ./secrets/postgres_user.txt
+          doppler secrets get POSTGRES_PASSWORD --plain --project=hbcubandhub --config=prd > ./secrets/postgres_password.txt
+          doppler secrets get JWT_SECRET        --plain --project=hbcubandhub --config=prd > ./secrets/jwt_secret.txt
+          doppler secrets get YOUTUBE_API_KEY   --plain --project=hbcubandhub --config=prd > ./secrets/youtube_api_key.txt
+          chmod 600 ./secrets/*.txt
+
           # Log in to GHCR and pull updated images
           echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           docker compose -f docker-compose.prod.yml pull api web worker
@@ -133,8 +142,8 @@ jobs:
             sleep 10
           done
 
-          # Prune old images
-          docker image prune -f --filter "until=24h"
+          # Prune old images (including unused tagged sha images)
+          docker image prune -a -f --filter "until=24h"
 
       - name: Health check
         run: |
