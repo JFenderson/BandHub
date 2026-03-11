@@ -41,6 +41,10 @@ RUN cd libs/observability && npm run build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+# Build-time public env vars (baked into the JS bundle by Next.js)
+ARG NEXT_PUBLIC_API_URL=https://api.hbcubandhub.tech
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Build the Next.js application
 RUN cd apps/web && npm run build
 
