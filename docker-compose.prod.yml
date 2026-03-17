@@ -148,6 +148,8 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.hbcubandhub.tech}
+      # Internal URL for server-side rendering — bypasses the internal:true network restriction
+      API_URL: http://api:3001/api/v1
     volumes:
       - /secrets:/secrets:ro
     env_file:
