@@ -79,7 +79,7 @@ export default async function VideoPage({ params }: VideoPageProps) {
                 )}
               </div>
               {video.band && (
-                <Link href={`/bands/${video.band.id}`} className="inline-flex items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group mb-6">
+                <Link href={`/bands/${video.band.slug}`} className="inline-flex items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group mb-6">
                   {video.band.logoUrl && (
                     <BandLogo 
                       src={video.band.logoUrl} 
