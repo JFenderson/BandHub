@@ -582,8 +582,8 @@ export class ApiClient {
   }
 
   async bulkUpdateVideos(data: BulkVideoUpdateRequest): Promise<BulkVideoUpdateResponse> {
-    return this.request<BulkVideoUpdateResponse>(`/admin/videos/bulk`, {
-      method: 'PATCH',
+    return this.request<BulkVideoUpdateResponse>(`/admin/videos/bulk-update`, {
+      method: 'POST',
       body: JSON.stringify(data),
     });
   }
