@@ -146,6 +146,32 @@ export function UserProvider({ children }: UserProviderProps) {
   }, []);
 
   /**
+   * Request a magic sign-in link via email
+   */
+  const requestMagicLink = useCallback(async (email: string) => {
+    return userApiClient.requestMagicLink(email);
+  }, []);
+
+  /**
+   * Sign in using a magic link token (called from the redemption page)
+   */
+  const loginWithMagicLink = useCallback(async (token: string) => {
+    try {
+      setIsLoading(true);
+      const response = await userApiClient.redeemMagicLink(token);
+      const days = 7;
+      setCookie('user_access_token', response.accessToken, days);
+      setCookie('user_session_token', response.sessionToken, days);
+      userApiClient.setAccessToken(response.accessToken);
+      userApiClient.setSessionToken(response.sessionToken);
+      const profile = await userApiClient.getProfile();
+      setUser(profile);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /**
    * Refresh user data
    */
   const refreshUser = useCallback(async () => {
@@ -167,6 +193,8 @@ export function UserProvider({ children }: UserProviderProps) {
     logout,
     updateProfile,
     refreshUser,
+    requestMagicLink,
+    loginWithMagicLink,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

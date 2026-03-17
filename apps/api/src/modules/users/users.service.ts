@@ -959,6 +959,109 @@ export class UsersService {
     return { deviceType, browser };
   }
 
+  // ─── Magic Link ──────────────────────────────────────────────────────────
+
+  private readonly MAGIC_LINK_EXPIRY_MINUTES = 15;
+  private readonly MAGIC_LINK_RATE_LIMIT_MINUTES = 1;
+
+  /**
+   * Create a magic link for a regular user and send the sign-in email
+   */
+  async createUserMagicLink(
+    email: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    // Silently return when user not found — prevents email enumeration
+    if (!user) return;
+
+    // Rate limit: no more than one request per minute
+    const recent = await this.prisma.userMagicLink.findFirst({
+      where: {
+        userId: user.id,
+        createdAt: { gte: new Date(Date.now() - this.MAGIC_LINK_RATE_LIMIT_MINUTES * 60_000) },
+      },
+    });
+
+    if (recent) {
+      throw new BadRequestException(
+        `Please wait ${this.MAGIC_LINK_RATE_LIMIT_MINUTES} minute(s) before requesting another link`,
+      );
+    }
+
+    // Clean up expired links for this user
+    await this.prisma.userMagicLink.deleteMany({
+      where: { userId: user.id, expiresAt: { lt: new Date() } },
+    });
+
+    // Generate token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = this.hashToken(rawToken);
+    const expiresAt = new Date(Date.now() + this.MAGIC_LINK_EXPIRY_MINUTES * 60_000);
+
+    await this.prisma.userMagicLink.create({
+      data: { token: hashedToken, userId: user.id, email: user.email, expiresAt, ipAddress, userAgent },
+    });
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const magicLinkUrl = `${frontendUrl}/auth/magic-link?token=${rawToken}`;
+
+    await this.emailService.sendUserMagicLinkEmail(user.email, user.name, magicLinkUrl);
+  }
+
+  /**
+   * Redeem a magic link token and return auth tokens (same shape as login)
+   */
+  async redeemUserMagicLink(
+    token: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<UserLoginResponseDto> {
+    const hashedToken = this.hashToken(token);
+
+    const link = await this.prisma.userMagicLink.findUnique({
+      where: { token: hashedToken },
+      include: { user: true },
+    });
+
+    if (!link || link.isUsed || link.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired magic link');
+    }
+
+    // Consume the link
+    await this.prisma.userMagicLink.update({
+      where: { id: link.id },
+      data: { isUsed: true, usedAt: new Date() },
+    });
+
+    await this.prisma.user.update({
+      where: { id: link.userId },
+      data: { lastSeenAt: new Date() },
+    });
+
+    const accessToken = this.generateAccessToken(link.user);
+    const sessionToken = await this.createSession(link.userId, false, ipAddress, userAgent);
+
+    return {
+      accessToken,
+      sessionToken,
+      expiresIn: this.SESSION_EXPIRY_DAYS * 24 * 60 * 60,
+      user: {
+        id: link.user.id,
+        email: link.user.email,
+        name: link.user.name,
+        avatar: link.user.avatar,
+        emailVerified: link.user.emailVerified,
+      },
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
    * Clean up expired sessions (call periodically)
    */

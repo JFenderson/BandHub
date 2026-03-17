@@ -12,6 +12,7 @@ import {
   HttpStatus,
   Headers,
   Query,
+  Ip,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
@@ -64,6 +65,46 @@ export class UsersController {
   ): Promise<UserLoginResponseDto> {
     const ipAddress = req.ip || req.socket.remoteAddress;
     return this.usersService.login(loginDto, ipAddress, userAgent);
+  }
+
+  /**
+   * Request a magic link for passwordless login
+   */
+  @Post('magic-link/create')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 per minute
+  @ApiOperation({ summary: 'Request a magic sign-in link via email' })
+  @ApiResponse({ status: 200, description: 'Magic link sent if account exists' })
+  async createMagicLink(
+    @Body() dto: { email: string },
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    try {
+      await this.usersService.createUserMagicLink(dto.email?.toLowerCase(), ip, userAgent);
+    } catch {
+      // Swallow errors — don't reveal whether the email exists
+    }
+    return {
+      message: 'If an account exists with this email, a sign-in link has been sent.',
+      expiresInMinutes: 15,
+    };
+  }
+
+  /**
+   * Redeem a magic link token and receive auth tokens
+   */
+  @Post('magic-link/redeem')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Redeem a magic link token' })
+  @ApiResponse({ status: 200, description: 'Authentication successful', type: UserLoginResponseDto })
+  @ApiResponse({ status: 401, description: 'Invalid or expired magic link' })
+  async redeemMagicLink(
+    @Body() dto: { token: string },
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent?: string,
+  ): Promise<UserLoginResponseDto> {
+    return this.usersService.redeemUserMagicLink(dto.token, ip, userAgent);
   }
 
   /**

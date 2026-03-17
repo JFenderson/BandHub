@@ -97,6 +97,31 @@ class UserApiClient {
   }
 
   /**
+   * Request a magic sign-in link via email
+   */
+  async requestMagicLink(email: string): Promise<{ message: string; expiresInMinutes: number }> {
+    return this.request<{ message: string; expiresInMinutes: number }>(
+      '/users/magic-link/create',
+      { method: 'POST', body: JSON.stringify({ email }) },
+      true,
+    );
+  }
+
+  /**
+   * Redeem a magic link token and receive auth tokens
+   */
+  async redeemMagicLink(token: string): Promise<UserLoginResponse> {
+    const response = await this.request<UserLoginResponse>(
+      '/users/magic-link/redeem',
+      { method: 'POST', body: JSON.stringify({ token }) },
+      true,
+    );
+    this.setAccessToken(response.accessToken);
+    this.setSessionToken(response.sessionToken);
+    return response;
+  }
+
+  /**
    * Logout current session
    */
   async logout(): Promise<void> {

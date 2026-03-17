@@ -113,6 +113,36 @@ export class EmailService {
   }
 
   /**
+   * Send magic link for passwordless login
+   */
+  async sendUserMagicLinkEmail(to: string, name: string, magicLinkUrl: string): Promise<void> {
+    const expiresInMinutes = 15;
+    await this.sendEmail({
+      to,
+      subject: 'Your sign-in link for HBCU Band Hub',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-radius: 12px; line-height: 48px; color: white; font-weight: bold; font-size: 18px;">HB</div>
+          </div>
+          <h2 style="color: #111827; margin-bottom: 8px;">Sign in to HBCU Band Hub</h2>
+          <p style="color: #6b7280;">Hi ${name},</p>
+          <p style="color: #374151;">Click the button below to sign in. This link expires in ${expiresInMinutes} minutes and can only be used once.</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${magicLinkUrl}" style="display:inline-block;padding:12px 32px;background:#7c3aed;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">
+              Sign in to HBCU Band Hub
+            </a>
+          </div>
+          <p style="font-size: 13px; color: #9ca3af;">If you didn't request this sign-in link, you can safely ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+          <p style="font-size: 12px; color: #9ca3af; text-align: center;">HBCU Band Hub — Celebrating the Excellence of HBCU Marching Bands</p>
+        </div>
+      `,
+      text: `Sign in to HBCU Band Hub\n\nHi ${name},\n\nClick this link to sign in (expires in ${expiresInMinutes} minutes):\n${magicLinkUrl}\n\nIf you didn't request this, you can safely ignore this email.`,
+    });
+  }
+
+  /**
    * Send password reset link
    */
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {

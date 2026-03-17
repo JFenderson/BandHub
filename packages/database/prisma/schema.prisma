@@ -462,6 +462,26 @@ model MagicLink {
   @@map("magic_links")
 }
 
+model UserMagicLink {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String    @map("user_id")
+  email     String
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  isUsed    Boolean   @default(false) @map("is_used")
+  ipAddress String?   @map("ip_address")
+  userAgent String?   @map("user_agent")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([expiresAt])
+  @@index([token])
+  @@index([userId])
+  @@map("user_magic_links")
+}
+
 model NotificationPreference {
   id                  String   @id @default(cuid())
   userId              String   @unique @map("user_id")
@@ -786,6 +806,7 @@ model User {
   points                   UserPoints?
   playlistCollaborators    PlaylistCollaborator[]
   playlistFollowers        PlaylistFollower[]
+  userMagicLinks           UserMagicLink[]
 
   @@index([email])
   @@index([username])

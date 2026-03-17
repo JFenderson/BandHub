@@ -78,4 +78,6 @@ export interface UserContextType {
   logout: () => Promise<void>;
   updateProfile: (data: UpdateUserProfile) => Promise<void>;
   refreshUser: () => Promise<void>;
+  requestMagicLink: (email: string) => Promise<{ message: string; expiresInMinutes: number }>;
+  loginWithMagicLink: (token: string) => Promise<void>;
 }
