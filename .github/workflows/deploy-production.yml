@@ -108,6 +108,9 @@ jobs:
           # Ensure image owner is lowercase (GHCR requirement)
           export GITHUB_REPOSITORY_OWNER=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
 
+          # Fix git object permissions if needed (runner user must own .git/objects)
+          sudo chown -R "$(whoami)" .git || true
+
           # Pull latest compose file and scripts from main
           git fetch origin main
           git checkout origin/main -- docker-compose.prod.yml scripts/
