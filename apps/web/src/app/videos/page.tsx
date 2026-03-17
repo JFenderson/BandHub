@@ -30,20 +30,34 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
   const limit = 16;
 
   // Fetch initial page of videos for SSR
-  const { data: videos, meta } = await apiClient.getVideos({
-    search,
-    bandId,
-    conference,
-    category,
-    year: eventYear ? parseInt(eventYear) : undefined,
-    sortBy: sortBy || 'publishedAt',
-    sortOrder: sortOrder || 'desc',
-    page: 1,
-    limit,
-  });
+  let videos: Awaited<ReturnType<typeof apiClient.getVideos>>['data'] = [];
+  let meta = { total: 0, page: 1, totalPages: 1 };
+  try {
+    const result = await apiClient.getVideos({
+      search,
+      bandId,
+      conference,
+      category,
+      year: eventYear ? parseInt(eventYear) : undefined,
+      sortBy: sortBy || 'publishedAt',
+      sortOrder: sortOrder || 'desc',
+      page: 1,
+      limit,
+    });
+    videos = result.data;
+    meta = result.meta;
+  } catch (error) {
+    console.error('Failed to fetch videos:', error);
+  }
 
   // Fetch bands for filter dropdown
-  const { data: bands } = await apiClient.getBands({ limit: 100 });
+  let bands: Awaited<ReturnType<typeof apiClient.getBands>>['data'] = [];
+  try {
+    const result = await apiClient.getBands({ limit: 100 });
+    bands = result.data;
+  } catch (error) {
+    console.error('Failed to fetch bands for filter:', error);
+  }
 
   // Build filters object for the infinite scroll component
   const filters = {

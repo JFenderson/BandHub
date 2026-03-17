@@ -4,6 +4,9 @@ import { BandCard } from '@/components/bands/BandCard';
 import { BandFilters } from '@/components/bands/BandFilters';
 import { Pagination } from '@/components/ui/Pagination';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface BandsPageProps {
   searchParams: Promise<{
     search?: string;
@@ -18,13 +21,15 @@ export default async function BandsPage({ searchParams }: BandsPageProps) {
   const page = parseInt(pageParam || '1');
   const limit = 12;
 
-  const { data: bands, meta } = await apiClient.getBands({
-    search,
-    state,
-    conference,
-    page,
-    limit,
-  });
+  let bands: Awaited<ReturnType<typeof apiClient.getBands>>['data'] = [];
+  let meta = { total: 0, page: 1, totalPages: 1 };
+  try {
+    const result = await apiClient.getBands({ search, state, conference, page, limit });
+    bands = result.data;
+    meta = result.meta;
+  } catch (error) {
+    console.error('Failed to fetch bands:', error);
+  }
 
   return (
     <div className="container-custom py-8">
