@@ -12,7 +12,7 @@ import { CacheModule } from '@bandhub/cache';
 
 @Module({
   imports: [PrismaModule, CacheModule],
-  controllers: [VideosController, TrendingController],
+  controllers: [TrendingController, VideosController],
   providers: [
     VideosService,
     VideosRepository,
