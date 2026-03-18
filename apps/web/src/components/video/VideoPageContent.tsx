@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { apiClient } from '@/lib/api-client';
 import { BandLogo } from '@/components/images';
@@ -95,6 +96,26 @@ export function VideoPageContent({ id, initialVideo }: VideoPageContentProps) {
                   )}
                   <div>
                     <div className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">{video.band.name}</div>
+                  </div>
+                  <svg className="w-5 h-5 ml-auto text-gray-400 group-hover:text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              )}
+              {video.creator && (
+                <Link href={`/creators/${video.creator.id}`} className="inline-flex items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group mb-6">
+                  {(video.creator.logoUrl || video.creator.thumbnailUrl) && (
+                    <Image
+                      src={video.creator.logoUrl || video.creator.thumbnailUrl || ''}
+                      alt={video.creator.name}
+                      width={48}
+                      height={48}
+                      className="rounded-full object-cover w-12 h-12 flex-shrink-0"
+                    />
+                  )}
+                  <div>
+                    <div className="text-xs text-gray-500 mb-0.5">Filmed by</div>
+                    <div className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">{video.creator.name}</div>
                   </div>
                   <svg className="w-5 h-5 ml-auto text-gray-400 group-hover:text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

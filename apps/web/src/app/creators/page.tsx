@@ -24,7 +24,6 @@ export default async function CreatorsPage({ searchParams }: CreatorsPageProps) 
   try {
     const result = await apiClient.getCreators({
       search,
-      isVerified: true,
       page,
       limit,
     });

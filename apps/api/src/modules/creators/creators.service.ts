@@ -17,7 +17,7 @@ export class CreatorsService {
     const {
       search,
       isFeatured,
-      isVerified = true,
+      isVerified,
       sortBy = 'qualityScore',
       sortOrder = 'desc',
       page = 1,

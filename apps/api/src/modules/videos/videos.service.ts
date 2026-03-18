@@ -159,9 +159,16 @@ export class VideosService {
       throw new NotFoundException(`Video with ID ${id} not found`);
     }
 
-    await this.cacheService.set(cacheKey, video, this.CACHE_TTL.VIDEO_DETAIL);
+    // Remap Prisma relation name 'contentCreator' to 'creator' for frontend compatibility
+    const mapped: any = { ...video };
+    if (mapped.contentCreator !== undefined) {
+      mapped.creator = mapped.contentCreator;
+      delete mapped.contentCreator;
+    }
 
-    return video;
+    await this.cacheService.set(cacheKey, mapped, this.CACHE_TTL.VIDEO_DETAIL);
+
+    return mapped;
   }
 
   async create(data: CreateVideoDto) {

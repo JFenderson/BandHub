@@ -293,7 +293,12 @@ export class BandsService {
           (a.featuredOrder || 999) - (b.featuredOrder || 999)
         );
 
-        return { bands: sortedBands };
+        const bandsWithCount = sortedBands.map((band: any) => ({
+          ...band,
+          videoCount: band._count?.videos ?? 0,
+        }));
+
+        return { bands: bandsWithCount };
       },
       CACHE_TTL.BAND_LIST,
     );
