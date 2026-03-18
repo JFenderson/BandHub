@@ -80,4 +80,5 @@ export interface UserContextType {
   refreshUser: () => Promise<void>;
   requestMagicLink: (email: string) => Promise<{ message: string; expiresInMinutes: number }>;
   loginWithMagicLink: (token: string) => Promise<void>;
+  loginWithOAuthToken: (accessToken: string, sessionToken: string) => Promise<void>;
 }

@@ -965,19 +965,30 @@ export class UsersService {
   private readonly MAGIC_LINK_RATE_LIMIT_MINUTES = 1;
 
   /**
-   * Create a magic link for a regular user and send the sign-in email
+   * Create a magic link for a regular user and send the sign-in email.
+   * If no account exists for the email, one is auto-created (passwordless registration).
    */
   async createUserMagicLink(
     email: string,
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
 
-    // Silently return when user not found — prevents email enumeration
-    if (!user) return;
+    // Auto-create account for new emails — magic link doubles as registration
+    if (!user) {
+      const nameFromEmail = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      user = await this.prisma.user.create({
+        data: {
+          email: email.toLowerCase(),
+          name: nameFromEmail,
+          passwordHash: crypto.randomBytes(32).toString('hex'), // placeholder — user logs in via magic link
+          emailVerified: true, // verified by virtue of receiving the magic link
+        },
+      });
+    }
 
     // Rate limit: no more than one request per minute
     const recent = await this.prisma.userMagicLink.findFirst({

@@ -172,6 +172,23 @@ export function UserProvider({ children }: UserProviderProps) {
   }, []);
 
   /**
+   * Sign in using tokens received from an OAuth callback redirect
+   */
+  const loginWithOAuthToken = useCallback(async (accessToken: string, sessionToken: string) => {
+    try {
+      setIsLoading(true);
+      setCookie('user_access_token', accessToken, 7);
+      setCookie('user_session_token', sessionToken, 7);
+      userApiClient.setAccessToken(accessToken);
+      userApiClient.setSessionToken(sessionToken);
+      const profile = await userApiClient.getProfile();
+      setUser(profile);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /**
    * Refresh user data
    */
   const refreshUser = useCallback(async () => {
@@ -195,6 +212,7 @@ export function UserProvider({ children }: UserProviderProps) {
     refreshUser,
     requestMagicLink,
     loginWithMagicLink,
+    loginWithOAuthToken,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

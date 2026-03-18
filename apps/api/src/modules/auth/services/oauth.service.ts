@@ -251,6 +251,41 @@ export class OAuthService {
   }
 
   /**
+   * Find or create a regular User (not AdminUser) from an OAuth profile.
+   * Used for the public-facing Google sign-in flow.
+   */
+  async findOrCreateRegularUser(profile: OAuthProfile): Promise<{
+    user: any;
+    isNewUser: boolean;
+  }> {
+    if (!profile.email) {
+      throw new BadRequestException('Email is required to sign in with Google');
+    }
+
+    const email = profile.email.toLowerCase();
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return { user: existing, isNewUser: false };
+    }
+
+    const crypto = require('crypto');
+    const name = profile.displayName ||
+      email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        email,
+        name,
+        passwordHash: crypto.randomBytes(32).toString('hex'),
+        emailVerified: true,
+        avatar: profile.avatarUrl || null,
+      },
+    });
+
+    return { user: newUser, isNewUser: true };
+  }
+
+  /**
    * Create or update user from OAuth profile (for SSO login)
    */
   async findOrCreateFromOAuth(profile: OAuthProfile): Promise<{

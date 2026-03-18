@@ -86,8 +86,8 @@ export class OAuthController {
 
       const profile = await profileResponse.json();
 
-      // Find or create user
-      const { user, isNewUser } = await this.oauthService.findOrCreateFromOAuth({
+      // Find or create a regular user (not AdminUser)
+      const { user, isNewUser } = await this.oauthService.findOrCreateRegularUser({
         provider: 'google',
         providerUserId: profile.id,
         email: profile.email,
@@ -98,11 +98,13 @@ export class OAuthController {
         tokenExpiresAt: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : undefined,
       });
 
-      // Generate JWT token using login flow
+      // Generate JWT tokens using the regular user login flow
       const loginResult = await this.authService.loginWithUser(user, 'user');
 
       const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
-      return res.redirect(`${frontendUrl}/auth/callback?token=${loginResult.accessToken}&newUser=${isNewUser}`);
+      return res.redirect(
+        `${frontendUrl}/auth/callback?token=${loginResult.accessToken}&sessionToken=${loginResult.refreshToken}&newUser=${isNewUser}`
+      );
     } catch (error) {
       const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
       return res.redirect(`${frontendUrl}/auth/error?message=${encodeURIComponent(error.message)}`);
