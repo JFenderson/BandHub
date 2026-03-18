@@ -5,12 +5,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { TrendingVideoCard } from '@/components/videos/TrendingVideoCard';
-import type { Video } from '@/types/api';
-
-interface TrendingVideo {
-  id: string;
-  [key: string]: any;
-}
+import type { Video, TrendingVideo } from '@/types/api';
 
 interface RecentVideosProps {
   initialRecentlyAdded: Video[];
