@@ -44,6 +44,7 @@ export class BandsService {
       bandType: query.bandType,
       search: query.search,
       state: query.state,
+      conference: query.conference,
       page: query.page,
       limit: query.limit,
     });

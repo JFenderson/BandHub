@@ -33,15 +33,17 @@ export class CacheKeyBuilder {
     bandType?: BandType;
     search?: string;
     state?: string;
+    conference?: string;
     page?: number;
     limit?: number;
   }): string {
     if (!filters) return 'bands:list:all';
-    
+
     const parts = ['bands', 'list'];
     if (filters.bandType) parts.push(`type:${filters.bandType}`);
     if (filters.search) parts.push(`search:${this.sanitize(filters.search)}`);
     if (filters.state) parts.push(`state:${filters.state}`);
+    if (filters.conference) parts.push(`conf:${filters.conference}`);
     if (filters.page) parts.push(`page:${filters.page}`);
     if (filters.limit) parts.push(`limit:${filters.limit}`);
     
