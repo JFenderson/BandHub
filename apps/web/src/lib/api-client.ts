@@ -261,6 +261,10 @@ export class ApiClient {
     return this.request<PaginatedResponse<Band>>(`/bands${query ? `?${query}` : ''}`);
   }
 
+  async getBandsForDropdown(): Promise<{ id: string; name: string }[]> {
+    return this.request<{ id: string; name: string }[]>(`/bands/dropdown`);
+  }
+
   async getBand(slug: string): Promise<Band> {
     return this.request<Band>(`/bands/slug/${slug}`);
   }

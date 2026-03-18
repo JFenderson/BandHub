@@ -122,6 +122,13 @@ export class BandsController {
     return this.bandsService.getFeaturedAnalytics();
   }
 
+  @Get('dropdown')
+  @ApiOperation({ summary: 'Get all HBCU bands for dropdown (id + name, unpaginated)' })
+  @ApiResponse({ status: 200, description: 'Dropdown bands retrieved successfully' })
+  async getDropdownBands() {
+    return this.bandsService.getBandsForDropdown();
+  }
+
   @Get('slug/:slug')
   @ApiOperation({ summary: 'Get a band by slug' })
   @ApiResponse({ status: 200, description: 'Band retrieved successfully' })

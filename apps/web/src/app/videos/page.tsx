@@ -50,11 +50,10 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
     console.error('Failed to fetch videos:', error);
   }
 
-  // Fetch bands for filter dropdown
-  let bands: Awaited<ReturnType<typeof apiClient.getBands>>['data'] = [];
+  // Fetch bands for filter dropdown (unpaginated endpoint, returns all HBCU bands)
+  let bands: { id: string; name: string }[] = [];
   try {
-    const result = await apiClient.getBands({ limit: 100 });
-    bands = result.data;
+    bands = await apiClient.getBandsForDropdown();
   } catch (error) {
     console.error('Failed to fetch bands for filter:', error);
   }

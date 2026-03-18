@@ -74,6 +74,17 @@ export class BandsService {
   }
 
   /**
+   * Get all HBCU bands for dropdown usage (unpaginated, id + name only)
+   */
+  async getBandsForDropdown(): Promise<{ id: string; name: string }[]> {
+    return this.cacheStrategy.wrap(
+      'bands:dropdown',
+      () => this.bandsRepository.findAllForDropdown(),
+      CACHE_TTL.BAND_LIST,
+    );
+  }
+
+  /**
    * Find band by ID
    * Heavily cached as band profiles rarely change
    */

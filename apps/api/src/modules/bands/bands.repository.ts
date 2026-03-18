@@ -209,6 +209,19 @@ export class BandsRepository {
   }
 
   /**
+   * Find all HBCU bands for dropdown (id + name only, unpaginated, sorted by name)
+   */
+  async findAllForDropdown(): Promise<{ id: string; name: string }[]> {
+    return this.readReplica.executeRead((client) =>
+      client.band.findMany({
+        where: { bandType: 'HBCU', isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      }),
+    );
+  }
+
+  /**
    * Find band by ID
    * Uses read replica for better performance
    */

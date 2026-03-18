@@ -2,13 +2,12 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTransition, useEffect, useState } from 'react';
-import type { Band } from '@/types/api';
 import { VideoCategory, VIDEO_CATEGORIES, VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { HBCU_CONFERENCES } from '@/lib/constants';
 
 interface VideoFiltersProps {
-  bands?: Band[];
+  bands?: { id: string; name: string }[];
   initialFilters?: {
     bandId?: string;
     category?: VideoCategory;
@@ -62,7 +61,7 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
 
   // Generate eventYear options (current eventYear back to 2010)
   const currentYearNum = new Date().getFullYear();
-  const years = Array.from({ length: currentYearNum - 2009 }, (_, i) => currentYearNum - i);
+  const years = Array.from({ length: currentYearNum - 1989 }, (_, i) => currentYearNum - i);
 
   const hasActiveFilters = currentSearch || currentBandId || currentConference || currentCategory || currentEventYear || currentSortBy !== 'publishedAt';
 

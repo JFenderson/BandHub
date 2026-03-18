@@ -18,12 +18,21 @@ export default async function CreatorsPage({ searchParams }: CreatorsPageProps) 
   const page = parseInt(pageParam || '1');
   const limit = 50;
 
-  const { data: creators, meta } = await apiClient.getCreators({
-    search,
-    isVerified: true,
-    page,
-    limit,
-  });
+  let creators: Awaited<ReturnType<typeof apiClient.getCreators>>['data'] = [];
+  let meta = { total: 0, page, totalPages: 1 };
+
+  try {
+    const result = await apiClient.getCreators({
+      search,
+      isVerified: true,
+      page,
+      limit,
+    });
+    creators = result.data;
+    meta = result.meta;
+  } catch (error) {
+    console.error('Failed to fetch creators:', error);
+  }
 
   return (
     <div className="container-custom py-8">

@@ -339,7 +339,7 @@ export function FilterSidebar({ onFiltersChange, className = '' }: FilterSidebar
                 {isLoading ? (
                   <div className="text-sm text-gray-500 py-2">Loading bands...</div>
                 ) : (
-                  filteredBands.slice(0, 20).map((band) => (
+                  filteredBands.slice(0, 50).map((band) => (
                     <label key={band.id} className="flex items-center gap-2 cursor-pointer py-1">
                       <input
                         type="checkbox"
