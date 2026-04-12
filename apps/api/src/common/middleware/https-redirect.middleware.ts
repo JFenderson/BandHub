@@ -42,7 +42,7 @@ export class HttpsRedirectMiddleware implements NestMiddleware {
     // Skip redirect for internal/localhost requests (e.g. Docker health checks)
     const host = req.get('host') || '';
     const hostname = host.split(':')[0];
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === 'api';
 
     if (isHealthEndpoint || isMetricsEndpoint || isLocalhost) {
       next();
