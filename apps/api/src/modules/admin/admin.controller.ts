@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Body, Query, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -113,6 +113,23 @@ export class AdminController {
     @CurrentUser() user: CurrentUserData,
   ) {
     return this.adminService.bulkUpdateVideos(dto, user.userId);
+  }
+
+  @Post('videos/categorize')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Trigger automatic video categorization',
+    description:
+      'Queues a background job that applies pattern-based category detection to videos. ' +
+      'No YouTube API quota is consumed. ' +
+      'By default only processes videos with no category assigned; pass uncategorizedOnly=false to re-run on all videos.',
+  })
+  @ApiResponse({ status: 202, description: 'Categorization job queued' })
+  async triggerCategorization(
+    @Body() body: { uncategorizedOnly?: boolean } = {},
+  ): Promise<{ jobId: string; message: string }> {
+    return this.adminService.triggerCategorization(body.uncategorizedOnly ?? true);
   }
 
   @Put('videos/:id')

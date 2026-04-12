@@ -308,17 +308,17 @@ export class DatabaseService {
   private detectCategorySlug(title: string, description: string): string {
     const text = `${title} ${description}`.toLowerCase();
     
-    // Map from your constant patterns to actual category slugs in your DB
-    // You'll need to ensure these slugs exist in your categories table
+    // Maps CATEGORY_PATTERNS category values to DB slugs
     const categoryMapping: Record<string, string> = {
-      'fifth-quarter': '5th-quarter',
-      'stand-battle': 'stand-battle',
-      'field-show': 'field-show',
-      'halftime': 'halftime',
-      'pregame': 'pregame',
-      'parade': 'parade',
-      'practice': 'practice',
-      'concert': 'concert',
+      'FIFTH_QUARTER': '5th-quarter',
+      'STAND_BATTLE': 'stand-battle',
+      'FIELD_SHOW': 'field-show',
+      'HALFTIME': 'halftime',
+      'PREGAME': 'pregame',
+      'ENTRANCE': 'entrance',
+      'PARADE': 'parade',
+      'PRACTICE': 'practice',
+      'CONCERT_BAND': 'concert-band',
     };
     
     for (const { category, patterns } of CATEGORY_PATTERNS) {

@@ -15,6 +15,7 @@ export enum JobType {
   BACKFILL_BANDS = 'backfill-bands',
   MATCH_VIDEOS = 'match-videos',
   PROMOTE_VIDEOS = 'promote-videos',
+  CATEGORIZE_VIDEOS = 'categorize-videos',
 }
 
 export enum JobPriority {
@@ -100,6 +101,14 @@ export interface PromoteVideosJobData {
   priority?: JobPriority;
 }
 
+export interface CategorizeVideosJobData {
+  type: JobType.CATEGORIZE_VIDEOS;
+  triggeredBy: 'admin' | 'system';
+  /** Only re-categorize videos missing a category (default: true) */
+  uncategorizedOnly?: boolean;
+  priority?: JobPriority;
+}
+
 export type JobData =
   | SyncBandJobData
   | SyncAllBandsJobData
@@ -109,7 +118,8 @@ export type JobData =
   | BackfillCreatorsJobData
   | BackfillBandsJobData
   | MatchVideosJobData
-  | PromoteVideosJobData;
+  | PromoteVideosJobData
+  | CategorizeVideosJobData;
 
 export interface YouTubeVideoMetadata {
   id: string;

@@ -134,6 +134,9 @@ export default function AdminCategoriesPage() {
   const [mergingCategory, setMergingCategory] = useState<Category | null>(null);
   const [targetCategoryId, setTargetCategoryId] = useState<string>('');
 
+  // Categorize state
+  const [isCategorizing, setIsCategorizing] = useState(false);
+
   // Form state
   const [formData, setFormData] = useState<CreateCategoryDto>({
     name: '',
@@ -293,6 +296,20 @@ export default function AdminCategoriesPage() {
     setShowDeleteConfirm(true);
   };
 
+  const handleCategorize = async (uncategorizedOnly: boolean) => {
+    setIsCategorizing(true);
+    try {
+      const result = await apiClient.categorizeVideos(uncategorizedOnly);
+      showToast(`Job queued (ID: ${result.jobId}). ${result.message}`, 'success');
+      // Refresh counts after a short delay to show updated numbers
+      setTimeout(fetchCategories, 3000);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to queue categorization job', 'error');
+    } finally {
+      setIsCategorizing(false);
+    }
+  };
+
   // Calculate total videos
   const totalVideos = categories.reduce((sum, cat) => sum + (cat._count?.videos || 0), 0);
 
@@ -306,15 +323,35 @@ export default function AdminCategoriesPage() {
             Organize video categories for better content discovery
           </p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Add New Category</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => handleCategorize(true)}
+            disabled={isCategorizing}
+            title="Auto-categorize videos that have no category assigned yet"
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCategorizing ? (
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            )}
+            <span>{isCategorizing ? 'Queuing…' : 'Auto-Categorize Videos'}</span>
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Add New Category</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

@@ -1,5 +1,5 @@
 export * from './queue.types';
-// export * from './video-categories';
+// video-categories re-exported via ./video below
 export * from './constants';
 // Export all band types
 export * from './band';

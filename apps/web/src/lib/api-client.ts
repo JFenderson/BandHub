@@ -701,6 +701,13 @@ export class ApiClient {
     });
   }
 
+  async categorizeVideos(uncategorizedOnly = true): Promise<{ jobId: string; message: string }> {
+    return this.request(`/admin/videos/categorize`, {
+      method: 'POST',
+      body: JSON.stringify({ uncategorizedOnly }),
+    });
+  }
+
   // ============ EVENTS METHODS ============
 
   async getEvents(filters?: EventFilters): Promise<PaginatedResponse<Event>> {

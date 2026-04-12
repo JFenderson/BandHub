@@ -1,18 +1,6 @@
 
+import type { VideoCategory } from './video-categories';
 export * from './video-categories';
-
-// Video category type that matches Prisma enum
-export type VideoCategory =
-  | 'FIFTH_QUARTER'
-  | 'FIELD_SHOW'
-  | 'STAND_BATTLE'
-  | 'PARADE'
-  | 'PRACTICE'
-  | 'CONCERT_BAND'
-  | 'HALFTIME'
-  | 'ENTRANCE'
-  | 'PREGAME'
-  | 'OTHER';
 
 export interface Video {
   id: string;

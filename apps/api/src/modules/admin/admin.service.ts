@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '@bandhub/database';
 import { SyncJobStatus, Prisma } from '@prisma/client';
+import { QUEUE_NAMES, JobType, JobPriority, CategorizeVideosJobData } from '@hbcu-band-hub/shared-types';
 import {
   DashboardStatsDto,
   RecentActivityDto,
@@ -17,7 +20,11 @@ import { VideoDetailDto } from './dto/video-detail.dto';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectQueue(QUEUE_NAMES.MAINTENANCE)
+    private readonly maintenanceQueue: Queue,
+  ) {}
 
   /**
    * Get dashboard statistics
@@ -815,5 +822,33 @@ export class AdminService {
       action,
       metadata,
     });
+  }
+
+  /**
+   * Enqueue a job to auto-categorize videos using pattern matching.
+   * No YouTube API quota is consumed — runs entirely against the database.
+   *
+   * @param uncategorizedOnly - true (default): only process videos with no category;
+   *                            false: re-run categorization on all videos
+   */
+  async triggerCategorization(uncategorizedOnly = true): Promise<{ jobId: string; message: string }> {
+    const data: CategorizeVideosJobData = {
+      type: JobType.CATEGORIZE_VIDEOS,
+      triggeredBy: 'admin',
+      uncategorizedOnly,
+      priority: JobPriority.LOW,
+    };
+
+    const job = await this.maintenanceQueue.add(JobType.CATEGORIZE_VIDEOS, data, {
+      priority: JobPriority.LOW,
+      jobId: `categorize-videos-${Date.now()}`,
+    });
+
+    return {
+      jobId: job.id!,
+      message: uncategorizedOnly
+        ? 'Categorization job queued — will process all videos currently missing a category.'
+        : 'Categorization job queued — will re-run pattern matching on all videos.',
+    };
   }
 }

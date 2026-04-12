@@ -24,6 +24,7 @@ import { BackfillCreatorsProcessor } from './processors/backfill-creators.proces
 import { BackfillBandsProcessor } from './processors/backfill-bands.processor';
 import { MatchVideosProcessor } from './processors/match-videos.processor';
 import { PromoteVideosProcessor } from './processors/promote-videos.processor';
+import { BackfillCategoriesProcessor } from './processors/backfill-categories.processor';
 // Scheduler
 import { SyncScheduler } from './scheduler/sync.scheduler';
 
@@ -121,6 +122,7 @@ BackfillCreatorsProcessor,
 BackfillBandsProcessor,
 MatchVideosProcessor,
 PromoteVideosProcessor,
+BackfillCategoriesProcessor,
 
 // Scheduler
 SyncScheduler,
