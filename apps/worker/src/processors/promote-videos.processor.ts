@@ -92,40 +92,21 @@ export class PromoteVideosProcessor extends WorkerHost {
         result.totalProcessed++;
         
         try {
-          // Check if Video with same youtubeId already exists
-          const existingVideo = await this.databaseService.video.findFirst({
-            where: { youtubeId: youtubeVideo.youtubeId },
-          });
-          
-          if (existingVideo) {
-            // Skip if already exists in Video table
-            result.skipped++;
-            
-            // Mark as promoted anyway to avoid reprocessing
-            await this.databaseService.youTubeVideo.update({
-              where: { id: youtubeVideo.id },
-              data: {
-                isPromoted: true,
-                promotedAt: new Date(),
-              },
-            });
-            continue;
-          }
-          
           // Determine category based on video content
           const categorySlug = await this.determineCategory(youtubeVideo);
-          
+
           // Get category ID
-          const category = categorySlug 
+          const category = categorySlug
             ? await this.databaseService.category.findUnique({
                 where: { slug: categorySlug },
                 select: { id: true },
               })
             : null;
-          
-          // Copy to Video table (user-facing content)
-          await this.databaseService.video.create({
-            data: {
+
+          // Upsert to Video table — atomic, safe under concurrent workers
+          const upsertResult = await this.databaseService.video.upsert({
+            where: { youtubeId: youtubeVideo.youtubeId },
+            create: {
               youtubeId: youtubeVideo.youtubeId,
               title: youtubeVideo.title,
               description: youtubeVideo.description || '',
@@ -134,14 +115,20 @@ export class PromoteVideosProcessor extends WorkerHost {
               publishedAt: youtubeVideo.publishedAt,
               viewCount: youtubeVideo.viewCount,
               likeCount: youtubeVideo.likeCount,
-              // bandId is guaranteed to be non-null by query filter, but add explicit check for safety
               bandId: youtubeVideo.bandId || '',
               categoryId: category?.id,
               isHidden: false,
               qualityScore: youtubeVideo.qualityScore,
             },
+            update: {
+              viewCount: youtubeVideo.viewCount,
+              likeCount: youtubeVideo.likeCount,
+              // Only set category if not already manually assigned
+              ...(category ? { categoryId: category.id } : {}),
+            },
+            select: { id: true },
           });
-          
+
           // Mark as promoted
           await this.databaseService.youTubeVideo.update({
             where: { id: youtubeVideo.id },
@@ -150,7 +137,7 @@ export class PromoteVideosProcessor extends WorkerHost {
               promotedAt: new Date(),
             },
           });
-          
+
           result.promoted++;
           
         } catch (error) {
@@ -191,39 +178,36 @@ export class PromoteVideosProcessor extends WorkerHost {
     const title = (video.title || '').toLowerCase();
     const description = (video.description || '').toLowerCase();
     const text = `${title} ${description}`;
-    
-    // Battle/Competition
-    if (text.match(/\b(vs|versus|battle|botb|showdown|face\s*off)\b/i)) {
-      return 'battles-competitions';
+
+    if (text.match(/\b(5th\s*quarter|fifth\s*quarter|post\s*game|after\s*the\s*game)\b/i)) {
+      return '5th-quarter';
     }
-    
-    // Halftime show
+    if (text.match(/\b(stand\s*battle|battle\s*of\s*(the\s*)?bands|band\s*battle|stands?\s*vs\.?)\b/i)) {
+      return 'stand-battle';
+    }
+    if (text.match(/\b(field\s*show|marching\s*show|formation|drill\s*team)\b/i)) {
+      return 'field-show';
+    }
     if (text.match(/\b(halftime|half\s*time|half-time)\b/i)) {
-      return 'halftime-shows';
+      return 'halftime';
     }
-    
-    // Parade
-    if (text.match(/\b(parade|mardi\s*gras|homecoming\s*parade)\b/i)) {
-      return 'parades';
+    if (text.match(/\b(pregame|pre\s*game|before\s*the\s*game)\b/i)) {
+      return 'pregame';
     }
-    
-    // Stand tunes
-    if (text.match(/\b(stand\s*tune|stands|in\s*the\s*stands|5th\s*quarter|fifth\s*quarter)\b/i)) {
-      return 'stand-tunes';
+    if (text.match(/\b(entrance|entering|arrival)\b/i)) {
+      return 'entrance';
     }
-    
-    // Practice/Rehearsal
-    if (text.match(/\b(practice|rehearsal|sectional|camp|clinic)\b/i)) {
-      return 'practices-rehearsals';
+    if (text.match(/\b(parade|homecoming\s*parade|mardi\s*gras)\b/i)) {
+      return 'parade';
     }
-    
-    // Documentary/Behind the scenes
-    if (text.match(/\b(documentary|behind\s*the\s*scenes|interview|story|history)\b/i)) {
-      return 'documentaries';
+    if (text.match(/\b(practice|rehearsal|sectional|band\s*camp|band\s*room)\b/i)) {
+      return 'practice';
     }
-    
-    // Default to performances
-    return 'performances';
+    if (text.match(/\b(concert|symphonic|spring\s*show|indoor)\b/i)) {
+      return 'concert-band';
+    }
+
+    return 'other';
   }
   
   @OnWorkerEvent('completed')
