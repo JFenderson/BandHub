@@ -11,6 +11,7 @@
     "dev": "nest start --watch"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.3",
         "@bandhub/database": "*",
     "@bandhub/cache": "*",
     "@hbcu-band-hub/shared-types": "*",

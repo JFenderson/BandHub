@@ -914,6 +914,9 @@ model YouTubeVideo {
   isPromoted       Boolean           @default(false) @map("is_promoted")
   promotedAt       DateTime?         @map("promoted_at")
   qualityScore     Int               @default(0) @map("quality_score")
+  aiExtraction     Json?             @map("ai_extraction")
+  aiProcessed      Boolean           @default(false) @map("ai_processed")
+  aiExcluded       Boolean           @default(false) @map("ai_excluded")
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
   

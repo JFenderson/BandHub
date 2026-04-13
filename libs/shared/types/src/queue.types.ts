@@ -16,6 +16,7 @@ export enum JobType {
   MATCH_VIDEOS = 'match-videos',
   PROMOTE_VIDEOS = 'promote-videos',
   CATEGORIZE_VIDEOS = 'categorize-videos',
+  CLASSIFY_VIDEOS = 'classify-videos',
 }
 
 export enum JobPriority {
@@ -109,6 +110,13 @@ export interface CategorizeVideosJobData {
   priority?: JobPriority;
 }
 
+export interface ClassifyVideosJobData {
+  type: JobType.CLASSIFY_VIDEOS;
+  triggeredBy: 'admin' | 'system';
+  limit?: number;
+  priority?: JobPriority;
+}
+
 export type JobData =
   | SyncBandJobData
   | SyncAllBandsJobData
@@ -119,7 +127,8 @@ export type JobData =
   | BackfillBandsJobData
   | MatchVideosJobData
   | PromoteVideosJobData
-  | CategorizeVideosJobData;
+  | CategorizeVideosJobData
+  | ClassifyVideosJobData;
 
 export interface YouTubeVideoMetadata {
   id: string;

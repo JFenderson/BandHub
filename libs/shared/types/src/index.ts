@@ -1,4 +1,5 @@
 export * from './queue.types';
+export * from './librarian.types';
 // video-categories re-exported via ./video below
 export * from './constants';
 // Export all band types

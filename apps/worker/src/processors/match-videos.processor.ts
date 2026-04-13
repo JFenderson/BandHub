@@ -1,10 +1,11 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { 
-  QueueName, 
-  JobType, 
+import {
+  QueueName,
+  JobType,
   MatchVideosJobData,
+  LibrarianExtraction,
 } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 import { ConfigService } from '@nestjs/config';
@@ -157,16 +158,18 @@ export class MatchVideosProcessor extends WorkerHost {
       // Generate aliases for all bands
       const bandsWithAliases = this.generateAliasesForBands(bands);
       
-      // Fetch unmatched videos
+      // Fetch unmatched videos (skip AI-excluded videos)
       this.logger.log('Fetching unmatched videos...');
       const videos = await this.databaseService.youTubeVideo.findMany({
-        where: { bandId: null },
+        where: { bandId: null, aiExcluded: false },
         select: {
           id: true,
           youtubeId: true,
           title: true,
           description: true,
           channelTitle: true,
+          aiProcessed: true,
+          aiExtraction: true,
         },
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -195,7 +198,56 @@ export class MatchVideosProcessor extends WorkerHost {
           video.description || '',
           video.channelTitle || '',
         ].join(' ');
-        
+
+        // AI fast path: use Librarian extraction if available and confident
+        const aiData = (video as any).aiExtraction as LibrarianExtraction | null;
+        if ((video as any).aiProcessed && aiData?.primaryBandName && aiData.confidence >= 60) {
+          const aiMatch = bandsWithAliases.find(
+            (b) =>
+              b.name.toLowerCase() === aiData.primaryBandName!.toLowerCase() ||
+              b.schoolName.toLowerCase().includes(aiData.primaryBandName!.toLowerCase()),
+          );
+          if (aiMatch) {
+            // Resolve opponent via AI if battle
+            let opponentBandId: string | null = null;
+            if (aiData.isBattle && aiData.opponentBandName) {
+              const opponentMatch = bandsWithAliases.find(
+                (b) =>
+                  b.name.toLowerCase() === aiData.opponentBandName!.toLowerCase() ||
+                  b.schoolName.toLowerCase().includes(aiData.opponentBandName!.toLowerCase()),
+              );
+              if (opponentMatch) {
+                opponentBandId = opponentMatch.id;
+                result.battleVideos++;
+              } else {
+                result.singleBand++;
+              }
+            } else {
+              result.singleBand++;
+            }
+
+            try {
+              await this.databaseService.youTubeVideo.update({
+                where: { id: video.id },
+                data: {
+                  bandId: aiMatch.id,
+                  opponentBandId,
+                  qualityScore: aiData.confidence,
+                },
+              });
+            } catch (error) {
+              result.errors.push(`Error updating ${video.youtubeId}: ${getErrorMessage(error)}`);
+            }
+
+            if (aiMatch.bandType === 'ALL_STAR') {
+              result.matchedAllStar++;
+            } else {
+              result.matchedHBCU++;
+            }
+            continue;
+          }
+        }
+
         // Check exclusions first
         const exclusionCheck = this.shouldExclude(searchText);
         if (exclusionCheck.exclude) {

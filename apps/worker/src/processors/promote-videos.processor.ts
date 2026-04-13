@@ -1,10 +1,11 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { 
-  QueueName, 
-  JobType, 
+import {
+  QueueName,
+  JobType,
   PromoteVideosJobData,
+  LibrarianExtraction,
 } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 
@@ -71,7 +72,7 @@ export class PromoteVideosProcessor extends WorkerHost {
         },
         take: limit,
         orderBy: { publishedAt: 'desc' },
-      });
+      }) as any[];
       
       this.logger.log(`Found ${videosToPromote.length} videos ready for promotion`);
       
@@ -175,6 +176,24 @@ export class PromoteVideosProcessor extends WorkerHost {
    * Determine the best category for a video based on its content
    */
   private async determineCategory(video: any): Promise<string | null> {
+    // Fast path: use AI extraction if available
+    const aiData = video.aiExtraction as LibrarianExtraction | null;
+    if (aiData?.videoCategory && aiData.videoCategory !== 'OTHER') {
+      const slugMap: Record<string, string> = {
+        FIFTH_QUARTER: '5th-quarter',
+        STAND_BATTLE: 'stand-battle',
+        FIELD_SHOW: 'field-show',
+        HALFTIME: 'halftime',
+        PREGAME: 'pregame',
+        ENTRANCE: 'entrance',
+        PARADE: 'parade',
+        PRACTICE: 'practice',
+        CONCERT_BAND: 'concert-band',
+      };
+      const slug = slugMap[aiData.videoCategory];
+      if (slug) return slug;
+    }
+
     const title = (video.title || '').toLowerCase();
     const description = (video.description || '').toLowerCase();
     const text = `${title} ${description}`;

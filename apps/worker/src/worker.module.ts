@@ -25,6 +25,8 @@ import { BackfillBandsProcessor } from './processors/backfill-bands.processor';
 import { MatchVideosProcessor } from './processors/match-videos.processor';
 import { PromoteVideosProcessor } from './processors/promote-videos.processor';
 import { BackfillCategoriesProcessor } from './processors/backfill-categories.processor';
+import { ClassifyVideosProcessor } from './processors/classify-videos.processor';
+import { BandLibrarianService } from './services/band-librarian.service';
 // Scheduler
 import { SyncScheduler } from './scheduler/sync.scheduler';
 
@@ -112,6 +114,7 @@ providers: [
 DatabaseService,
 YouTubeService,
 CircuitBreakerService,
+BandLibrarianService,
 // Processors
 SyncBandProcessor,
 SyncAllBandsProcessor,
@@ -123,6 +126,7 @@ BackfillBandsProcessor,
 MatchVideosProcessor,
 PromoteVideosProcessor,
 BackfillCategoriesProcessor,
+ClassifyVideosProcessor,
 
 // Scheduler
 SyncScheduler,

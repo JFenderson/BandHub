@@ -18,7 +18,12 @@
       "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx jest --config jest.config.ts --testPathPattern=\"bands.service.spec\" --no-coverage --forceExit --runInBand --verbose)",
       "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx jest --config jest.config.ts --runInBand --forceExit)",
       "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npx jest --config jest.config.ts --runInBand --forceExit test/unit/api-key.service.spec.ts)",
-      "Bash(grep '\"\"version\"\"')"
+      "Bash(grep '\"\"version\"\"')",
+      "Bash(pnpm db:migrate)",
+      "Bash(npx prisma:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:newpassword123@localhost:5432/hbcu_band_hub?schema=public\" npx prisma migrate dev --name add_ai_extraction_to_youtube_video --schema packages/database/prisma/schema.prisma --create-only)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:newpassword123@localhost:5432/hbcu_band_hub?schema=public\" PRISMA_SCHEMA_PATH=packages/database/prisma/schema.prisma npx prisma migrate diff --from-schema-datasource packages/database/prisma/schema.prisma --to-schema-datamodel packages/database/prisma/schema.prisma --script)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:newpassword123@localhost:5432/hbcu_band_hub?schema=public\" npx prisma migrate deploy --schema packages/database/prisma/schema.prisma)"
     ]
   }
 }
