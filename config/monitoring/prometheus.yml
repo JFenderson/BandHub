@@ -28,7 +28,7 @@ scrape_configs:
   # Worker metrics
   - job_name: 'bandhub-worker'
     static_configs:
-      - targets: ['worker:3002']
+      - targets: ['worker:9400']
     metrics_path: '/metrics'
     scrape_interval: 30s
     scrape_timeout: 10s
