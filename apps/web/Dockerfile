@@ -17,6 +17,9 @@ COPY libs/observability/package.json ./libs/observability/
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 
+# Install Alpine/musl-compatible rollup binary (required by @sentry/nextjs)
+RUN npm install --no-save @rollup/rollup-linux-x64-musl
+
 # ========================================
 # Stage 2: Builder
 # ========================================
