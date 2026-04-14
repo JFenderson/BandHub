@@ -149,7 +149,7 @@ async function main() {
       bandIdMap.get(bandConfig.name.toLowerCase());
 
     if (!bandId) {
-      console.log(`\n⚠️  Skipping ${bandConfig.name} - not found in database`);
+      console.log('\n⚠️  Skipping', bandConfig.name, '- not found in database');
       continue;
     }
 
@@ -159,12 +159,12 @@ async function main() {
         where: { bandId },
       });
       if (existingCount > 0) {
-        console.log(`\n⏭️  Skipping ${bandConfig.name} - already has ${existingCount} videos`);
+        console.log('\n⏭️  Skipping', bandConfig.name, '- already has', existingCount, 'videos');
         continue;
       }
     }
 
-    console.log(`\n[${processed + 1}] Searching: ${bandConfig.name}`);
+    console.log('\n[' + (processed + 1) + '] Searching:', bandConfig.name);
     console.log(`   School: ${bandConfig.school}`);
     console.log(`   Keywords: ${bandConfig.keywords.slice(0, 5).join(', ')}...`);
 
@@ -178,7 +178,7 @@ async function main() {
 
       console.log(`   ✅ Found: ${result.found}, Added: ${result.added}, Skipped: ${result.skipped}`);
     } catch (error) {
-      console.error(`   ❌ Error: ${error}`);
+      console.error('   ❌ Error:', error);
     }
 
     processed++;
@@ -202,7 +202,7 @@ async function main() {
       .sort((a, b) => b[1].found - a[1].found)
       .slice(0, 10)
       .forEach(([name, result], i) => {
-        console.log(`   ${i + 1}. ${name}: ${result.found} found, ${result.added} added`);
+        console.log('  ', (i + 1) + '.', name + ':', result.found, 'found,', result.added, 'added');
       });
   }
 
@@ -329,7 +329,7 @@ async function searchBandVideos(
         });
         added++;
       } catch (error) {
-        console.log(`   ⚠️  Error saving video ${videoId}: ${error}`);
+        console.log('   ⚠️  Error saving video', videoId + ':', error);
       }
     }
   } catch (error) {

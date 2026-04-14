@@ -84,8 +84,8 @@ async function main() {
       break;
     }
 
-    console.log(`\n[${processed + 1}/${Math.min(bands.length, processLimit)}] Processing: ${band.name}`);
-    console.log(`   YouTube Channel: ${band.youtubeChannelId}`);
+    console.log('\n[' + (processed + 1) + '/' + Math.min(bands.length, processLimit) + '] Processing:', band.name);
+    console.log('   YouTube Channel:', band.youtubeChannelId);
     console.log(`   Current Quota Used: ${quotaUsed}/${config.DAILY_QUOTA_LIMIT}`);
 
     try {
@@ -96,7 +96,7 @@ async function main() {
     } catch (error) {
       const errorMsg = `Failed to sync ${band.name}: ${error}`;
       errors.push(errorMsg);
-      console.error(`   ❌ ${errorMsg}`);
+      console.error('   ❌', errorMsg);
     }
 
     processed++;
@@ -172,7 +172,7 @@ async function syncBandVideos(band: {
 
     const uploadsPlaylistId = channelResponse.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
     if (!uploadsPlaylistId) {
-      console.log(`   ⚠️  No uploads playlist found for channel ${band.youtubeChannelId}`);
+      console.log('   ⚠️  No uploads playlist found for channel', band.youtubeChannelId);
       return { added, updated, quotaUsed: bandQuotaUsed };
     }
 
@@ -284,7 +284,7 @@ async function syncBandVideos(band: {
             added++;
           }
         } catch (error) {
-          console.log(`   ⚠️  Error processing video ${videoId}: ${error}`);
+          console.log('   ⚠️  Error processing video', videoId + ':', error);
         }
       }
 
@@ -303,7 +303,7 @@ async function syncBandVideos(band: {
     });
 
   } catch (error) {
-    console.log(`   ❌ Error syncing band: ${error}`);
+    console.log('   ❌ Error syncing band:', error);
     throw error;
   }
 

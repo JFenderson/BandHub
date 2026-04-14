@@ -216,7 +216,7 @@ Endpoints accepting files use \`multipart/form-data\`. Ensure your client sets t
   // main.js compiles to apps/api/dist/main.js, so go up 1 level to apps/api, then uploads
   const uploadsPath = join(__dirname, '..', 'uploads');
 
-  console.log(`📁 Static uploads path: ${uploadsPath}`);
+  console.log('📁 Static uploads path:', uploadsPath);
 
   app.useStaticAssets(uploadsPath, {
     prefix: '/uploads/',
@@ -252,13 +252,13 @@ Sentry.setupExpressErrorHandler(app.getHttpAdapter().getInstance());
   const port = process.env.API_PORT || 3001;
   await app.listen(port);
 
-  console.log(`🚀 API running on http://localhost:${port}`);
-  console.log(`📚 Swagger docs at http://localhost:${port}/api/docs`);
+  console.log('🚀 API running on http://localhost:' + port);
+  console.log('📚 Swagger docs at http://localhost:' + port + '/api/docs');
   // Enable NestJS shutdown hooks so providers can react to shutdown
   app.enableShutdownHooks();
 
   const gracefulShutdown = async (signal: string) => {
-    console.log(`Received ${signal}, starting graceful shutdown...`);
+    console.log('Received', signal + ', starting graceful shutdown...');
     try {
       const queueService = app.get(QueueService, { strict: false });
       if (queueService) {

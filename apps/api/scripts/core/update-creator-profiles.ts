@@ -119,7 +119,7 @@ async function main() {
         const channel = channelData.get(creator.youtubeChannelId);
 
         if (!channel) {
-          console.log(`   ⚠️  No data found for ${creator.name}`);
+          console.log('   ⚠️  No data found for', creator.name);
           skipped++;
           continue;
         }
@@ -155,7 +155,7 @@ async function main() {
         }
 
         if (Object.keys(updateData).length === 0) {
-          console.log(`   ⏭️  ${creator.name} - No updates needed`);
+          console.log('   ⏭️ ', creator.name, '- No updates needed');
           skipped++;
           continue;
         }
@@ -167,7 +167,7 @@ async function main() {
           });
         }
 
-        console.log(`   ✅ ${creator.name}`);
+        console.log('   ✅', creator.name);
         if (updateData.logoUrl) {
           console.log(`      📷 Profile: ${updateData.logoUrl.substring(0, 50)}...`);
         }
@@ -181,7 +181,7 @@ async function main() {
         updated++;
       }
     } catch (error) {
-      console.error(`   ❌ Error processing batch: ${error}`);
+      console.error('   ❌ Error processing batch:', error);
       errors++;
     }
 

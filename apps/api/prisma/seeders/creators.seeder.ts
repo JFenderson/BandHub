@@ -888,10 +888,10 @@ const result = await prisma.contentCreator.upsert({
 
     if (result.createdAt === result.updatedAt) {
       added++;
-      console.log(`✅ Added: ${creator.name}`);
+      console.log('✅ Added:', creator.name);
     } else {
       updated++;
-      console.log(`🔄 Updated: ${creator.name}`);
+      console.log('🔄 Updated:', creator.name);
     }
   }
 

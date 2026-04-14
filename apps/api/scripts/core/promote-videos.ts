@@ -42,7 +42,7 @@ async function promoteVideos() {
       });
 
       if (existing) {
-        console.log(`Skipping ${ytVideo.title} - already exists`);
+        console.log('Skipping', ytVideo.title, '- already exists');
         skipped++;
         continue;
       }
@@ -81,7 +81,7 @@ async function promoteVideos() {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error promoting video ${ytVideo.title}:`, errorMessage);
+      console.error('Error promoting video', ytVideo.title + ':', errorMessage);
     }
   }
 

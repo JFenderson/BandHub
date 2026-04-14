@@ -178,7 +178,7 @@ async function main() {
       .sort((a, b) => b[1].videosLinked - a[1].videosLinked)
       .slice(0, 20)
       .forEach(([_, result], i) => {
-        console.log(`   ${i + 1}. ${result.name}: ${result.videosLinked} videos`);
+        console.log('  ', (i + 1) + '.', result.name + ':', result.videosLinked, 'videos');
       });
   }
 

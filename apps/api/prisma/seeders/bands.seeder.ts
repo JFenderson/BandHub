@@ -60,14 +60,14 @@ export async function seedBands(prisma: PrismaClient): Promise<void> {
     try {
       const result = await upsertBand(prisma, band);
       if (result === 'created') {
-        console.log(`   ✅ Created: ${band.name}`);
+        console.log('   ✅ Created:', band.name);
         created++;
       } else {
-        console.log(`   🔄 Updated: ${band.name}`);
+        console.log('   🔄 Updated:', band.name);
         updated++;
       }
     } catch (error) {
-      console.error(`   ❌ Error with ${band.name}:`, error.message);
+      console.error('   ❌ Error with', band.name + ':', error.message);
       errors++;
     }
   }
@@ -78,14 +78,14 @@ export async function seedBands(prisma: PrismaClient): Promise<void> {
     try {
       const result = await upsertBand(prisma, band);
       if (result === 'created') {
-        console.log(`   ✅ Created: ${band.name}`);
+        console.log('   ✅ Created:', band.name);
         created++;
       } else {
-        console.log(`   🔄 Updated: ${band.name}`);
+        console.log('   🔄 Updated:', band.name);
         updated++;
       }
     } catch (error) {
-      console.error(`   ❌ Error with ${band.name}:`, error.message);
+      console.error('   ❌ Error with', band.name + ':', error.message);
       errors++;
     }
   }

@@ -32,9 +32,9 @@ async function seedMissingHbcus() {
           updatedAt: new Date(), // Set to current date/time or use band.updatedAt if available
         },
       });
-      console.log(`✅ Created: ${band.name}`);
+      console.log('✅ Created:', band.name);
     } catch (error) {
-      console.error(`❌ Error creating ${band.name}:`, error.message);
+      console.error('❌ Error creating', band.name + ':', error.message);
     }
   }
   

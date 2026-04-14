@@ -57,20 +57,20 @@ export async function seedEvents(prisma: PrismaClient): Promise<void> {
 
   // Seed each event type group
   for (const [eventType, typeEvents] of Object.entries(eventsByType)) {
-    console.log(`📅 Seeding ${eventType.replace('_', ' ')} Events...\n`);
-    
+    console.log('📅 Seeding', eventType.replace('_', ' '), 'Events...\n');
+
     for (const event of typeEvents) {
       try {
         const result = await upsertEvent(prisma, event);
         if (result === 'created') {
-          console.log(`   ✅ Created: ${event.name}`);
+          console.log('   ✅ Created:', event.name);
           created++;
         } else {
-          console.log(`   🔄 Updated: ${event.name}`);
+          console.log('   🔄 Updated:', event.name);
           updated++;
         }
       } catch (error) {
-        console.error(`   ❌ Error with ${event.name}:`, error.message);
+        console.error('   ❌ Error with', event.name + ':', error.message);
         errors++;
       }
     }
@@ -89,7 +89,7 @@ export async function seedEvents(prisma: PrismaClient): Promise<void> {
   // Breakdown by type
   console.log('\n📊 Events by Type:');
   for (const [eventType, typeEvents] of Object.entries(eventsByType)) {
-    console.log(`   • ${eventType.replace('_', ' ')}: ${typeEvents.length}`);
+    console.log('   •', eventType.replace('_', ' ') + ':', typeEvents.length);
   }
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }

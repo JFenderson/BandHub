@@ -86,8 +86,8 @@ async function main() {
       break;
     }
 
-    console.log(`\n[${processed + 1}/${Math.min(creators.length, processLimit)}] Processing: ${creator.name}`);
-    console.log(`   YouTube Channel: ${creator.youtubeChannelId}`);
+    console.log('\n[' + (processed + 1) + '/' + Math.min(creators.length, processLimit) + '] Processing:', creator.name);
+    console.log('   YouTube Channel:', creator.youtubeChannelId);
     console.log(`   Current Quota Used: ${quotaUsed}/${config.DAILY_QUOTA_LIMIT}`);
 
     try {
@@ -98,7 +98,7 @@ async function main() {
     } catch (error) {
       const errorMsg = `Failed to sync ${creator.name}: ${error}`;
       errors.push(errorMsg);
-      console.error(`   ❌ ${errorMsg}`);
+      console.error('   ❌', errorMsg);
     }
 
     processed++;
@@ -174,7 +174,7 @@ async function syncCreatorVideos(creator: {
 
     const uploadsPlaylistId = channelResponse.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
     if (!uploadsPlaylistId) {
-      console.log(`   ⚠️  No uploads playlist found for channel ${creator.youtubeChannelId}`);
+      console.log('   ⚠️  No uploads playlist found for channel', creator.youtubeChannelId);
       return { added, updated, quotaUsed: creatorQuotaUsed };
     }
 
@@ -288,7 +288,7 @@ async function syncCreatorVideos(creator: {
             added++;
           }
         } catch (error) {
-          console.log(`   ⚠️  Error processing video ${videoId}: ${error}`);
+          console.log('   ⚠️  Error processing video', videoId + ':', error);
         }
       }
 
@@ -309,7 +309,7 @@ async function syncCreatorVideos(creator: {
     });
 
   } catch (error) {
-    console.log(`   ❌ Error syncing creator: ${error}`);
+    console.log('   ❌ Error syncing creator:', error);
     throw error;
   }
 

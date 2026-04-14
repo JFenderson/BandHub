@@ -89,8 +89,8 @@ async function main() {
       }
     }
 
-    console.log(`\n[${video.channelTitle}]`);
-    console.log(`   Title: ${video.title}`);
+    console.log('\n[' + video.channelTitle + ']');
+    console.log('   Title:', video.title);
     if (possibleMatch) {
       console.log(`   ⚠️  Might contain: "${possibleMatch}"`);
     }

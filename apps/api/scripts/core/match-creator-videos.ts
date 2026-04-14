@@ -195,7 +195,7 @@ async function main() {
 
     if (videos.length === 0) continue;
 
-    console.log(`\n🎬 Processing: ${creator.name} (${videos.length} unmatched videos)`);
+    console.log('\n🎬 Processing:', creator.name, '(' + videos.length + ' unmatched videos)');
 
     let creatorMatched = 0;
     let creatorProcessed = 0;
@@ -263,7 +263,7 @@ async function main() {
       .slice(0, 15)
       .forEach(([_, result], i) => {
         const rate = result.processed > 0 ? ((result.matched / result.processed) * 100).toFixed(0) : 0;
-        console.log(`   ${i + 1}. ${result.name}: ${result.matched}/${result.processed} (${rate}%)`);
+        console.log('  ', (i + 1) + '.', result.name + ': ' + result.matched + '/' + result.processed + ' (' + rate + '%)');
       });
   }
 
@@ -273,7 +273,7 @@ async function main() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 15)
       .forEach(([bandName, count], i) => {
-        console.log(`   ${i + 1}. ${bandName}: ${count} videos`);
+        console.log('  ', (i + 1) + '.', bandName + ':', count, 'videos');
       });
   }
 

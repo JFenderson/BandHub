@@ -227,13 +227,13 @@ async function main() {
     console.log('===========================\n');
 
     for (const band of stats.allStarBandsFound) {
-      console.log(`🎺 ${band.name}`);
+      console.log('🎺', band.name);
       console.log(`   Region: ${band.region}`);
       console.log(`   Videos found: ${band.videoCount}`);
       console.log(`   Aliases: ${band.aliases.join(', ')}`);
       console.log(`   Sample titles:`);
       band.sampleTitles.slice(0, 3).forEach((title) => {
-        console.log(`     - ${title}`);
+        console.log('     -', title);
       });
       console.log('');
     }
@@ -244,11 +244,11 @@ async function main() {
     console.log('==========================\n');
 
     for (const event of stats.eventsFound) {
-      console.log(`📅 ${event.name} (${event.type})`);
+      console.log('📅', event.name, '(' + event.type + ')');
       console.log(`   Videos found: ${event.videoCount}`);
       console.log(`   Sample titles:`);
       event.sampleTitles.slice(0, 2).forEach((title) => {
-        console.log(`     - ${title}`);
+        console.log('     -', title);
       });
       console.log('');
     }

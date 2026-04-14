@@ -38,7 +38,7 @@ async function main() {
 
   for (const [channelName, data] of topChannels) {
     console.log(`\n${'='.repeat(60)}`);
-    console.log(`📺 ${channelName} (${data.count} unmatched videos)`);
+    console.log('📺', channelName, '(' + data.count + ' unmatched videos)');
     console.log(`${'='.repeat(60)}`);
 
     // Get sample titles from this channel
@@ -57,7 +57,7 @@ async function main() {
 
     console.log('\nSample titles (top by views):');
     samples.forEach((v, i) => {
-      console.log(`   ${i + 1}. ${v.title}`);
+      console.log('  ', (i + 1) + '.', v.title);
       // Show first 100 chars of description if it might help
       if (v.description && v.description.length > 10) {
         const descPreview = v.description.substring(0, 100).replace(/\n/g, ' ');

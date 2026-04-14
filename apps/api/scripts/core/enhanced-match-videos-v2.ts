@@ -575,7 +575,7 @@ async function main() {
           },
         });
       } catch (error) {
-        console.error(`   ❌ Error updating ${video.youtubeId}:`, error);
+        console.error('   ❌ Error updating', video.youtubeId + ':', error);
       }
     }
 
@@ -618,7 +618,7 @@ async function main() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 15)
       .forEach(([name, count], index) => {
-        console.log(`   ${index + 1}. ${name} - ${count} videos`);
+        console.log('  ', (index + 1) + '.', name, '-', count, 'videos');
       });
   }
 

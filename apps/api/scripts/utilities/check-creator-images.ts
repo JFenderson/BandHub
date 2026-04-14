@@ -21,7 +21,7 @@ async function main() {
   console.log('Sample of creator data in database:\n');
 
   for (const creator of creators) {
-    console.log(`${creator.name}:`);
+    console.log(creator.name + ':');
     console.log(`  logoUrl: ${creator.logoUrl || '(empty)'}`);
     console.log(`  thumbnailUrl: ${creator.thumbnailUrl || '(empty)'}`);
     console.log(`  subscribers: ${creator.subscriberCount}`);

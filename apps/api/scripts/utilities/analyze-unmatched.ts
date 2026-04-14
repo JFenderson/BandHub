@@ -35,7 +35,7 @@ async function main() {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 20)
     .forEach(([channel, count], index) => {
-      console.log(`   ${index + 1}. ${channel}: ${count} videos`);
+      console.log('  ', (index + 1) + '.', channel + ':', count, 'videos');
     });
 
   // 3. Show a sample of video titles
@@ -47,7 +47,7 @@ async function main() {
   });
 
   sampleVideos.forEach(v => {
-    console.log(`   - [${v.channelTitle}] ${v.title}`);
+    console.log('   - [' + v.channelTitle + ']', v.title);
   });
 
   // 4. Export to JSON for deep dive

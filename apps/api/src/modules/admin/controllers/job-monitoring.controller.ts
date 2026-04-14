@@ -414,7 +414,7 @@ export class JobMonitoringController {
         type: 'queue-update',
       })),
       catchError((error) => {
-        console.error(`SSE Error for queue ${queueName}:`, error);
+        console.error('SSE Error for queue', queueName + ':', error);
         return of({
           data: { error: 'Failed to fetch queue data' },
           id: Date.now().toString(),

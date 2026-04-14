@@ -91,7 +91,7 @@ export class MagicLinkController {
       // In production, send email here
       // await this.emailService.sendMagicLink(dto.email, result.magicLinkUrl);
 
-      console.log(`Magic link created for ${dto.email}: ${result.magicLinkUrl}`);
+      console.log('Magic link created for', dto.email + ':', result.magicLinkUrl);
     } catch {
       // Don't reveal if email exists or not
       // Log internally but return generic success message

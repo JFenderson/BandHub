@@ -67,7 +67,7 @@ async function main() {
   // Test each title
   for (const title of TEST_TITLES) {
     console.log('='.repeat(70));
-    console.log(`📹 Testing: "${title}"`);
+    console.log('📹 Testing: "' + title + '"');
     console.log('='.repeat(70));
 
     const lowerTitle = title.toLowerCase();
@@ -120,7 +120,7 @@ async function main() {
           );
 
           if (matchingBand) {
-            console.log(`   📋 Band exists: ${matchingBand.name}`);
+            console.log('   📋 Band exists:', matchingBand.name);
             console.log(`   📋 Aliases: ${matchingBand.aliases.slice(0, 10).join(', ')}`);
           } else {
             console.log(`   ❌ Band NOT in database!`);
@@ -131,7 +131,7 @@ async function main() {
       matches.sort((a, b) => b.score - a.score);
       console.log('\n✅ MATCHES FOUND:');
       matches.slice(0, 5).forEach((m, i) => {
-        console.log(`   ${i + 1}. ${m.band} (score: ${m.score}, matched: "${m.alias}")`);
+        console.log('  ', (i + 1) + '.', m.band + ' (score: ' + m.score + ', matched: "' + m.alias + '")');
       });
     }
 
@@ -143,7 +143,7 @@ async function main() {
   console.log('📊 Bands in Database (sample):');
   console.log('='.repeat(70));
   bands.slice(0, 20).forEach((b) => {
-    console.log(`   - ${b.name} (${b.schoolName})`);
+    console.log('   -', b.name, '(' + b.schoolName + ')');
   });
 }
 

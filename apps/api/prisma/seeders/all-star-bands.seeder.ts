@@ -49,7 +49,7 @@ async function seedAllStarBands(prisma: PrismaClient) {
           isActive: true,
         },
       });
-      console.log(`   🔄 Updated: ${band.name}`);
+      console.log('   🔄 Updated:', band.name);
       updated++;
     } else {
       await prisma.band.create({
@@ -65,7 +65,7 @@ async function seedAllStarBands(prisma: PrismaClient) {
           isActive: true,
         },
       });
-      console.log(`   ✅ Created: ${band.name}`);
+      console.log('   ✅ Created:', band.name);
       created++;
     }
   }

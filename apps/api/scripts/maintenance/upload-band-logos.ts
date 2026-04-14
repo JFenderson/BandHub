@@ -30,10 +30,10 @@ async function uploadLogo(bandId: string, logoPath: string) {
     }
 
     const result = await response.json();
-    console.log(`✓ Uploaded logo for band ${bandId}`);
+    console.log('✓ Uploaded logo for band', bandId);
     return result;
   } catch (error) {
-    console.error(`✗ Failed to upload logo for band ${bandId}:`, error);
+    console.error('✗ Failed to upload logo for band', bandId + ':', error);
   }
 }
 

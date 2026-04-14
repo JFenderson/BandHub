@@ -57,7 +57,7 @@ async function main() {
 
   console.log(`📊 Found ${bands.length} bands needing full sync:\n`);
   bands.forEach((band, index) => {
-    console.log(`   ${index + 1}. ${band.name} (${band.schoolName})`);
+    console.log('  ', (index + 1) + '.', band.name, '(' + band.schoolName + ')');
   });
   console.log('');
 
@@ -92,7 +92,7 @@ async function main() {
       break;
     }
 
-    console.log(`\n[${ i + 1}/${bands.length}] Processing: ${band.name}`);
+    console.log('\n[' + (i + 1) + '/' + bands.length + '] Processing:', band.name);
     console.log(`   Quota used: ${quotaUsed}/${config.DAILY_QUOTA_LIMIT}`);
 
     try {
@@ -100,7 +100,7 @@ async function main() {
       console.log(`   ✅ Synced: ${result.videosAdded} added, ${result.videosUpdated} updated`);
       console.log(`   📊 Quota used for band: ${result.quotaUsed}`);
     } catch (error) {
-      console.error(`   ❌ Failed to sync: ${error}`);
+      console.error('   ❌ Failed to sync:', error);
     }
 
     // Wait before next band (unless it's the last one)
@@ -310,7 +310,7 @@ async function getVideoDetails(videoId: string) {
       likeCount: parseInt(video.statistics?.likeCount || '0'),
     };
   } catch (error) {
-    console.error(`   Failed to get details for video ${videoId}:`, error);
+    console.error('   Failed to get details for video', videoId + ':', error);
     return null;
   }
 }

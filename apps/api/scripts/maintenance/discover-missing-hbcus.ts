@@ -226,7 +226,7 @@ async function main() {
     console.log('==========================================\n');
 
     for (const missing of stats.missingHBCUs) {
-      console.log(`📍 ${missing.bandName}`);
+      console.log('📍', missing.bandName);
       console.log(`   School: ${missing.schoolName}`);
       console.log(`   Location: ${missing.city}, ${missing.state}`);
       console.log(`   Conference: ${missing.conference}`);
@@ -236,7 +236,7 @@ async function main() {
       }
       console.log(`   Sample titles:`);
       missing.sampleTitles.forEach((title) => {
-        console.log(`     - ${title}`);
+        console.log('     -', title);
       });
       console.log('');
     }

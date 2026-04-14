@@ -18,7 +18,7 @@
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.3",
-    "@nestjs/core": "^11.0.0",
+    "@nestjs/core": "^11.1.18",
     "@nestjs/schedule": "^6.1.0",
     "@prisma/client": "^5.18.0",
     "bullmq": "^5.8.0",

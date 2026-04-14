@@ -339,7 +339,7 @@ async function step6_finalVerification() {
   });
 
   topBands.forEach((band, index) => {
-    console.log(`   ${index + 1}. ${band.name}: ${band._count.videos} videos`);
+    console.log('  ', (index + 1) + '.', band.name + ':', band._count.videos, 'videos');
   });
 
   console.log('\n');

@@ -46,7 +46,7 @@ use(req: RequestWithIp, res: Response, next: NextFunction) {
 
   // CHANGE THIS - always log, not just in development
   this.logger.debug(`🟢 IpExtractorMiddleware: IP=${realIp}, path=${req.path}`);
-  console.log(`🟢 IpExtractorMiddleware: IP=${realIp}, path=${req.path}`);
+  console.log('🟢 IpExtractorMiddleware: IP=' + realIp + ', path=' + req.path);
 
   next();
 }
