@@ -117,6 +117,11 @@ jobs:
           doppler secrets download --no-file --format env --project=hbcubandhub --config=prd > /secrets/.env
           chmod 600 /secrets/.env
 
+          # Export secrets into shell so docker compose can interpolate ${VAR} syntax
+          set -a
+          source /secrets/.env
+          set +a
+
           # Write Docker file-based secrets from Doppler
           mkdir -p ./secrets
           chmod 700 ./secrets
@@ -131,7 +136,7 @@ jobs:
           docker compose -f docker-compose.prod.yml pull api web worker
 
           # Ensure infrastructure is running
-          docker compose -f docker-compose.prod.yml up -d postgres redis
+          docker compose -f docker-compose.prod.yml up -d postgres redis prometheus grafana
           sleep 15
 
           # Run migrations
