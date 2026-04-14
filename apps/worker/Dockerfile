@@ -92,6 +92,9 @@ COPY --from=builder /app/libs/observability/package.json ./libs/observability/pa
 # Copy Prisma generated client
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
+# Copy runtime config files needed by processors
+COPY --from=builder /app/apps/api/src/config/allstar-config.json ./allstar-config.json
+
 # Set correct ownership
 RUN chown -R worker:worker /app
 
