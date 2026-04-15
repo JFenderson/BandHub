@@ -89,7 +89,7 @@ load_environment() {
         log_info "Fetching secrets from Doppler config: ${DOPPLER_CONFIG}"
         # Use a temporary file for security instead of eval
         TEMP_ENV=$(mktemp)
-        if doppler secrets download --format=env-no-quotes --config="${DOPPLER_CONFIG}" > "$TEMP_ENV"; then
+        if doppler secrets download --format=env-no-quotes --config="${DOPPLER_CONFIG}" 2>/dev/null | grep -v '^Downloaded' > "$TEMP_ENV" && [ -s "$TEMP_ENV" ]; then
             set -a
             source "$TEMP_ENV"
             set +a
@@ -134,7 +134,7 @@ refresh_secrets() {
     fi
 
     mkdir -p /secrets
-    if doppler secrets download --no-file --format env --config="${DOPPLER_CONFIG}" > /secrets/.env; then
+    if doppler secrets download --no-file --format env --config="${DOPPLER_CONFIG}" 2>/dev/null | grep -v '^Downloaded' > /secrets/.env && [ -s /secrets/.env ]; then
         chmod 600 /secrets/.env
         log_success "/secrets/.env written from Doppler (config: ${DOPPLER_CONFIG})"
     else
