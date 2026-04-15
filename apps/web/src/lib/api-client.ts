@@ -708,6 +708,17 @@ export class ApiClient {
     });
   }
 
+  async triggerRematch(options: {
+    filter: 'all' | 'low_confidence' | 'unmatched' | 'alias_only';
+    qualityScoreThreshold?: number;
+    limit?: number;
+  }): Promise<{ jobId: string; message: string }> {
+    return this.request(`/admin/videos/rematch`, {
+      method: 'POST',
+      body: JSON.stringify(options),
+    });
+  }
+
   // ============ EVENTS METHODS ============
 
   async getEvents(filters?: EventFilters): Promise<PaginatedResponse<Event>> {
@@ -875,6 +886,67 @@ export class ApiClient {
 
   async getSyncErrors(): Promise<any> {
     return this.request(`/admin/sync/errors`);
+  }
+
+  // ============ JOB MONITORING METHODS ============
+
+  async getJobMetrics(): Promise<{
+    timestamp: string;
+    queues: Array<{
+      queueName: string;
+      waiting: number;
+      active: number;
+      completed: number;
+      failed: number;
+      delayed: number;
+      paused: boolean;
+    }>;
+    totals: { waiting: number; active: number; completed: number; failed: number; delayed: number };
+    successRate: number;
+    processingRate: number;
+  }> {
+    return this.request(`/admin/jobs/metrics`);
+  }
+
+  async getJobTrends(period: '24h' | '7d' | '30d' = '24h'): Promise<Array<{
+    queueName: string;
+    period: string;
+    successful: number;
+    failed: number;
+    total: number;
+    successRate: number;
+    avgProcessingTime: number;
+  }>> {
+    return this.request(`/admin/jobs/trends?period=${period}`);
+  }
+
+  async getStuckJobAlerts(): Promise<Array<{
+    jobId: string;
+    queueName: string;
+    jobName: string;
+    stuckDuration: number;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    startedAt: string;
+    data: any;
+    attemptsMade: number;
+  }>> {
+    return this.request(`/admin/jobs/alerts/stuck`);
+  }
+
+  async pauseQueueByName(queueName: string): Promise<void> {
+    await this.request(`/admin/jobs/queue/${queueName}/pause`, { method: 'PATCH' });
+  }
+
+  async resumeQueueByName(queueName: string): Promise<void> {
+    await this.request(`/admin/jobs/queue/${queueName}/resume`, { method: 'PATCH' });
+  }
+
+  async clearQueueByName(queueName: string, type: 'completed' | 'failed' | 'all' = 'all'): Promise<void> {
+    await this.request(`/admin/jobs/queue/${queueName}/clear?type=${type}`, { method: 'DELETE' });
+  }
+
+  async retryJob(queueName: string, jobId: string): Promise<{ success: boolean; newJobId: string }> {
+    return this.request(`/admin/jobs/retry/${queueName}/${jobId}`, { method: 'POST', body: JSON.stringify({}) });
   }
 
   // Admin Dashboard methods

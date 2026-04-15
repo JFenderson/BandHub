@@ -83,6 +83,13 @@ export default function SyncManagementPage() {
   const [syncType, setSyncType] = useState<'channel' | 'playlist' | 'search'>('channel');
   const [isTriggeringSync, setIsTriggeringSync] = useState(false);
 
+  // Rematch Modal
+  const [showRematchModal, setShowRematchModal] = useState(false);
+  const [rematchFilter, setRematchFilter] = useState<'unmatched' | 'alias_only' | 'low_confidence' | 'all'>('unmatched');
+  const [rematchLimit, setRematchLimit] = useState<string>('');
+  const [rematchThreshold, setRematchThreshold] = useState<string>('50');
+  const [isTriggeringRematch, setIsTriggeringRematch] = useState(false);
+
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     setToast({ message, type, show: true });
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
@@ -156,6 +163,16 @@ export default function SyncManagementPage() {
     };
   }, [isPolling, fetchAll]);
 
+  const handleCategorize = async () => {
+    try {
+      await apiClient.categorizeVideos(true);
+      showToast('Categorization job queued (uncategorized videos only)', 'success');
+      fetchAll();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to trigger categorization', 'error');
+    }
+  };
+
   const handleTriggerSync = async () => {
     setIsTriggeringSync(true);
     try {
@@ -221,6 +238,30 @@ export default function SyncManagementPage() {
     }
   };
 
+  const handleTriggerRematch = async () => {
+    setIsTriggeringRematch(true);
+    try {
+      const options: { filter: typeof rematchFilter; qualityScoreThreshold?: number; limit?: number } = {
+        filter: rematchFilter,
+      };
+      if (rematchFilter === 'low_confidence' && rematchThreshold) {
+        options.qualityScoreThreshold = parseInt(rematchThreshold, 10);
+      }
+      if (rematchLimit) {
+        options.limit = parseInt(rematchLimit, 10);
+      }
+      await apiClient.triggerRematch(options);
+      showToast(`Re-match job queued (filter: ${rematchFilter})`, 'success');
+      setShowRematchModal(false);
+      fetchAll();
+    } catch (err) {
+      console.error('Failed to trigger rematch:', err);
+      showToast(err instanceof Error ? err.message : 'Failed to trigger rematch', 'error');
+    } finally {
+      setIsTriggeringRematch(false);
+    }
+  };
+
   const formatDuration = (startedAt?: string, completedAt?: string): string => {
     if (!startedAt) return '—';
     const start = new Date(startedAt).getTime();
@@ -259,6 +300,24 @@ export default function SyncManagementPage() {
             />
             <span>Auto-refresh</span>
           </label>
+          <button
+            onClick={handleCategorize}
+            className="border border-green-300 text-green-700 px-4 py-2 rounded-lg hover:bg-green-50 transition-colors flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            <span>Categorize Videos</span>
+          </button>
+          <button
+            onClick={() => setShowRematchModal(true)}
+            className="border border-purple-300 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-50 transition-colors flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <span>Re-match Videos</span>
+          </button>
           <button
             onClick={() => setShowTriggerModal(true)}
             className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
@@ -576,6 +635,94 @@ export default function SyncManagementPage() {
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
               >
                 {isTriggeringSync ? 'Triggering...' : 'Start Sync'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Re-match Modal */}
+      {showRematchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Re-match Videos to Bands</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Resets existing matches and re-runs the full three-stage matching pipeline (channel ownership → AI → alias).
+              Manual matches are never reset.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Filter</label>
+                <select
+                  value={rematchFilter}
+                  onChange={(e) => setRematchFilter(e.target.value as typeof rematchFilter)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="unmatched">Unmatched only (safest — no band assigned)</option>
+                  <option value="alias_only">Alias matches only (upgrade low-quality matches)</option>
+                  <option value="low_confidence">Low confidence matches (below threshold)</option>
+                  <option value="all">All non-manual matches (full reset)</option>
+                </select>
+                <p className="text-xs text-gray-400 mt-1">
+                  {rematchFilter === 'unmatched' && 'Videos with no band assigned and not excluded.'}
+                  {rematchFilter === 'alias_only' && 'Videos matched only by keyword alias — will be re-evaluated with AI.'}
+                  {rematchFilter === 'low_confidence' && 'Videos with a quality score below the threshold.'}
+                  {rematchFilter === 'all' && 'Every video except manually-assigned ones will be re-processed.'}
+                </p>
+              </div>
+
+              {rematchFilter === 'low_confidence' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Quality Score Threshold <span className="text-gray-400">(0–100)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={rematchThreshold}
+                    onChange={(e) => setRematchThreshold(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="50"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Limit <span className="text-gray-400">(optional — leave blank for all)</span>
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={rematchLimit}
+                  onChange={(e) => setRematchLimit(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="e.g. 500"
+                />
+              </div>
+
+              {rematchFilter === 'all' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                  This will reset ALL non-manual matches. Run during off-peak hours — the job can take a while depending on your video count.
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowRematchModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTriggerRematch}
+                disabled={isTriggeringRematch}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+              >
+                {isTriggeringRematch ? 'Queuing...' : 'Start Re-match'}
               </button>
             </div>
           </div>
