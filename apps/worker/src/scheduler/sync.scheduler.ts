@@ -170,7 +170,6 @@ export class SyncScheduler implements OnModuleInit {
       {
         type: JobType.MATCH_VIDEOS,
         triggeredBy: 'schedule',
-        minConfidence: 30,
       } as MatchVideosJobData,
       {
         priority: JobPriority.NORMAL,

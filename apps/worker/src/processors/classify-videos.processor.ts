@@ -14,6 +14,14 @@ function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
+function chunk<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
 interface ClassifyResult {
   totalProcessed: number;
   classified: number;
@@ -28,6 +36,7 @@ interface ClassifyResult {
 export class ClassifyVideosProcessor extends WorkerHost {
   private readonly logger = new Logger(ClassifyVideosProcessor.name);
   private readonly BATCH_SIZE = 20;
+  private readonly SUB_BATCH_SIZE = 5; // Videos per Claude API call
 
   constructor(
     private databaseService: DatabaseService,
@@ -82,36 +91,54 @@ export class ClassifyVideosProcessor extends WorkerHost {
         message: `Classifying batch ${batchCount + 1}`,
       });
 
-      for (const video of batch) {
-        result.totalProcessed++;
+      // Process in sub-batches of SUB_BATCH_SIZE for efficient Claude API usage (5 per call)
+      const subBatches = chunk(batch, this.SUB_BATCH_SIZE);
+      for (const subBatch of subBatches) {
         try {
-          const extraction = await this.bandLibrarian.classify({
-            title: video.title,
-            description: video.description ?? '',
-            tags: [],
-            channelTitle: video.channelTitle ?? '',
-          });
+          const extractions = await this.bandLibrarian.classifyBatch(
+            subBatch.map((v) => ({
+              title: v.title,
+              description: v.description ?? '',
+              tags: (v as any).tags ?? [],
+              channelTitle: v.channelTitle ?? '',
+            })),
+          );
 
-          await this.databaseService.youTubeVideo.update({
-            where: { id: video.id },
-            data: {
-              aiExtraction: extraction as any,
-              aiProcessed: true,
-              aiExcluded: !extraction.isHbcuBandContent,
-            },
-          });
-
-          result.classified++;
-          if (!extraction.isHbcuBandContent) result.excluded++;
+          // Persist results in parallel
+          await Promise.all(
+            subBatch.map(async (video, i) => {
+              const extraction = extractions[i];
+              result.totalProcessed++;
+              try {
+                await this.databaseService.youTubeVideo.update({
+                  where: { id: video.id },
+                  data: {
+                    aiExtraction: extraction as any,
+                    aiProcessed: true,
+                    aiExcluded: !extraction.isHbcuBandContent,
+                  },
+                });
+                result.classified++;
+                if (!extraction.isHbcuBandContent) result.excluded++;
+              } catch (err) {
+                result.errors.push(`Error saving classification for ${video.youtubeId}: ${getErrorMessage(err)}`);
+                this.logger.warn(`Failed to save classification for ${video.youtubeId}: ${err}`);
+              }
+            }),
+          );
         } catch (err) {
-          result.errors.push(`Error classifying ${video.youtubeId}: ${getErrorMessage(err)}`);
-          this.logger.warn(`Failed to classify ${video.youtubeId}: ${err}`);
+          // Sub-batch failure — record errors for all videos in the sub-batch
+          for (const video of subBatch) {
+            result.totalProcessed++;
+            result.errors.push(`Error classifying ${video.youtubeId}: ${getErrorMessage(err)}`);
+          }
+          this.logger.warn(`Sub-batch classification failed: ${err}`);
         }
       }
 
       batchCount++;
 
-      // 300ms delay between batches to avoid rate limits
+      // 300ms delay between outer batches to avoid rate limits
       if (batch.length === this.BATCH_SIZE) {
         await sleep(300);
       }

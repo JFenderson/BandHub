@@ -73,6 +73,19 @@ export class PromoteVideosProcessor extends WorkerHost {
         take: limit,
         orderBy: { publishedAt: 'desc' },
       }) as any[];
+
+      // Also fetch participantBandIds for each video (not in include above)
+      const participantMap = new Map<string, string[]>();
+      if (videosToPromote.length > 0) {
+        const ytIds = videosToPromote.map((v: any) => v.id);
+        const ytVideosWithParticipants = await (this.databaseService.youTubeVideo.findMany as any)({
+          where: { id: { in: ytIds } },
+          select: { id: true, participantBandIds: true },
+        }) as any[];
+        for (const ytv of ytVideosWithParticipants) {
+          participantMap.set(ytv.id, ytv.participantBandIds ?? []);
+        }
+      }
       
       this.logger.log(`Found ${videosToPromote.length} videos ready for promotion`);
       
@@ -129,6 +142,25 @@ export class PromoteVideosProcessor extends WorkerHost {
             },
             select: { id: true },
           });
+
+          // Create VideoBand junction entries for all participant bands
+          const participantBandIds = participantMap.get(youtubeVideo.id) ?? [];
+          if (participantBandIds.length > 0) {
+            const videoBandData = participantBandIds.map((bandId: string) => ({
+              videoId: upsertResult.id,
+              bandId,
+              role:
+                bandId === youtubeVideo.bandId
+                  ? ('PRIMARY' as const)
+                  : bandId === youtubeVideo.opponentBandId
+                  ? ('OPPONENT' as const)
+                  : ('PARTICIPANT' as const),
+            }));
+            await (this.databaseService as any).videoBand.createMany({
+              data: videoBandData,
+              skipDuplicates: true,
+            });
+          }
 
           // Mark as promoted
           await this.databaseService.youTubeVideo.update({

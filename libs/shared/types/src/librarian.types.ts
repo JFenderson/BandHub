@@ -9,7 +9,17 @@ export type LibrarianExclusionReason =
 export interface LibrarianExtraction {
   isHbcuBandContent: boolean;
   exclusionReason?: LibrarianExclusionReason;
+  /** Exact DB id of the primary band. Preferred over primaryBandName for matching. */
+  primaryBandId?: string;
+  /** Exact DB id of the opponent band (2-band battles). */
+  opponentBandId?: string;
+  /** All band IDs when 3+ bands are present (includes primary and opponent). */
+  participantBandIds?: string[];
+  /** Whether the primary band is a marching or pep band (for same-school disambiguation). */
+  bandSubtype?: 'marching' | 'pep' | 'unknown';
+  /** Kept for debug logging — do not use for DB lookups. */
   primaryBandName?: string;
+  /** Kept for debug logging — do not use for DB lookups. */
   opponentBandName?: string;
   videoCategory:
     | 'FIFTH_QUARTER'

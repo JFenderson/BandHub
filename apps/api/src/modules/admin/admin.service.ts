@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '@bandhub/database';
 import { SyncJobStatus, Prisma } from '@prisma/client';
-import { QUEUE_NAMES, JobType, JobPriority, CategorizeVideosJobData } from '@hbcu-band-hub/shared-types';
+import { QUEUE_NAMES, JobType, JobPriority, CategorizeVideosJobData, RematchVideosJobData } from '@hbcu-band-hub/shared-types';
 import {
   DashboardStatsDto,
   RecentActivityDto,
@@ -24,6 +24,8 @@ export class AdminService {
     private readonly prisma: PrismaService,
     @InjectQueue(QUEUE_NAMES.MAINTENANCE)
     private readonly maintenanceQueue: Queue,
+    @InjectQueue(QUEUE_NAMES.VIDEO_PROCESSING)
+    private readonly videoProcessingQueue: Queue,
   ) {}
 
   /**
@@ -849,6 +851,42 @@ export class AdminService {
       message: uncategorizedOnly
         ? 'Categorization job queued — will process all videos currently missing a category.'
         : 'Categorization job queued — will re-run pattern matching on all videos.',
+    };
+  }
+
+  /**
+   * Enqueue a job to re-match YouTube videos using the enhanced matching pipeline.
+   *
+   * @param filter - Which videos to re-process:
+   *   - 'unmatched': videos with no band assigned
+   *   - 'low_confidence': matches below qualityScoreThreshold (default 50)
+   *   - 'alias_only': videos matched via alias fallback only (weakest signal)
+   *   - 'all': all videos except MANUAL matches
+   * @param qualityScoreThreshold - Re-match low_confidence videos below this score (default 50)
+   * @param limit - Maximum number of videos to reset in this run
+   */
+  async triggerRematch(
+    filter: RematchVideosJobData['filter'] = 'unmatched',
+    qualityScoreThreshold = 50,
+    limit?: number,
+  ): Promise<{ jobId: string; message: string }> {
+    const data: RematchVideosJobData = {
+      type: JobType.REMATCH_VIDEOS,
+      triggeredBy: 'admin',
+      filter,
+      qualityScoreThreshold,
+      limit,
+      priority: JobPriority.NORMAL,
+    };
+
+    const job = await this.videoProcessingQueue.add(JobType.REMATCH_VIDEOS, data, {
+      priority: JobPriority.NORMAL,
+      jobId: `rematch-videos-${filter}-${Date.now()}`,
+    });
+
+    return {
+      jobId: job.id!,
+      message: `Re-match job queued (filter: ${filter}). Videos will be reset and re-processed through the enhanced matching pipeline.`,
     };
   }
 }

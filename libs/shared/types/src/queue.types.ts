@@ -17,6 +17,7 @@ export enum JobType {
   PROMOTE_VIDEOS = 'promote-videos',
   CATEGORIZE_VIDEOS = 'categorize-videos',
   CLASSIFY_VIDEOS = 'classify-videos',
+  REMATCH_VIDEOS = 'rematch-videos',
 }
 
 export enum JobPriority {
@@ -91,7 +92,23 @@ export interface MatchVideosJobData {
   type: JobType.MATCH_VIDEOS;
   triggeredBy: 'admin' | 'schedule' | 'system';
   limit?: number;
+  /** @deprecated Confidence thresholds are now managed internally by the processor. */
   minConfidence?: number;
+  priority?: JobPriority;
+}
+
+export interface RematchVideosJobData {
+  type: JobType.REMATCH_VIDEOS;
+  triggeredBy: 'admin' | 'system';
+  /** Which videos to re-match:
+   *  - all: everything except MANUAL matches
+   *  - low_confidence: matches below qualityScoreThreshold
+   *  - unmatched: videos with no bandId assigned
+   *  - alias_only: videos matched via alias fallback only
+   */
+  filter: 'all' | 'low_confidence' | 'unmatched' | 'alias_only';
+  qualityScoreThreshold?: number;
+  limit?: number;
   priority?: JobPriority;
 }
 
@@ -128,7 +145,8 @@ export type JobData =
   | MatchVideosJobData
   | PromoteVideosJobData
   | CategorizeVideosJobData
-  | ClassifyVideosJobData;
+  | ClassifyVideosJobData
+  | RematchVideosJobData;
 
 export interface YouTubeVideoMetadata {
   id: string;

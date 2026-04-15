@@ -132,6 +132,31 @@ export class AdminController {
     return this.adminService.triggerCategorization(body.uncategorizedOnly ?? true);
   }
 
+  @Post('videos/rematch')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Re-match videos using the enhanced matching pipeline',
+    description:
+      'Resets band assignments for the specified set of videos and re-queues them for re-processing. ' +
+      'MANUAL matches are never overwritten.',
+  })
+  @ApiResponse({ status: 202, description: 'Re-match job queued' })
+  async triggerRematch(
+    @Body()
+    body: {
+      filter?: 'all' | 'low_confidence' | 'unmatched' | 'alias_only';
+      qualityScoreThreshold?: number;
+      limit?: number;
+    } = {},
+  ): Promise<{ jobId: string; message: string }> {
+    return this.adminService.triggerRematch(
+      body.filter ?? 'unmatched',
+      body.qualityScoreThreshold ?? 50,
+      body.limit,
+    );
+  }
+
   @Put('videos/:id')
   @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Update a single video' })

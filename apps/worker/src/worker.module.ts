@@ -26,6 +26,7 @@ import { MatchVideosProcessor } from './processors/match-videos.processor';
 import { PromoteVideosProcessor } from './processors/promote-videos.processor';
 import { BackfillCategoriesProcessor } from './processors/backfill-categories.processor';
 import { ClassifyVideosProcessor } from './processors/classify-videos.processor';
+import { RematchVideosProcessor } from './processors/rematch-videos.processor';
 import { BandLibrarianService } from './services/band-librarian.service';
 // Scheduler
 import { SyncScheduler } from './scheduler/sync.scheduler';
@@ -127,6 +128,7 @@ MatchVideosProcessor,
 PromoteVideosProcessor,
 BackfillCategoriesProcessor,
 ClassifyVideosProcessor,
+RematchVideosProcessor,
 
 // Scheduler
 SyncScheduler,

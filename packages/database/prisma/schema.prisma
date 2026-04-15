@@ -247,6 +247,7 @@ model Band {
   syncJobs                  SyncJob[]
   videos                    Video[]             @relation("videos_band_idTobands")
   opponentVideos            Video[]             @relation("videos_opponent_band_idTobands")
+  videoBands                VideoBand[]
   youtubeVideos             YouTubeVideo[]      @relation("youtube_videos_band")
   opponentYoutubeVideos     YouTubeVideo[]      @relation("youtube_videos_opponent")
   reviews                   Review[]
@@ -841,6 +842,7 @@ model Video {
   category           Category?           @relation(fields: [categoryId], references: [id])
   contentCreator     ContentCreator?     @relation(fields: [creatorId], references: [id])
   opponentBand       Band?               @relation("videos_opponent_band_idTobands", fields: [opponentBandId], references: [id])
+  videoBands         VideoBand[]
   watchLater         WatchLater[]
   playlistVideos     PlaylistVideo[]
   comments           Comment[]
@@ -920,6 +922,10 @@ model YouTubeVideo {
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
   
+  participantBandIds  String[]          @default([]) @map("participant_band_ids")
+  matchSource         MatchSource?      @map("match_source")
+  matchConfidence     Int               @default(0) @map("match_confidence")
+
   band             Band?             @relation("youtube_videos_band", fields: [bandId], references: [id])
   opponentBand     Band?             @relation("youtube_videos_opponent", fields: [opponentBandId], references: [id])
   contentCreator   ContentCreator?   @relation(fields: [creatorId], references: [id])
@@ -933,6 +939,7 @@ model YouTubeVideo {
   @@index([creatorId])
   @@index([creatorId, publishedAt(sort: Desc)])
   @@index([isPromoted])
+  @@index([matchSource, qualityScore])
   @@index([publishedAt(sort: Desc)])
   @@index([qualityScore(sort: Desc)])
   @@index([syncStatus, createdAt])
@@ -1266,6 +1273,19 @@ enum AchievementCategory {
   SPECIAL       // Early adopter, milestones, etc.
 }
 
+enum MatchSource {
+  CHANNEL_OWNERSHIP
+  AI
+  ALIAS
+  MANUAL
+}
+
+enum VideoBandRole {
+  PRIMARY
+  OPPONENT
+  PARTICIPANT
+}
+
 enum AchievementRarity {
   COMMON
   UNCOMMON
@@ -1331,4 +1351,19 @@ model UserPoints {
   @@index([totalPoints(sort: Desc)])
   @@index([currentLevel])
   @@map("user_points")
+}
+
+model VideoBand {
+  id        String        @id @default(cuid())
+  videoId   String        @map("video_id")
+  bandId    String        @map("band_id")
+  role      VideoBandRole @default(PARTICIPANT)
+  createdAt DateTime      @default(now()) @map("created_at")
+  video     Video         @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  band      Band          @relation(fields: [bandId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, bandId])
+  @@index([bandId])
+  @@index([videoId])
+  @@map("video_bands")
 }
