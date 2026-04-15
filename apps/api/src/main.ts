@@ -21,6 +21,10 @@ import { MetricsService } from './metrics/metrics.service';
 import { VersionDeprecationMiddleware } from './common/middleware/version-deprecation.middleware';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { HttpsRedirectMiddleware } from './common/middleware/https-redirect.middleware';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter as BullBoardExpressAdapter } from '@bull-board/express';
+import { Queue } from 'bullmq';
 
 async function bootstrap() {
   startTracing('api');
@@ -248,7 +252,41 @@ Endpoints accepting files use \`multipart/form-data\`. Ensure your client sets t
   });
 
 Sentry.setupExpressErrorHandler(app.getHttpAdapter().getInstance());
-  
+
+  // BullBoard — queue monitoring UI at /queues
+  // Protected by BULL_BOARD_TOKEN env var (set in Doppler as BULL_BOARD_TOKEN)
+  const bullBoardToken = process.env.BULL_BOARD_TOKEN;
+  if (bullBoardToken) {
+    const redisOpts = {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      password: process.env.REDIS_PASSWORD,
+      maxRetriesPerRequest: null,
+    };
+    const queues = ['video-sync', 'video-processing', 'maintenance'].map(
+      (name) => new BullMQAdapter(new Queue(name, { connection: redisOpts })),
+    );
+    const serverAdapter = new BullBoardExpressAdapter();
+    serverAdapter.setBasePath('/queues');
+    createBullBoard({ queues, serverAdapter });
+
+    // Token-based middleware — pass ?token=<BULL_BOARD_TOKEN> or Authorization: Bearer <token>
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.use('/queues', (req: any, res: any, next: any) => {
+      const queryToken = req.query?.token;
+      const authHeader: string = req.headers?.authorization || '';
+      const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+      if (queryToken === bullBoardToken || bearerToken === bullBoardToken) {
+        return next();
+      }
+      res.status(401).json({ message: 'Unauthorized' });
+    });
+    expressApp.use('/queues', serverAdapter.getRouter());
+    console.log('📊 BullBoard available at http://localhost:' + (process.env.API_PORT || 3001) + '/queues');
+  } else {
+    console.log('ℹ️  BullBoard disabled — set BULL_BOARD_TOKEN to enable');
+  }
+
   const port = process.env.API_PORT || 3001;
   await app.listen(port);
 
