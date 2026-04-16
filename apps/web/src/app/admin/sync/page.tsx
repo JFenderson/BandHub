@@ -173,6 +173,24 @@ export default function SyncManagementPage() {
     }
   };
 
+  const handleHideExcluded = async () => {
+    try {
+      const result = await apiClient.hideExcludedVideos();
+      showToast(result.message, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to hide excluded videos', 'error');
+    }
+  };
+
+  const handleRecategorizeOther = async () => {
+    try {
+      const result = await apiClient.recategorizeOtherVideos();
+      showToast(result.message, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to recategorize videos', 'error');
+    }
+  };
+
   const handleTriggerSync = async () => {
     setIsTriggeringSync(true);
     try {
@@ -300,6 +318,26 @@ export default function SyncManagementPage() {
             />
             <span>Auto-refresh</span>
           </label>
+          <button
+            onClick={handleHideExcluded}
+            className="border border-red-300 text-red-700 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors flex items-center space-x-2"
+            title="Hide promoted videos flagged as non-HBCU content (high school, drum corps, etc.)"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            </svg>
+            <span>Hide Non-HBCU Videos</span>
+          </button>
+          <button
+            onClick={handleRecategorizeOther}
+            className="border border-orange-300 text-orange-700 px-4 py-2 rounded-lg hover:bg-orange-50 transition-colors flex items-center space-x-2"
+            title="Re-run category detection on videos stuck in the Other category"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span>Fix "Other" Categories</span>
+          </button>
           <button
             onClick={handleCategorize}
             className="border border-green-300 text-green-700 px-4 py-2 rounded-lg hover:bg-green-50 transition-colors flex items-center space-x-2"

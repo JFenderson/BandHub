@@ -889,4 +889,101 @@ export class AdminService {
       message: `Re-match job queued (filter: ${filter}). Videos will be reset and re-processed through the enhanced matching pipeline.`,
     };
   }
+
+  /**
+   * Hide all promoted Video records whose source YouTubeVideo was AI-excluded
+   * (i.e. flagged as non-HBCU content such as high school bands).
+   * Sets isHidden=true — reversible via the admin videos page.
+   */
+  async hideExcludedVideos(): Promise<{ hidden: number; message: string }> {
+    // Find youtube_videos marked as excluded
+    const excludedYtVideos = await this.prisma.youTubeVideo.findMany({
+      where: { aiExcluded: true },
+      select: { youtubeId: true },
+    });
+
+    if (excludedYtVideos.length === 0) {
+      return { hidden: 0, message: 'No AI-excluded YouTube videos found.' };
+    }
+
+    const youtubeIds = excludedYtVideos.map((v) => v.youtubeId);
+
+    // Hide matching promoted Video records
+    const result = await this.prisma.video.updateMany({
+      where: {
+        youtubeId: { in: youtubeIds },
+        isHidden: false,
+      },
+      data: { isHidden: true },
+    });
+
+    return {
+      hidden: result.count,
+      message: `Hidden ${result.count} promoted videos flagged as non-HBCU content (high school, drum corps, etc.).`,
+    };
+  }
+
+  /**
+   * Re-run category detection on promoted Video records currently assigned to
+   * the "other" catch-all category or with no category at all.
+   * Uses the same keyword matching logic as the promote processor.
+   */
+  async recategorizeOtherVideos(): Promise<{ updated: number; message: string }> {
+    // Find the "other" category id
+    const otherCategory = await this.prisma.category.findUnique({
+      where: { slug: 'other' },
+      select: { id: true },
+    });
+
+    const videos = await this.prisma.video.findMany({
+      where: {
+        OR: [
+          { categoryId: otherCategory?.id ?? '__none__' },
+          { categoryId: null },
+        ],
+        isHidden: false,
+      },
+      select: { id: true, title: true, description: true, categoryId: true },
+    });
+
+    if (videos.length === 0) {
+      return { updated: 0, message: 'No videos in "Other" category to recategorize.' };
+    }
+
+    // Fetch all categories once
+    const categories = await this.prisma.category.findMany({ select: { id: true, slug: true } });
+    const categoryBySlug = new Map(categories.map((c) => [c.slug, c.id]));
+
+    let updated = 0;
+    for (const video of videos) {
+      const newSlug = this.detectCategorySlug(video.title, video.description ?? '');
+      if (!newSlug || newSlug === 'other') continue;
+      const newCategoryId = categoryBySlug.get(newSlug);
+      if (!newCategoryId) continue;
+      await this.prisma.video.update({
+        where: { id: video.id },
+        data: { categoryId: newCategoryId },
+      });
+      updated++;
+    }
+
+    return {
+      updated,
+      message: `Recategorized ${updated} of ${videos.length} "Other" videos to more specific categories.`,
+    };
+  }
+
+  private detectCategorySlug(title: string, description: string): string {
+    const text = `${title} ${description}`.toLowerCase();
+    if (text.match(/\b(5th\s*quarter|fifth\s*quarter|post\s*game|after\s*the\s*game)\b/i)) return '5th-quarter';
+    if (text.match(/\b(stand\s*battle|battle\s*of\s*(the\s*)?bands|band\s*battle|stands?\s*vs\.?)\b/i)) return 'stand-battle';
+    if (text.match(/\b(field\s*show|marching\s*show|formation|drill\s*team)\b/i)) return 'field-show';
+    if (text.match(/\b(halftime|half\s*time|half-time)\b/i)) return 'halftime';
+    if (text.match(/\b(pregame|pre\s*game|before\s*the\s*game)\b/i)) return 'pregame';
+    if (text.match(/\b(entrance|entering|arrival)\b/i)) return 'entrance';
+    if (text.match(/\b(parade|homecoming\s*parade|mardi\s*gras)\b/i)) return 'parade';
+    if (text.match(/\b(practice|rehearsal|sectional|band\s*camp|band\s*room)\b/i)) return 'practice';
+    if (text.match(/\b(concert|symphonic|spring\s*show|indoor)\b/i)) return 'concert-band';
+    return 'other';
+  }
 }

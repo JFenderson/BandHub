@@ -721,6 +721,14 @@ export class ApiClient {
     });
   }
 
+  async hideExcludedVideos(): Promise<{ hidden: number; message: string }> {
+    return this.request(`/admin/videos/hide-excluded`, { method: 'POST' });
+  }
+
+  async recategorizeOtherVideos(): Promise<{ updated: number; message: string }> {
+    return this.request(`/admin/videos/recategorize-other`, { method: 'POST' });
+  }
+
   // ============ EVENTS METHODS ============
 
   async getEvents(filters?: EventFilters): Promise<PaginatedResponse<Event>> {

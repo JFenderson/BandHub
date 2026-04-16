@@ -157,6 +157,30 @@ export class AdminController {
     );
   }
 
+  @Post('videos/hide-excluded')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Hide promoted videos flagged as non-HBCU content',
+    description: 'Finds all promoted Video records whose source YouTubeVideo was AI-excluded (high school, drum corps, etc.) and sets isHidden=true. Reversible via the admin videos page.',
+  })
+  @ApiResponse({ status: 200, description: 'Excluded videos hidden' })
+  async hideExcludedVideos(): Promise<{ hidden: number; message: string }> {
+    return this.adminService.hideExcludedVideos();
+  }
+
+  @Post('videos/recategorize-other')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Re-run category detection on "Other" videos',
+    description: 'Re-runs keyword-based category matching on all promoted videos currently in the "Other" catch-all or uncategorized. Does not use AI quota.',
+  })
+  @ApiResponse({ status: 200, description: 'Recategorization complete' })
+  async recategorizeOtherVideos(): Promise<{ updated: number; message: string }> {
+    return this.adminService.recategorizeOtherVideos();
+  }
+
   @Put('videos/:id')
   @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Update a single video' })
