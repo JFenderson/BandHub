@@ -511,9 +511,11 @@ export class ApiClient {
     return this.request<Creator>(`/creators/${id}`);
   }
 
-  async getCreatorVideos(id: string, filters?: VideoFilters): Promise<PaginatedResponse<Video>> {
+  async getCreatorVideos(id: string, filters?: VideoFilters & { bandId?: string; year?: number }): Promise<PaginatedResponse<Video>> {
     const params = new URLSearchParams();
+    if (filters?.bandId) params.append('bandId', filters.bandId);
     if (filters?.category) params.append('category', filters.category);
+    if (filters?.year) params.append('eventYear', filters.year.toString());
     if (filters?.search) params.append('search', filters.search);
     if (filters?.sortBy) params.append('sortBy', filters.sortBy);
     if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);

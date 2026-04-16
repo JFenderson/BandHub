@@ -1,45 +1,65 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Suspense } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { Pagination } from '@/components/ui/Pagination';
+import { CreatorVideoFilters } from '@/components/creators/CreatorVideoFilters';
 
 // Force dynamic rendering to always fetch fresh data
 export const dynamic = 'force-dynamic';
 
 interface CreatorPageProps {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
   searchParams: Promise<{
     page?: string;
+    bandId?: string;
+    category?: string;
+    year?: string;
+    search?: string;
+    sortBy?: string;
   }>;
 }
 
 export default async function CreatorPage({ params, searchParams }: CreatorPageProps) {
   const { id } = await params;
-  const resolvedSearchParams = await searchParams;
-  const page = parseInt(resolvedSearchParams.page || '1');
+  const { page: pageParam, bandId, category, year, search, sortBy } = await searchParams;
+  const page = parseInt(pageParam || '1');
   const limit = 12;
 
-  let creator;
-  let videosResult;
+  let creator: Awaited<ReturnType<typeof apiClient.getCreator>>;
+  let videosResult: Awaited<ReturnType<typeof apiClient.getCreatorVideos>>;
+  let bands: { id: string; name: string }[] = [];
 
   try {
-    creator = await apiClient.getCreator(id);
-    videosResult = await apiClient.getCreatorVideos(id, {
-      page,
-      limit,
-      sortBy: 'publishedAt',
-      sortOrder: 'desc',
-    });
-  } catch (error) {
+    [creator, videosResult] = await Promise.all([
+      apiClient.getCreator(id),
+      apiClient.getCreatorVideos(id, {
+        page,
+        limit,
+        bandId,
+        category: category as any,
+        year: year ? parseInt(year) : undefined,
+        search,
+        sortBy: (sortBy as 'publishedAt' | 'viewCount' | 'title') || 'publishedAt',
+        sortOrder: 'desc',
+      }),
+    ]);
+  } catch {
     notFound();
+  }
+
+  try {
+    bands = await apiClient.getBandsForDropdown();
+  } catch {
+    // non-fatal — filters still render without band list
   }
 
   const videos = videosResult.data;
   const videoCount = creator._count?.videos ?? creator.videosInOurDb ?? 0;
+
+  const hasActiveFilters = !!(bandId || category || year || search || (sortBy && sortBy !== 'publishedAt'));
 
   return (
     <div className="bg-white">
@@ -79,12 +99,10 @@ export default async function CreatorPage({ params, searchParams }: CreatorPageP
                   </span>
                 )}
                 {creator.isFeatured && (
-                  <span className="bg-amber-500 text-white text-xs px-2 py-1 rounded-full">
-                    Featured
-                  </span>
+                  <span className="bg-amber-500 text-white text-xs px-2 py-1 rounded-full">Featured</span>
                 )}
               </div>
-              
+
               <div className="flex flex-wrap gap-4 text-sm">
                 {creator.channelUrl && (
                   <a
@@ -102,9 +120,7 @@ export default async function CreatorPage({ params, searchParams }: CreatorPageP
               </div>
 
               {creator.description && (
-                <p className="mt-6 text-primary-50 leading-relaxed max-w-3xl">
-                  {creator.description}
-                </p>
+                <p className="mt-6 text-primary-50 leading-relaxed max-w-3xl">{creator.description}</p>
               )}
             </div>
           </div>
@@ -121,9 +137,7 @@ export default async function CreatorPage({ params, searchParams }: CreatorPageP
             </div>
             {creator.subscriberCount > 0 && (
               <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {formatNumber(creator.subscriberCount)}
-                </div>
+                <div className="text-2xl font-bold text-gray-900">{formatNumber(creator.subscriberCount)}</div>
                 <div className="text-sm text-gray-600">Subscribers</div>
               </div>
             )}
@@ -138,11 +152,24 @@ export default async function CreatorPage({ params, searchParams }: CreatorPageP
       </div>
 
       {/* Videos Section */}
-      <div className="container-custom py-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Videos</h2>
+      <div className="container-custom py-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Videos
+            {videosResult.meta.total > 0 && (
+              <span className="ml-2 text-lg font-normal text-gray-500">
+                ({hasActiveFilters ? `${videosResult.meta.total} filtered` : videosResult.meta.total})
+              </span>
+            )}
+          </h2>
         </div>
 
+        {/* Filters */}
+        <Suspense fallback={<FilterSkeleton />}>
+          <CreatorVideoFilters creatorId={id} bands={bands} />
+        </Suspense>
+
+        {/* Results */}
         {videos.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -150,8 +177,7 @@ export default async function CreatorPage({ params, searchParams }: CreatorPageP
                 <VideoCard key={video.id} video={video} />
               ))}
             </div>
-            
-            {/* Pagination */}
+
             <Pagination
               currentPage={videosResult.meta.page}
               totalPages={videosResult.meta.totalPages}
@@ -159,8 +185,24 @@ export default async function CreatorPage({ params, searchParams }: CreatorPageP
             />
           </>
         ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <p className="text-gray-500">No videos available from this creator yet.</p>
+          <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            {hasActiveFilters ? (
+              <>
+                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">No videos match your filters</h3>
+                <p className="text-gray-500 mb-4">Try adjusting or clearing your filters.</p>
+                <Link
+                  href={`/creators/${id}`}
+                  className="text-primary-600 hover:text-primary-700 font-medium text-sm"
+                >
+                  Clear all filters
+                </Link>
+              </>
+            ) : (
+              <p className="text-gray-500">No videos available from this creator yet.</p>
+            )}
           </div>
         )}
       </div>
@@ -168,13 +210,20 @@ export default async function CreatorPage({ params, searchParams }: CreatorPageP
   );
 }
 
-// Helper function to format large numbers
+function FilterSkeleton() {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-5 mb-6 animate-pulse">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-16 bg-gray-100 rounded-lg" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
-  }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}K`;
-  }
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
   return num.toString();
 }

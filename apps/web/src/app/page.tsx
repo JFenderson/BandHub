@@ -7,6 +7,20 @@ import { RecentVideos } from '@/components/home/RecentVideos';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Maps DB category slugs → VideoCategory enum values that /videos filters use
+const SLUG_TO_CATEGORY: Record<string, string> = {
+  '5th-quarter':  'FIFTH_QUARTER',
+  'stand-battle': 'STAND_BATTLE',
+  'field-show':   'FIELD_SHOW',
+  'halftime':     'HALFTIME',
+  'pregame':      'PREGAME',
+  'entrance':     'ENTRANCE',
+  'parade':       'PARADE',
+  'practice':     'PRACTICE',
+  'concert-band': 'CONCERT_BAND',
+  'other':        'OTHER',
+};
+
 export default async function HomePage() {
   // Fetch featured content server-side — client components below will re-fetch if these fail
   const [bandsResult, recentlyAddedResult, categoriesResult, trendingResult] =
@@ -89,7 +103,7 @@ export default async function HomePage() {
               {categories.map((category) => (
                 <Link
                   key={category.slug}
-                  href={`/videos?category=${category.slug}`}
+                  href={`/videos?category=${SLUG_TO_CATEGORY[category.slug] ?? category.slug}`}
                   className="bg-gradient-to-br from-gray-50 to-gray-100 hover:from-primary-50 hover:to-primary-100 border border-gray-200 hover:border-primary-300 rounded-lg p-6 text-center transition-all group"
                 >
                   <p className="font-medium text-gray-900 group-hover:text-primary-700">
