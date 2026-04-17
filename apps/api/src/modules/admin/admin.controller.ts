@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Body, Query, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Body, Query, Param, UseGuards, HttpCode, HttpStatus, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -179,6 +179,54 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Recategorization complete' })
   async recategorizeOtherVideos(): Promise<{ updated: number; message: string }> {
     return this.adminService.recategorizeOtherVideos();
+  }
+
+  @Post('videos/promote')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Trigger video promotion job',
+    description: 'Queues a PROMOTE_VIDEOS job that upserts all matched YouTubeVideos into the Video table.',
+  })
+  @ApiResponse({ status: 202, description: 'Promote job queued' })
+  async triggerPromote(
+    @Query('limit') limit?: string,
+  ): Promise<{ jobId: string; message: string }> {
+    return this.adminService.triggerPromote(limit ? parseInt(limit, 10) : undefined);
+  }
+
+  @Get('videos/unmatched')
+  @Roles(AdminRole.MODERATOR, AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Paginated report of unmatched / AI-excluded YouTubeVideos',
+    description: 'Returns YouTubeVideos with bandId=null or aiExcluded=true, grouped by noMatchReason with per-reason counts.',
+  })
+  @ApiResponse({ status: 200, description: 'Unmatched video report' })
+  async getUnmatchedVideoReport(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+  ) {
+    return this.adminService.getUnmatchedVideoReport(page, Math.min(limit, 200));
+  }
+
+  @Post('videos/dev-reset')
+  @Roles(AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '[DEV ONLY] Full re-match reset — clears Video + VideoBand, then re-queues matching',
+    description:
+      'Deletes all rows in the Video and VideoBand tables, resets isPromoted on all YouTubeVideos, ' +
+      'and enqueues a full REMATCH_VIDEOS job. DESTRUCTIVE — dev/staging use only. Requires SUPER_ADMIN.',
+  })
+  @ApiResponse({ status: 200, description: 'Reset complete and re-match job enqueued' })
+  async devResetAndRematch(): Promise<{
+    deletedVideos: number;
+    deletedVideoBands: number;
+    resetYouTubeVideos: number;
+    matchJobId: string;
+    message: string;
+  }> {
+    return this.adminService.devResetAndRematch();
   }
 
   @Put('videos/:id')

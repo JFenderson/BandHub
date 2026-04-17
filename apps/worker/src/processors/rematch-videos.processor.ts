@@ -85,6 +85,8 @@ export class RematchVideosProcessor extends WorkerHost {
             aiExtraction: null,
             aiExcluded: false,
             isPromoted: false,
+            noMatchReason: null,
+            matchAttemptedAt: null,
           } as any,
         });
         result.totalReset += batch.length;

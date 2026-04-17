@@ -925,6 +925,8 @@ model YouTubeVideo {
   participantBandIds  String[]          @default([]) @map("participant_band_ids")
   matchSource         MatchSource?      @map("match_source")
   matchConfidence     Int               @default(0) @map("match_confidence")
+  noMatchReason       String?           @map("no_match_reason")
+  matchAttemptedAt    DateTime?         @map("match_attempted_at")
 
   band             Band?             @relation("youtube_videos_band", fields: [bandId], references: [id])
   opponentBand     Band?             @relation("youtube_videos_opponent", fields: [opponentBandId], references: [id])
@@ -940,6 +942,8 @@ model YouTubeVideo {
   @@index([creatorId, publishedAt(sort: Desc)])
   @@index([isPromoted])
   @@index([matchSource, qualityScore])
+  @@index([noMatchReason])
+  @@index([matchAttemptedAt])
   @@index([publishedAt(sort: Desc)])
   @@index([qualityScore(sort: Desc)])
   @@index([syncStatus, createdAt])

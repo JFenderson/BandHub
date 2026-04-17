@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTransition, useEffect, useState } from 'react';
+import { useTransition, useEffect, useState, useRef } from 'react';
 import { VideoCategory, VIDEO_CATEGORIES, VIDEO_CATEGORY_LABELS } from '@hbcu-band-hub/shared-types';
 import { apiClient } from '@/lib/api-client';
 import { HBCU_CONFERENCES } from '@/lib/constants';
@@ -28,6 +28,15 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
   const currentCategory = searchParams?.get('category') || '';
   const currentEventYear = searchParams?.get('eventYear') || '';
   const currentSortBy = searchParams?.get('sortBy') || 'publishedAt';
+
+  // Local state for search input — debounced before pushing to URL
+  const [searchInputValue, setSearchInputValue] = useState(currentSearch);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync local search state when URL changes (e.g., "Clear all" resets to '')
+  useEffect(() => {
+    setSearchInputValue(currentSearch);
+  }, [currentSearch]);
 
   useEffect(() => {
     apiClient.getCategories()
@@ -76,8 +85,16 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
           <input
             id="search"
             type="text"
-            defaultValue={currentSearch}
-            onChange={(e) => updateFilter('search', e.target.value)}
+            value={searchInputValue}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchInputValue(value);
+              // Debounce: wait 400ms after the user stops typing before pushing to URL
+              if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+              debounceTimerRef.current = setTimeout(() => {
+                updateFilter('search', value);
+              }, 400);
+            }}
             placeholder="Search titles, descriptions..."
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />

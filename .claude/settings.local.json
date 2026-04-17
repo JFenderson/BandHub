@@ -24,7 +24,8 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:newpassword123@localhost:5432/hbcu_band_hub?schema=public\" npx prisma migrate dev --name add_ai_extraction_to_youtube_video --schema packages/database/prisma/schema.prisma --create-only)",
       "Bash(DATABASE_URL=\"postgresql://postgres:newpassword123@localhost:5432/hbcu_band_hub?schema=public\" PRISMA_SCHEMA_PATH=packages/database/prisma/schema.prisma npx prisma migrate diff --from-schema-datasource packages/database/prisma/schema.prisma --to-schema-datamodel packages/database/prisma/schema.prisma --script)",
       "Bash(DATABASE_URL=\"postgresql://postgres:newpassword123@localhost:5432/hbcu_band_hub?schema=public\" npx prisma migrate deploy --schema packages/database/prisma/schema.prisma)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:newpassword123@localhost:5432/hbcu_band_hub?schema=public\" npx prisma generate --schema packages/database/prisma/schema.prisma)"
     ]
   }
 }

@@ -117,6 +117,12 @@ export class PromoteVideosProcessor extends WorkerHost {
               })
             : null;
 
+          // Check if the Video row already exists so we know whether to refresh VideoBand rows
+          const existingVideo = await this.databaseService.video.findUnique({
+            where: { youtubeId: youtubeVideo.youtubeId },
+            select: { id: true },
+          });
+
           // Upsert to Video table — atomic, safe under concurrent workers
           const upsertResult = await this.databaseService.video.upsert({
             where: { youtubeId: youtubeVideo.youtubeId },
@@ -137,14 +143,24 @@ export class PromoteVideosProcessor extends WorkerHost {
             update: {
               viewCount: youtubeVideo.viewCount,
               likeCount: youtubeVideo.likeCount,
+              bandId: youtubeVideo.bandId || '',
+              opponentBandId: youtubeVideo.opponentBandId ?? null,
+              qualityScore: youtubeVideo.qualityScore,
               // Only set category if not already manually assigned
               ...(category ? { categoryId: category.id } : {}),
             },
             select: { id: true },
           });
 
-          // Create VideoBand junction entries for all participant bands
+          // Create VideoBand junction entries for all participant bands.
+          // On re-promotion (existingVideo found), delete stale rows first so roles
+          // reflect the updated match rather than the previous one.
           const participantBandIds = participantMap.get(youtubeVideo.id) ?? [];
+          if (existingVideo) {
+            await (this.databaseService as any).videoBand.deleteMany({
+              where: { videoId: upsertResult.id },
+            });
+          }
           if (participantBandIds.length > 0) {
             const videoBandData = participantBandIds.map((bandId: string) => ({
               videoId: upsertResult.id,

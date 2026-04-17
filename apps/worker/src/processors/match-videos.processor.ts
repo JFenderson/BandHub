@@ -262,6 +262,8 @@ export class MatchVideosProcessor extends WorkerHost {
             qualityScore: 100,
             matchConfidence: 100,
             matchSource: 'CHANNEL_OWNERSHIP',
+            noMatchReason: null,
+            matchAttemptedAt: new Date(),
           },
         });
 
@@ -281,9 +283,9 @@ export class MatchVideosProcessor extends WorkerHost {
     if (video.aiProcessed && aiData) {
       // Exclusion check
       if (!aiData.isHbcuBandContent && aiData.exclusionReason) {
-        await this.databaseService.youTubeVideo.update({
+        await (this.databaseService.youTubeVideo.update as any)({
           where: { id: video.id },
-          data: { aiExcluded: true },
+          data: { aiExcluded: true, noMatchReason: 'ai_excluded', matchAttemptedAt: new Date() },
         });
         result.excluded++;
         return;
@@ -304,6 +306,8 @@ export class MatchVideosProcessor extends WorkerHost {
               qualityScore: aiData.confidence,
               matchConfidence: aiData.confidence,
               matchSource: 'AI',
+              noMatchReason: null,
+              matchAttemptedAt: new Date(),
             },
           });
 
@@ -336,12 +340,20 @@ export class MatchVideosProcessor extends WorkerHost {
 
     if (allMatches.length === 0) {
       result.noMatch++;
+      await (this.databaseService.youTubeVideo.update as any)({
+        where: { id: video.id },
+        data: { noMatchReason: 'no_alias_found', matchAttemptedAt: new Date() },
+      });
       return;
     }
 
     const topMatch = allMatches[0];
     if (topMatch.score < MIN_CONFIDENCE) {
       result.lowConfidence++;
+      await (this.databaseService.youTubeVideo.update as any)({
+        where: { id: video.id },
+        data: { noMatchReason: 'low_confidence', matchAttemptedAt: new Date() },
+      });
       return;
     }
 
@@ -367,6 +379,8 @@ export class MatchVideosProcessor extends WorkerHost {
         qualityScore: resolvedPrimary.score,
         matchConfidence: resolvedPrimary.score,
         matchSource: 'ALIAS',
+        noMatchReason: null,
+        matchAttemptedAt: new Date(),
       },
     });
 

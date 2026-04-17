@@ -3,7 +3,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '@bandhub/database';
 import { SyncJobStatus, Prisma } from '@prisma/client';
-import { QUEUE_NAMES, JobType, JobPriority, CategorizeVideosJobData, RematchVideosJobData } from '@hbcu-band-hub/shared-types';
+import { QUEUE_NAMES, JobType, JobPriority, CategorizeVideosJobData, RematchVideosJobData, PromoteVideosJobData } from '@hbcu-band-hub/shared-types';
 import {
   DashboardStatsDto,
   RecentActivityDto,
@@ -887,6 +887,141 @@ export class AdminService {
     return {
       jobId: job.id!,
       message: `Re-match job queued (filter: ${filter}). Videos will be reset and re-processed through the enhanced matching pipeline.`,
+    };
+  }
+
+  /**
+   * DEV ONLY — nuclear reset: clears Video + VideoBand tables, resets isPromoted
+   * on all YouTubeVideos, then triggers a full re-match.
+   * Never call this in production.
+   */
+  async devResetAndRematch(): Promise<{
+    deletedVideos: number;
+    deletedVideoBands: number;
+    resetYouTubeVideos: number;
+    matchJobId: string;
+    message: string;
+  }> {
+    // Delete VideoBand first (FK dependency on Video)
+    const deletedVideoBandsResult = await (this.prisma as any).videoBand.deleteMany({});
+    const deletedVideosResult = await this.prisma.video.deleteMany({});
+
+    // Reset isPromoted so the promote step re-processes everything
+    const resetResult = await (this.prisma.youTubeVideo.updateMany as any)({
+      data: { isPromoted: false, promotedAt: null },
+    });
+
+    const data: RematchVideosJobData = {
+      type: JobType.REMATCH_VIDEOS,
+      triggeredBy: 'admin',
+      filter: 'all',
+      priority: JobPriority.NORMAL,
+    };
+
+    const job = await this.videoProcessingQueue.add(JobType.REMATCH_VIDEOS, data, {
+      priority: JobPriority.NORMAL,
+      jobId: `dev-full-reset-rematch-${Date.now()}`,
+    });
+
+    return {
+      deletedVideos: deletedVideosResult.count,
+      deletedVideoBands: deletedVideoBandsResult.count,
+      resetYouTubeVideos: resetResult.count,
+      matchJobId: job.id!,
+      message: 'Dev reset complete. Video and VideoBand tables cleared. Full re-match job enqueued.',
+    };
+  }
+
+  async triggerPromote(limit?: number): Promise<{ jobId: string; message: string }> {
+    const data: PromoteVideosJobData = {
+      type: JobType.PROMOTE_VIDEOS,
+      triggeredBy: 'admin',
+      limit,
+      priority: JobPriority.NORMAL,
+    };
+
+    const job = await this.videoProcessingQueue.add(JobType.PROMOTE_VIDEOS, data, {
+      priority: JobPriority.NORMAL,
+      jobId: `promote-videos-admin-${Date.now()}`,
+    });
+
+    return {
+      jobId: job.id!,
+      message: 'Promote job queued. Matched YouTubeVideos will be upserted into the Video table.',
+    };
+  }
+
+  /**
+   * Paginated report of YouTubeVideos that could not be matched to a band,
+   * grouped by noMatchReason with summary counts.
+   */
+  async getUnmatchedVideoReport(
+    page = 1,
+    limit = 50,
+  ): Promise<{
+    summary: Array<{ reason: string | null; count: number }>;
+    data: Array<{
+      id: string;
+      youtubeId: string;
+      title: string;
+      channelId: string;
+      channelTitle: string | null;
+      aiExcluded: boolean;
+      noMatchReason: string | null;
+      matchAttemptedAt: Date | null;
+      publishedAt: Date;
+    }>;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const where = {
+      OR: [
+        { bandId: null },
+        { aiExcluded: true },
+      ],
+    };
+
+    const [total, data, reasonGroups] = await Promise.all([
+      this.prisma.youTubeVideo.count({ where }),
+      (this.prisma.youTubeVideo.findMany as any)({
+        where,
+        select: {
+          id: true,
+          youtubeId: true,
+          title: true,
+          channelId: true,
+          channelTitle: true,
+          aiExcluded: true,
+          noMatchReason: true,
+          matchAttemptedAt: true,
+          publishedAt: true,
+        },
+        orderBy: { publishedAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      (this.prisma.youTubeVideo.groupBy as any)({
+        by: ['noMatchReason'],
+        where,
+        _count: { _all: true },
+        orderBy: { _count: { noMatchReason: 'desc' } },
+      }),
+    ]);
+
+    const summary = (reasonGroups as any[]).map((g) => ({
+      reason: g.noMatchReason as string | null,
+      count: g._count._all as number,
+    }));
+
+    return {
+      summary,
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 

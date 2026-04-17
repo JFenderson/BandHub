@@ -65,7 +65,11 @@ export function InfiniteVideoGrid({
     filters.search
   );
 
-  if (isEmpty && !isLoading) {
+  // Use displayVideos (which includes server initial data) so we don't
+  // flash an empty state while the client-side query is still in flight
+  const showEmpty = !isLoading && displayVideos.length === 0;
+
+  if (showEmpty) {
     return <EmptyVideosState hasFilters={hasFilters} />;
   }
 
