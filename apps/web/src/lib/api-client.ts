@@ -729,6 +729,31 @@ export class ApiClient {
     return this.request(`/admin/videos/recategorize-other`, { method: 'POST' });
   }
 
+  async triggerPromote(limit?: number): Promise<{ jobId: string; message: string }> {
+    const query = limit ? `?limit=${limit}` : '';
+    return this.request(`/admin/videos/promote${query}`, { method: 'POST' });
+  }
+
+  async getUnmatchedVideoReport(page = 1, limit = 50): Promise<{
+    summary: Array<{ noMatchReason: string | null; _count: { id: number } }>;
+    data: Array<{
+      id: string;
+      youtubeId: string;
+      title: string;
+      channelTitle: string | null;
+      aiExcluded: boolean;
+      noMatchReason: string | null;
+      matchAttemptedAt: string | null;
+      publishedAt: string | null;
+    }>;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    return this.request(`/admin/videos/unmatched?page=${page}&limit=${limit}`);
+  }
+
   // ============ EVENTS METHODS ============
 
   async getEvents(filters?: EventFilters): Promise<PaginatedResponse<Event>> {

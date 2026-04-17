@@ -7,6 +7,7 @@ import { VideoModerationTable } from '@/components/admin/VideoModerationTable';
 import { VideoDetailModal } from '@/components/admin/VideoDetailModal';
 import { BulkActionsBar } from '@/components/admin/BulkActionsBar';
 import { ConfirmModal, InputModal, Toast } from '@/components/admin/Modals';
+import { PipelineActionsPanel } from '@/components/admin/PipelineActionsPanel';
 
 type TabType = 'all' | 'pending' | 'hidden';
 
@@ -316,6 +317,9 @@ export default function AdminVideosPage() {
           </p>
         </div>
       </div>
+
+      {/* Pipeline Actions */}
+      <PipelineActionsPanel onActionComplete={fetchVideos} />
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
