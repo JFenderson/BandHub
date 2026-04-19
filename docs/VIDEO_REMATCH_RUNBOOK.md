@@ -1,6 +1,11 @@
 # Video Re-Match Runbook
 
-Use this guide any time you need to reset and re-run the video matching pipeline in the dev environment. This is a destructive operation on the `Video` and `VideoBand` tables — the `YouTubeVideo` table is never touched.
+Two modes of operation — choose based on environment:
+
+| Mode | When to use | Risk |
+|---|---|---|
+| **Scripts** (recommended for prod) | Prod or any time you want direct control | Safe — no queue, no worker dependency |
+| **API endpoints** | Dev only | `dev-reset` is destructive |
 
 ---
 
@@ -8,15 +13,82 @@ Use this guide any time you need to reset and re-run the video matching pipeline
 
 | Table | What happens |
 |---|---|
-| `youtube_videos` | Matching fields are reset; rows are never deleted |
-| `videos` | All rows deleted and rebuilt from scratch |
-| `video_bands` | All rows deleted and rebuilt from scratch |
+| `youtube_videos` | Matching fields are written; rows are never deleted |
+| `videos` | Upserted from matched YouTubeVideos (create or update) |
+| `video_bands` | Rebuilt per video on re-promotion |
 
-**Pipeline order:** Reset → Match → Promote
+**Pipeline order:** Match → Promote → Categorize
 
 ---
 
-## Prerequisites
+## Running via Scripts (Prod-Safe)
+
+Scripts connect directly to the database — no worker, no queue, no API server needed.
+
+### Prerequisites
+
+```bash
+cd c:\Users\josep\source\BandHub   # repo root
+# Confirm DATABASE_URL points to the right database
+echo $env:DATABASE_URL
+```
+
+Set the env file for prod (adjust path to wherever your prod secrets live):
+
+```powershell
+# Option A: Doppler
+doppler run --project bandhub --config prd -- npx tsx apps/api/scripts/core/match-videos.ts
+
+# Option B: explicit env file
+$env:DATABASE_URL = "postgresql://..."
+npx tsx apps/api/scripts/core/match-videos.ts
+```
+
+### Step 1 — Match unmatched videos
+
+```powershell
+npx tsx --env-file=apps/api/.env apps/api/scripts/core/match-videos.ts
+```
+
+Processes all YouTubeVideos where `bandId IS NULL AND aiExcluded = false`.  
+Writes `noMatchReason` and `matchAttemptedAt` on every video.  
+Prints progress every 500 videos. Typical run: ~20–40 min for 10k videos.
+
+Optional: limit for testing:
+```powershell
+npx tsx --env-file=apps/api/.env apps/api/scripts/core/match-videos.ts --limit=1000
+```
+
+### Step 2 — Promote matched videos
+
+```powershell
+npx tsx --env-file=apps/api/.env apps/api/scripts/core/promote-videos.ts
+```
+
+Upserts all matched (bandId NOT NULL, isPromoted = false) YouTubeVideos into the `Video` table.  
+Updates band assignment on existing Video rows after a rematch.  
+Rebuilds `VideoBand` junction rows. Safe to re-run.
+
+### Step 3 — Categorize promoted videos
+
+```powershell
+# Uncategorized only (default — fastest)
+npx tsx --env-file=apps/api/.env apps/api/scripts/core/categorize-videos.ts
+
+# Re-categorize ALL videos (use after a full rematch)
+npx tsx --env-file=apps/api/.env apps/api/scripts/core/categorize-videos.ts --all
+```
+
+No AI quota used. Keyword pattern matching only. Processes in batches of 500.
+
+---
+
+## Running via API Endpoints (Dev Only)
+
+> **WARNING:** `dev-reset` deletes the entire Video and VideoBand tables.  
+> **Never run `dev-reset` against production.**
+
+### Prerequisites
 
 - API running: `pnpm dev:api` (port 3001)
 - Worker running: `pnpm dev` or `pnpm dev:worker`
