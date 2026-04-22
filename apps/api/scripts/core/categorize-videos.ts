@@ -14,6 +14,11 @@
 
 import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';
+import { resolve } from 'path';
+
+// Load .env — works from both tsx (scripts/core/) and compiled bundle (scripts/dist/)
+dotenv.config({ path: resolve(__dirname, '../../.env') });
+dotenv.config({ path: resolve(__dirname, '../../../apps/api/.env') });
 dotenv.config();
 
 const prisma = new PrismaClient();

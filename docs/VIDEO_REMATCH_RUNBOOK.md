@@ -44,6 +44,22 @@ $env:DATABASE_URL = "postgresql://..."
 npx tsx apps/api/scripts/core/match-videos.ts
 ```
 
+### Step 0 — Link official band channels (one-time setup)
+
+Populates `Band.youtubeChannelId` for bands that have official YouTube channels registered as ContentCreators (JSU Bands, Human Jukebox Media, FAMU Marching 100, etc.). Once set, Stage 0 channel ownership matching gives those videos 100% confidence automatically.
+
+```powershell
+# Dry run first — shows what would change
+npx tsx --env-file=apps/api/.env apps/api/scripts/core/link-creator-channels.ts
+
+# Save the links
+npx tsx --env-file=apps/api/.env apps/api/scripts/core/link-creator-channels.ts --apply
+```
+
+Re-run anytime new official band channels are added to the creators seeder.
+
+---
+
 ### Step 1 — Match unmatched videos
 
 ```powershell
@@ -54,9 +70,13 @@ Processes all YouTubeVideos where `bandId IS NULL AND aiExcluded = false`.
 Writes `noMatchReason` and `matchAttemptedAt` on every video.  
 Prints progress every 500 videos. Typical run: ~20–40 min for 10k videos.
 
-Optional: limit for testing:
+Optional flags:
 ```powershell
+# Limit for testing
 npx tsx --env-file=apps/api/.env apps/api/scripts/core/match-videos.ts --limit=1000
+
+# Re-match ALL videos (including already-matched) — use after link-creator-channels to fix bad assignments
+npx tsx --env-file=apps/api/.env apps/api/scripts/core/match-videos.ts --all
 ```
 
 ### Step 2 — Promote matched videos

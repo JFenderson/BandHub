@@ -14,10 +14,20 @@
  * Usage:
  *   npx tsx --env-file=apps/api/.env apps/api/scripts/core/match-videos.ts
  *   npx tsx --env-file=apps/api/.env apps/api/scripts/core/match-videos.ts --limit=5000
+ *   npx tsx --env-file=apps/api/.env apps/api/scripts/core/match-videos.ts --all
+ *
+ * Flags:
+ *   --all      Re-match ALL videos (including already-matched ones) — fixes bad assignments
+ *   --limit=N  Process at most N videos
  */
 
 import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';
+import { resolve } from 'path';
+
+// Load .env — works from both tsx (scripts/core/) and compiled bundle (scripts/dist/)
+dotenv.config({ path: resolve(__dirname, '../../.env') });
+dotenv.config({ path: resolve(__dirname, '../../../apps/api/.env') });
 dotenv.config();
 
 const prisma = new PrismaClient();
@@ -291,9 +301,11 @@ async function main() {
   const args = process.argv.slice(2);
   const limitArg = args.find((a) => a.startsWith('--limit='));
   const limit = limitArg ? parseInt(limitArg.split('=')[1], 10) : undefined;
+  const matchAll = args.includes('--all');
 
   console.log('=== Match Videos Script ===');
   console.log(`Database: ${process.env.DATABASE_URL ? 'connected' : 'NOT FOUND — set DATABASE_URL'}`);
+  console.log(`Mode: ${matchAll ? 'ALL videos (re-match everything)' : 'unmatched only (bandId = null)'}`);
   if (limit) console.log(`Limit: ${limit}`);
 
   // Load all active bands
@@ -320,10 +332,11 @@ async function main() {
   }
   console.log(`Channel ownership map: ${channelOwnershipMap.size} bands with known channels`);
 
-  // Fetch unmatched, non-excluded videos
-  console.log('\nFetching unmatched videos...');
+  // Fetch videos to process
+  const modeLabel = matchAll ? 'all non-excluded videos' : 'unmatched videos';
+  console.log(`\nFetching ${modeLabel}...`);
   const videos = await prisma.youTubeVideo.findMany({
-    where: { bandId: null, aiExcluded: false },
+    where: matchAll ? { aiExcluded: false } : { bandId: null, aiExcluded: false },
     select: {
       id: true,
       youtubeId: true,
@@ -337,7 +350,7 @@ async function main() {
     take: limit,
     orderBy: { createdAt: 'desc' },
   });
-  console.log(`Found ${videos.length} unmatched videos to process\n`);
+  console.log(`Found ${videos.length} videos to process\n`);
 
   if (videos.length === 0) {
     console.log('Nothing to do.');
