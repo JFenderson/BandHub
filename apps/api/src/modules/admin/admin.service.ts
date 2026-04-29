@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { PrismaService } from '@bandhub/database';
+import { CacheService } from '@bandhub/cache';
 import { SyncJobStatus, Prisma } from '@prisma/client';
 import { QUEUE_NAMES, JobType, JobPriority, CategorizeVideosJobData, RematchVideosJobData, PromoteVideosJobData } from '@hbcu-band-hub/shared-types';
 import {
@@ -22,6 +23,7 @@ import { VideoDetailDto } from './dto/video-detail.dto';
 export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
     @InjectQueue(QUEUE_NAMES.MAINTENANCE)
     private readonly maintenanceQueue: Queue,
     @InjectQueue(QUEUE_NAMES.VIDEO_PROCESSING)
@@ -652,6 +654,10 @@ export class AdminService {
       }
     }
 
+    if (successfulIds.length > 0) {
+      await this.cacheService.delPattern('videos:*');
+    }
+
     return {
       successCount: successfulIds.length,
       failedCount: failedIds.length,
@@ -1052,6 +1058,7 @@ export class AdminService {
       data: { isHidden: true },
     });
 
+    await this.cacheService.delPattern('videos:*');
     return {
       hidden: result.count,
       message: `Hidden ${result.count} promoted videos flagged as non-HBCU content (high school, drum corps, etc.).`,
@@ -1082,6 +1089,7 @@ export class AdminService {
       data: { isHidden: true, hideReason: 'greek-life' },
     });
 
+    await this.cacheService.delPattern('videos:*');
     return {
       hidden: result.count,
       message: `Hidden ${result.count} Greek life videos (probates, step shows, stroll offs, etc.).`,

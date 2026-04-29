@@ -306,13 +306,13 @@ export class VideosService {
 
   async hideVideo(id: string, reason: string) {
     const result = await this.update(id, { isHidden: true, hideReason: reason });
-    await this.cacheService.del('videos:hidden');
+    await this.cacheService.delPattern('videos:*');
     return result;
   }
 
   async unhideVideo(id: string) {
     const result = await this.update(id, { isHidden: false, hideReason: null });
-    await this.cacheService.del('videos:hidden');
+    await this.cacheService.delPattern('videos:*');
     return result;
   }
 

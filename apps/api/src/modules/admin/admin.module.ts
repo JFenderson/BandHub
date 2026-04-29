@@ -4,11 +4,13 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { JobMonitoringController } from './controllers/job-monitoring.controller';
 import { PrismaModule } from '@bandhub/database';
+import { CacheModule } from '@bandhub/cache';
 import { QUEUE_NAMES } from '@hbcu-band-hub/shared-types';
 
 @Module({
   imports: [
     PrismaModule,
+    CacheModule,
     BullModule.registerQueue(
       { name: QUEUE_NAMES.YOUTUBE_SYNC },
       { name: QUEUE_NAMES.VIDEO_PROCESSING },
