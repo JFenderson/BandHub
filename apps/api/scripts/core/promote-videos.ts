@@ -30,19 +30,19 @@ const prisma = new PrismaClient();
 // Category detection — mirrors PromoteVideosProcessor.determineCategory()
 // ---------------------------------------------------------------------------
 
-function determineCategory(video: { title: string; description: string | null; aiExtraction: any }): string | null {
+function determineCategory(video: { title: string; description: string | null; aiExtraction: any; bandType?: string | null }): string | null {
   const aiData = video.aiExtraction as { videoCategory?: string } | null;
   if (aiData?.videoCategory && aiData.videoCategory !== 'OTHER') {
     const slugMap: Record<string, string> = {
       FIFTH_QUARTER:  '5th-quarter',
+      ZERO_QUARTER:   'zero-quarter',
       STAND_BATTLE:   'stand-battle',
-      FIELD_SHOW:     'field-show',
-      HALFTIME:       'halftime',
-      PREGAME:        'pregame',
+      FIELD_SHOW:     'field-playing',
+      HALFTIME:       'halftime-show',
       ENTRANCE:       'entrance',
       PARADE:         'parade',
       PRACTICE:       'practice',
-      CONCERT_BAND:   'concert-band',
+      CONCERT_BAND:   'concert',
     };
     const slug = slugMap[aiData.videoCategory];
     if (slug) return slug;
@@ -50,15 +50,18 @@ function determineCategory(video: { title: string; description: string | null; a
 
   const text = `${video.title || ''} ${video.description || ''}`.toLowerCase();
 
+  if (video.bandType !== 'HIGH_SCHOOL' && /\b(high\s*school|hs\s*band|jr\.?\s*high|middle\s*school)\b/i.test(text)) return 'high-school';
+  if (/\b(zero[\s-]quarter|0[\s-]quarter|0th[\s-]quarter)\b/i.test(text))                       return 'zero-quarter';
   if (/\b(5th\s*quarter|fifth\s*quarter|post\s*game|after\s*the\s*game)\b/i.test(text))         return '5th-quarter';
-  if (/\b(stand\s*battle|battle\s*of\s*(the\s*)?bands|band\s*battle|stands?\s*vs\.?)\b/i.test(text)) return 'stand-battle';
-  if (/\b(field\s*show|marching\s*show|formation|drill\s*team)\b/i.test(text))                  return 'field-show';
-  if (/\b(halftime|half\s*time|half-time)\b/i.test(text))                                        return 'halftime';
-  if (/\b(pregame|pre\s*game|before\s*the\s*game)\b/i.test(text))                               return 'pregame';
-  if (/\b(entrance|entering|arrival)\b/i.test(text))                                             return 'entrance';
+  if (/\b(stand\s*battle|battle\s*of\s*(the\s*)?bands|band\s*battle|stands?\s*vs\.?|stands|botb|bita)\b/i.test(text)) return 'stand-battle';
+  if (/\b(stick[\s-]tape|drum\s*feature|percussion\s*feature|drumline)\b/i.test(text))          return 'percussion-feature';
+  if (/\b(field\s*show|marching\s*show|formation|drill\s*team|field\s*playing)\b/i.test(text))  return 'field-playing';
+  if (/\b(halftime|half\s*time|half-time)\b/i.test(text))                                        return 'halftime-show';
+  if (/\b(entrance|entering|arrival|pregame|pre\s*game|marching\s+in)\b/i.test(text))           return 'entrance';
+  if (/\b(march(ing)?\s*out|exit\s*march|band\s*exit)\b/i.test(text))                           return 'exit';
   if (/\b(parade|homecoming\s*parade|mardi\s*gras)\b/i.test(text))                              return 'parade';
-  if (/\b(practice|rehearsal|sectional|band\s*camp|band\s*room)\b/i.test(text))                 return 'practice';
-  if (/\b(concert|symphonic|spring\s*show|indoor)\b/i.test(text))                               return 'concert-band';
+  if (/\b(practice|rehearsal|sectional|band\s*camp|jamboree|scrimmage)\b/i.test(text))          return 'practice';
+  if (/\b(concert|symphonic|spring\s*show|indoor)\b/i.test(text))                               return 'concert';
 
   return 'other';
 }
@@ -104,6 +107,7 @@ async function main() {
       participantBandIds: true,
       qualityScore: true,
       aiExtraction: true,
+      band: { select: { bandType: true } },
     },
     take: limit,
     orderBy: { publishedAt: 'desc' },
@@ -123,7 +127,7 @@ async function main() {
 
   for (const [index, ytv] of videosToPromote.entries()) {
     try {
-      const categorySlug = determineCategory(ytv);
+      const categorySlug = determineCategory({ ...ytv, bandType: (ytv as any).band?.bandType });
       const categoryId = categorySlug ? categoryMap.get(categorySlug) ?? null : null;
 
       // Check if Video row already exists (determines whether to rebuild VideoBand rows)

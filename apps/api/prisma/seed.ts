@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { PrismaService } from '@bandhub/database';
+import { PrismaClient } from '@prisma/client';
 import { seedCategories, seedBands, seedCreators, seedAdmin, seedEvents } from './seeders';
 dotenv.config();
 
@@ -27,7 +27,7 @@ dotenv.config();
  *   npx ts-node prisma/seeders/index.ts
  */
 
-const prisma = new PrismaService({
+const prisma = new PrismaClient({
   log: ['info', 'warn', 'error'],
 });
 

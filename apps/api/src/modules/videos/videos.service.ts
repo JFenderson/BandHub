@@ -70,6 +70,8 @@ export class VideosService {
           {
             bandId: modifiedQuery.bandId,
             categoryId: modifiedQuery.categoryId,
+            categorySlug: (modifiedQuery as any).categorySlug,
+            conference: (modifiedQuery as any).conference,
             includeHidden: modifiedQuery.includeHidden,
           },
           modifiedQuery.page,

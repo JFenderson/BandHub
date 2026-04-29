@@ -38,7 +38,8 @@ const OFFICIAL_CHANNELS: Array<{ channelId: string; schoolName: string; creatorN
   { channelId: 'UC9slanCMZWrSn7UUHRYc7OA', schoolName: 'Tuskegee University',                  creatorName: 'Crimson Piper Media' },
   { channelId: 'UCSduiMl4sz1tCnb5X-axBjQ', schoolName: 'Albany State University',              creatorName: 'Marching Ram Show Band' },
   { channelId: 'UC3QPWswazHQniPlp6hV42jA', schoolName: 'South Carolina State University',      creatorName: 'South Carolina State Marching 101' },
-  { channelId: 'UC6NQkWeJCQAguQ7xVt8NADQ', schoolName: 'Prairie View A&M University',          creatorName: 'Prairie View Marching Storm' },
+  // ZymbalistiK removed — only 30% Prairie View, covers 8+ bands (multi-band channel)
+
   { channelId: 'UCRP2Xty4XpGFt7BCUTxFHdw', schoolName: 'North Carolina A&T',                  creatorName: 'BGMM Media' },
   { channelId: 'UCE_nMi6Q0Y5gka-Eyj2Gu0Q', schoolName: 'Alabama State University',             creatorName: 'Marching Hornet Media' },
   { channelId: 'UCk0h7gTm0gYxoyLdvlyTM-Q', schoolName: 'Virginia State University',            creatorName: 'VSU Marching Band' },
@@ -71,6 +72,7 @@ const OFFICIAL_CHANNELS: Array<{ channelId: string; schoolName: string; creatorN
   { channelId: 'UCkZPqjwG3hgFbEY5zXnqCZA', schoolName: 'Claflin University',                  creatorName: 'Claflin University Marching Band' },
   { channelId: 'UCZfXb8TLpQ6FeVy3yBJHzPA', schoolName: 'Lane College',                        creatorName: 'Lane College Marching Band' },
   { channelId: 'UCrzV8HjGkJqJT5YvHCnLF8Q', schoolName: 'Stillman College',                    creatorName: 'Stillman College Marching Band' },
+  { channelId: 'UCowlhisGdbAhKCJkevQ-u0g', schoolName: 'Elizabeth City State University',      creatorName: 'Sound Of Class' },
 ];
 
 async function main() {

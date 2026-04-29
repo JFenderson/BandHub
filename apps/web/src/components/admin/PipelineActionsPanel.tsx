@@ -54,6 +54,13 @@ const ACTIONS = [
     color: 'red',
     confirmText: 'This will hide all promoted videos that AI flagged as non-HBCU content. This is reversible. Continue?',
   },
+  {
+    id: 'hide-greek-life',
+    label: 'Hide Greek Life Videos',
+    description: 'Hides promoted videos whose titles match Greek life content (probates, step shows, stroll offs, fraternity/sorority org names).',
+    color: 'red',
+    confirmText: 'This will hide all videos identified as Greek life content by title keyword matching. This is reversible. Continue?',
+  },
 ] as const;
 
 type ActionId = typeof ACTIONS[number]['id'];
@@ -97,6 +104,9 @@ export function PipelineActionsPanel({ onActionComplete }: PipelineActionsPanelP
         result = { success: true, message: res.message, detail: `Updated: ${res.updated} videos` };
       } else if (id === 'hide-excluded') {
         const res = await apiClient.hideExcludedVideos();
+        result = { success: true, message: res.message, detail: `Hidden: ${res.hidden} videos` };
+      } else if (id === 'hide-greek-life') {
+        const res = await apiClient.hideGreekLifeVideos();
         result = { success: true, message: res.message, detail: `Hidden: ${res.hidden} videos` };
       } else {
         result = { success: false, message: 'Unknown action' };

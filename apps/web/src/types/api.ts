@@ -86,7 +86,9 @@ export interface ApiResponse<T> {
 // Filter/Query types
 export interface VideoFilters {
   bandId?: string;
+  bandType?: string;
   category?: VideoCategory;
+  categorySlug?: string;
   year?: number;
   conference?: string;
   search?: string;

@@ -56,6 +56,7 @@ export interface VideoWithRelations extends Omit<Video, 'bandId' | 'opponentBand
 export interface VideoFilters {
   bandId?: string;
   bandSlug?: string;
+  bandType?: string;
   opponentBandId?: string;
   categoryId?: string;
   categorySlug?: string;
@@ -111,6 +112,7 @@ export interface UpdateVideoDto {
 export interface VideoQueryParams {
   search?: string;
   bandId?: string;
+  bandType?: string;
   opponentBandId?: string;
   category?: VideoCategory;
   year?: number;

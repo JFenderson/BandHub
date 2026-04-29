@@ -30,6 +30,11 @@ export class VideoQueryDto {
   @IsString()
   conference?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by band type', enum: ['HBCU', 'ALL_STAR', 'HIGH_SCHOOL'] })
+  @IsOptional()
+  @IsEnum(['HBCU', 'ALL_STAR', 'HIGH_SCHOOL'])
+  bandType?: string;
+
 @ApiPropertyOptional({ description: 'Filter by category ID' })
 @SanitizeText()
 @IsOptional()
@@ -41,12 +46,12 @@ categoryId?: string;
 @IsString()
 categorySlug?: string;
 
-@ApiPropertyOptional({ 
+@ApiPropertyOptional({
   description: 'Filter by category enum',
-  enum: ['FIFTH_QUARTER', 'ZERO_QUARTER', 'FIELD_SHOW', 'STAND_BATTLE', 'PARADE', 'PRACTICE', 'CONCERT_BAND', 'HALFTIME', 'ENTRANCE', 'PREGAME', 'OTHER']
+  enum: ['FIFTH_QUARTER', 'ZERO_QUARTER', 'FIELD_SHOW', 'STAND_BATTLE', 'PARADE', 'PRACTICE', 'CONCERT_BAND', 'HALFTIME', 'ENTRANCE', 'PREGAME', 'HIGH_SCHOOL', 'OTHER']
 })
 @IsOptional()
-@IsEnum(['FIFTH_QUARTER', 'ZERO_QUARTER', 'FIELD_SHOW', 'STAND_BATTLE', 'PARADE', 'PRACTICE', 'CONCERT_BAND', 'HALFTIME', 'ENTRANCE', 'PREGAME', 'OTHER'])
+@IsEnum(['FIFTH_QUARTER', 'ZERO_QUARTER', 'FIELD_SHOW', 'STAND_BATTLE', 'PARADE', 'PRACTICE', 'CONCERT_BAND', 'HALFTIME', 'ENTRANCE', 'PREGAME', 'HIGH_SCHOOL', 'OTHER'])
 category?: string;
 
   @ApiPropertyOptional({ description: 'Filter by opponent band ID' })

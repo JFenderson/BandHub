@@ -38,9 +38,9 @@ export async function seedBands(prisma: PrismaClient): Promise<void> {
   console.log('\n🎺 Seeding Bands...');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-  // Load data files
-  const hbcuBandsPath = path.resolve(process.cwd(), 'prisma/seed-data/hbcu-bands.json');
-  const allStarBandsPath = path.resolve(process.cwd(), 'prisma/seed-data/all-star-bands.json');
+  // Load data files — __dirname is apps/api/prisma/seeders, data is in apps/api/prisma/seed-data
+  const hbcuBandsPath = path.resolve(__dirname, '../seed-data/hbcu-bands.json');
+  const allStarBandsPath = path.resolve(__dirname, '../seed-data/all-star-bands.json');
 
   const hbcuBands: BandSeedData[] = JSON.parse(fs.readFileSync(hbcuBandsPath, 'utf-8'));
   const allStarBands: BandSeedData[] = JSON.parse(fs.readFileSync(allStarBandsPath, 'utf-8'));

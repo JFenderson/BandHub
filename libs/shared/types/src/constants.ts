@@ -18,6 +18,7 @@ export const VIDEO_CATEGORIES: VideoCategory[] = [
   'HALFTIME',
   'ENTRANCE',
   'PREGAME',
+  'HIGH_SCHOOL',
   'OTHER',
 ];
 
@@ -31,5 +32,6 @@ export const VIDEO_CATEGORY_LABELS: Record<VideoCategory, string> = {
   HALFTIME: 'Halftime Show',
   ENTRANCE: 'Entrance',
   PREGAME: 'Pregame',
+  HIGH_SCHOOL: 'High School',
   OTHER: 'Other',
 };

@@ -169,6 +169,18 @@ export class AdminController {
     return this.adminService.hideExcludedVideos();
   }
 
+  @Post('videos/hide-greek-life')
+  @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Hide Greek life videos',
+    description: 'Hides promoted videos whose titles match Greek life keywords (probates, step shows, stroll offs, org names). Reversible via the admin videos page.',
+  })
+  @ApiResponse({ status: 200, description: 'Greek life videos hidden' })
+  async hideGreekLifeVideos(): Promise<{ hidden: number; message: string }> {
+    return this.adminService.hideGreekLifeVideos();
+  }
+
   @Post('videos/recategorize-other')
   @Roles(AdminRole.ADMIN, AdminRole.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)

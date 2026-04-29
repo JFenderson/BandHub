@@ -12,6 +12,7 @@ export interface VideoQueryDto {
   bandId?: string;
   bandSlug?: string;
   conference?: string;  // Filter by band conference (e.g., SWAC, MEAC)
+  bandType?: string;    // Filter by band type (HBCU, ALL_STAR, HIGH_SCHOOL)
   category?: string;  // Category enum value like 'FIFTH_QUARTER'
   categoryId?: string;
   categorySlug?: string;
@@ -28,19 +29,22 @@ export interface VideoQueryDto {
   limit?: number;
 }
 
-// Map category enum values to search keywords
+// Map category slug values to search keywords (used for legacy enum-style ?category= param)
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  'FIFTH_QUARTER': ['5th quarter', 'fifth quarter', '5thquarter'],
-  'ZERO_QUARTER': ['0th quarter', 'zero quarter', 'zeroth quarter', '0thquarter'],
-  'FIELD_SHOW': ['field show', 'fieldshow'],
-  'STAND_BATTLE': ['stand battle', 'standbattle', 'stands battle'],
-  'HALFTIME': ['halftime', 'half time', 'half-time'],
-  'PARADE': ['parade', 'marching'],
-  'PRACTICE': ['practice', 'rehearsal'],
-  'CONCERT_BAND': ['concert', 'concert band'],
-  'ENTRANCE': ['entrance', 'band entrance', 'entering'],
-  'PREGAME': ['pregame', 'pre-game', 'pre game'],
-  'OTHER': [], // No specific keywords for OTHER
+  '5th-quarter':        ['5th quarter', 'fifth quarter', 'post game', 'after the game'],
+  'zero-quarter':       ['zero quarter', 'zero-quarter', '0 quarter', '0th quarter'],
+  'field-playing':      ['field show', 'marching show', 'field playing', 'on-field', 'formation'],
+  'stand-battle':       ['stand battle', 'battle of the bands', 'band battle', 'stands', 'botb', 'bita'],
+  'halftime-show':      ['halftime', 'half time', 'half-time'],
+  'parade':             ['parade', 'homecoming parade', 'mardi gras'],
+  'practice':           ['practice', 'rehearsal', 'band camp', 'sectional', 'jamboree', 'scrimmage'],
+  'concert':            ['concert', 'symphonic', 'spring show', 'indoor'],
+  'entrance':           ['entrance', 'entering', 'arrival', 'pregame', 'pre-game', 'marching in'],
+  'exit':               ['march out', 'marching out', 'exit march', 'band exit'],
+  'percussion-feature': ['stick tape', 'drumline', 'drum feature', 'percussion feature', 'snare feature', 'tenor feature', 'quad feature'],
+  'performance':        ['performance', 'performs', 'showcase', 'spotlight'],
+  'high-school':        ['high school', 'hs band', 'jr high', 'middle school', 'prep school'],
+  'other':              [],
 };
 
 /**
@@ -63,6 +67,7 @@ export class VideosRepository {
       bandId,
       bandSlug,
       conference,
+      bandType,
       category,
       categoryId,
       categorySlug,
@@ -90,8 +95,9 @@ export class VideosRepository {
     } else if (bandSlug) {
       where.band = { slug: bandSlug };
     } else if (conference) {
-      // Filter videos by band's conference
       where.band = { conference: conference };
+    } else if (bandType) {
+      where.band = { bandType: bandType as any };
     }
 
     // Handle category filtering by searching video titles for keywords
@@ -467,14 +473,18 @@ export class VideosRepository {
     filters: {
       bandId?: string;
       categoryId?: string;
+      categorySlug?: string;
+      conference?: string;
       includeHidden?: boolean;
     } = {},
     page: number = 1,
     limit: number = 20,
   ) {
-    const { bandId, categoryId, includeHidden } = filters;
-    
-    const conditions: string[] = ["v.search_vector @@ plainto_tsquery('english', $1)"];
+    const { bandId, categoryId, categorySlug, conference, includeHidden } = filters;
+
+    const conditions: string[] = [
+      `(v.search_vector @@ plainto_tsquery('english', $1) OR v.title ILIKE '%' || $1 || '%')`,
+    ];
     const params: any[] = [searchQuery];
     let paramIndex = 2;
 
@@ -491,6 +501,18 @@ export class VideosRepository {
     if (categoryId) {
       conditions.push(`v.category_id = $${paramIndex}`);
       params.push(categoryId);
+      paramIndex++;
+    }
+
+    if (categorySlug && !categoryId) {
+      conditions.push(`v.category_id = (SELECT id FROM categories WHERE slug = $${paramIndex})`);
+      params.push(categorySlug);
+      paramIndex++;
+    }
+
+    if (conference) {
+      conditions.push(`EXISTS (SELECT 1 FROM bands b2 WHERE b2.id = v.band_id AND b2.conference = $${paramIndex})`);
+      params.push(conference);
       paramIndex++;
     }
 
@@ -523,7 +545,7 @@ export class VideosRepository {
           v.quality_score as "qualityScore",
           v.is_hidden as "isHidden",
           v.created_at as "createdAt",
-          ts_rank(v.search_vector, plainto_tsquery('english', $1)) as rank,
+          COALESCE(ts_rank(v.search_vector, plainto_tsquery('english', $1)), 0) as rank,
           jsonb_build_object(
             'id', b.id,
             'name', b.name,

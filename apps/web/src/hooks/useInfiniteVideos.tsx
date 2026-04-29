@@ -40,6 +40,8 @@ async function fetchVideosPage(
   if (filters.category) params.append('category', filters.category);
   if (filters.year) params.append('eventYear', filters.year.toString());
   if (filters.search) params.append('search', filters.search);
+  if (filters.categorySlug) params.append('categorySlug', filters.categorySlug);
+  if (filters.bandType) params.append('bandType', filters.bandType);
   if (filters.sortBy) params.append('sortBy', filters.sortBy);
   if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
   params.append('page', page.toString());

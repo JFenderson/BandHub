@@ -8,6 +8,7 @@ import { HBCU_CONFERENCES } from '@/lib/constants';
 
 interface VideoFiltersProps {
   bands?: { id: string; name: string }[];
+  section?: 'hbcu' | 'high-school';
   initialFilters?: {
     bandId?: string;
     category?: VideoCategory;
@@ -16,7 +17,8 @@ interface VideoFiltersProps {
   };
 }
 
-export function VideoFilters({ bands }: VideoFiltersProps) {
+export function VideoFilters({ bands, section = 'hbcu' }: VideoFiltersProps) {
+  const isHighSchool = section === 'high-school';
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -64,7 +66,7 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
 
   const clearAllFilters = () => {
     startTransition(() => {
-      router.push('/videos');
+      router.push(isHighSchool ? '/videos?section=high-school' : '/videos');
     });
   };
 
@@ -72,11 +74,25 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
   const currentYearNum = new Date().getFullYear();
   const years = Array.from({ length: currentYearNum - 1989 }, (_, i) => currentYearNum - i);
 
-  const hasActiveFilters = currentSearch || currentBandId || currentConference || currentCategory || currentEventYear || currentSortBy !== 'publishedAt';
+  const hasActiveFilters = currentSearch || (!isHighSchool && (currentBandId || currentConference || currentCategory)) || currentEventYear || currentSortBy !== 'publishedAt';
+
+  // In high school section, filter the category dropdown to only show high-school-relevant options
+  const displayCategories = isHighSchool
+    ? VIDEO_CATEGORIES.filter((c) => c === 'HIGH_SCHOOL' || c === 'OTHER')
+    : VIDEO_CATEGORIES.filter((c) => c !== 'HIGH_SCHOOL');
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+      {isHighSchool && (
+        <div className="mb-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          High school videos are identified by keyword matching. More high school content will appear as bands are added to the platform.
+        </div>
+      )}
+
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${isHighSchool ? 'lg:grid-cols-3' : 'lg:grid-cols-6'}`}>
         {/* Search Input */}
         <div>
           <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
@@ -89,7 +105,6 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
             onChange={(e) => {
               const value = e.target.value;
               setSearchInputValue(value);
-              // Debounce: wait 400ms after the user stops typing before pushing to URL
               if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
               debounceTimerRef.current = setTimeout(() => {
                 updateFilter('search', value);
@@ -100,65 +115,71 @@ export function VideoFilters({ bands }: VideoFiltersProps) {
           />
         </div>
 
-        {/* Band Filter */}
-        <div>
-          <label htmlFor="band" className="block text-sm font-medium text-gray-700 mb-1">
-            Band
-          </label>
-          <select
-            id="band"
-            value={currentBandId}
-            onChange={(e) => updateFilter('bandId', e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">All Bands</option>
-            {bands?.map((band) => (
-              <option key={band.id} value={band.id}>
-                {band.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Band Filter — HBCU only */}
+        {!isHighSchool && (
+          <div>
+            <label htmlFor="band" className="block text-sm font-medium text-gray-700 mb-1">
+              Band
+            </label>
+            <select
+              id="band"
+              value={currentBandId}
+              onChange={(e) => updateFilter('bandId', e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">All Bands</option>
+              {bands?.map((band) => (
+                <option key={band.id} value={band.id}>
+                  {band.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        {/* Conference Filter */}
-        <div>
-          <label htmlFor="conference" className="block text-sm font-medium text-gray-700 mb-1">
-            Conference
-          </label>
-          <select
-            id="conference"
-            value={currentConference}
-            onChange={(e) => updateFilter('conference', e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">All Conferences</option>
-            {HBCU_CONFERENCES.map((conf) => (
-              <option key={conf.value} value={conf.value}>
-                {conf.value}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Conference Filter — HBCU only */}
+        {!isHighSchool && (
+          <div>
+            <label htmlFor="conference" className="block text-sm font-medium text-gray-700 mb-1">
+              Conference
+            </label>
+            <select
+              id="conference"
+              value={currentConference}
+              onChange={(e) => updateFilter('conference', e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">All Conferences</option>
+              {HBCU_CONFERENCES.map((conf) => (
+                <option key={conf.value} value={conf.value}>
+                  {conf.value}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Category Filter */}
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-            Category
-          </label>
-          <select
-            id="category"
-            value={currentCategory}
-            onChange={(e) => updateFilter('category', e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">All Categories</option>
-            {VIDEO_CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {VIDEO_CATEGORY_LABELS[category]}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!isHighSchool && (
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <select
+              id="category"
+              value={currentCategory}
+              onChange={(e) => updateFilter('category', e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">All Categories</option>
+              {displayCategories.map((category) => (
+                <option key={category} value={category}>
+                  {VIDEO_CATEGORY_LABELS[category]}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Year Filter */}
         <div>

@@ -1058,6 +1058,36 @@ export class AdminService {
     };
   }
 
+  async hideGreekLifeVideos(): Promise<{ hidden: number; message: string }> {
+    const GREEK_LIFE_KEYWORDS = [
+      'probate', 'neophyte', 'crossing ceremony', 'line show',
+      'step show', 'step off', 'step competition', 'step contest', 'step battle',
+      'stroll off', 'strolling competition', 'strolling show', 'greek stroll',
+      'greek life', 'greek week', 'greek show',
+      'nphc', 'divine nine',
+      'fraternity show', 'sorority show', 'frat show',
+      'alpha phi alpha', 'omega psi phi', 'kappa alpha psi',
+      'phi beta sigma', 'iota phi theta',
+      'alpha kappa alpha', 'delta sigma theta',
+      'sigma gamma rho', 'zeta phi beta', 'kappa kappa psi', 'tau beta sigma',
+    ];
+
+    const result = await this.prisma.video.updateMany({
+      where: {
+        isHidden: false,
+        OR: GREEK_LIFE_KEYWORDS.map((kw) => ({
+          title: { contains: kw, mode: 'insensitive' as const },
+        })),
+      },
+      data: { isHidden: true, hideReason: 'greek-life' },
+    });
+
+    return {
+      hidden: result.count,
+      message: `Hidden ${result.count} Greek life videos (probates, step shows, stroll offs, etc.).`,
+    };
+  }
+
   /**
    * Re-run category detection on promoted Video records currently assigned to
    * the "other" catch-all category or with no category at all.

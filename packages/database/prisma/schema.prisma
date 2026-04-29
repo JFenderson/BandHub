@@ -1186,6 +1186,7 @@ enum AdminRole {
 enum BandType {
   HBCU
   ALL_STAR
+  HIGH_SCHOOL
 }
 
 enum EventType {

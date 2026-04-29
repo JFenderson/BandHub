@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "BandType" ADD VALUE 'HIGH_SCHOOL';

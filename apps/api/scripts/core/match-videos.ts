@@ -47,6 +47,7 @@ interface BandRecord {
 
 interface AliasedBand extends BandRecord {
   aliases: string[];
+  kwAliases: Set<string>; // explicit searchKeywords — get boosted base score
 }
 
 interface MatchResult {
@@ -90,12 +91,16 @@ const MARCH_SIGNALS = [
 function buildAliasIndex(bands: BandRecord[]): AliasedBand[] {
   return bands.map((band) => {
     const aliases = new Set<string>();
+    const kwAliases = new Set<string>();
 
     aliases.add(band.name.toLowerCase());
     aliases.add(band.schoolName.toLowerCase());
 
+    // Track explicit searchKeywords separately — they score higher and allow 2-char
     for (const kw of band.searchKeywords) {
-      if (kw.length >= 3) aliases.add(kw.toLowerCase());
+      const kwLower = kw.toLowerCase();
+      kwAliases.add(kwLower);
+      aliases.add(kwLower);
     }
 
     const schoolSimplified = band.schoolName
@@ -118,7 +123,8 @@ function buildAliasIndex(bands: BandRecord[]): AliasedBand[] {
       aliases.add(acronym);
     }
 
-    return { ...band, aliases: Array.from(aliases).filter((a) => a.length >= 3) };
+    // searchKeyword aliases: allow 2-char; auto-generated aliases: require 3-char minimum
+    return { ...band, aliases: Array.from(aliases).filter((a) => kwAliases.has(a) ? a.length >= 2 : a.length >= 3), kwAliases };
   });
 }
 
@@ -133,6 +139,9 @@ function escapeRegex(str: string): string {
 function baseAliasScore(alias: string, band: AliasedBand): number {
   if (alias === band.name.toLowerCase()) return 100;
   if (band.bandType !== 'ALL_STAR' && alias === band.schoolName.toLowerCase()) return 80;
+  // Explicit searchKeywords get a boosted minimum so 2-5 char abbreviations reach MIN_CONFIDENCE
+  // (e.g. "JSU", "FAMU", "SU" each score 50 → 60+ with title/channel bonus)
+  if (band.kwAliases.has(alias)) return alias.length >= 8 ? 70 : alias.length >= 5 ? 55 : 50;
   if (alias.length >= 8) return 60;
   if (alias.length >= 5) return 45;
   if (alias.length >= 3) return 20;
@@ -205,9 +214,12 @@ function findAliasMatches(
       const useWordBoundary = alias.length <= 4;
       const regex = useWordBoundary ? new RegExp(`\\b${escapeRegex(alias)}\\b`, 'i') : null;
 
-      const inChannel = useWordBoundary ? regex!.test(lowerChannel) : lowerChannel.includes(alias);
-      const inTitle   = useWordBoundary ? regex!.test(lowerTitle)   : lowerTitle.includes(alias);
-      const inDesc    = useWordBoundary ? regex!.test(lowerDesc)    : lowerDesc.includes(alias);
+      // Always use word-boundary for all fields — prevents brand-name pollution
+      // (e.g. "showtime" must not match "ShowtimeWeb.com" in descriptions)
+      const wbRegex = new RegExp(`\\b${escapeRegex(alias)}\\b`, 'i');
+      const inChannel = wbRegex.test(lowerChannel);
+      const inTitle   = wbRegex.test(lowerTitle);
+      const inDesc    = wbRegex.test(lowerDesc);
 
       if (!inChannel && !inTitle && !inDesc) continue;
 
@@ -473,7 +485,15 @@ async function main() {
       if (allMatches.length === 0) {
         await (prisma.youTubeVideo.update as any)({
           where: { id: video.id },
-          data: { noMatchReason: 'no_alias_found', matchAttemptedAt: new Date() },
+          data: {
+            bandId: null,
+            opponentBandId: null,
+            participantBandIds: [],
+            matchConfidence: 0,
+            matchSource: null,
+            noMatchReason: 'no_alias_found',
+            matchAttemptedAt: new Date(),
+          },
         });
         noMatch++;
         continue;
@@ -483,7 +503,15 @@ async function main() {
       if (topMatch.score < MIN_CONFIDENCE) {
         await (prisma.youTubeVideo.update as any)({
           where: { id: video.id },
-          data: { noMatchReason: 'low_confidence', matchAttemptedAt: new Date() },
+          data: {
+            bandId: null,
+            opponentBandId: null,
+            participantBandIds: [],
+            matchConfidence: 0,
+            matchSource: null,
+            noMatchReason: 'low_confidence',
+            matchAttemptedAt: new Date(),
+          },
         });
         lowConfidence++;
         continue;

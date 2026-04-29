@@ -363,6 +363,8 @@ export class ApiClient {
   async getVideos(filters?: VideoFilters): Promise<PaginatedResponse<Video>> {
     const params = new URLSearchParams();
     if (filters?.bandId) params.append('bandId', filters.bandId);
+    if (filters?.bandType) params.append('bandType', filters.bandType);
+    if (filters?.categorySlug) params.append('categorySlug', filters.categorySlug);
     if (filters?.category) params.append('category', filters.category);
     if (filters?.year) params.append('eventYear', filters.year.toString());
     if (filters?.conference) params.append('conference', filters.conference);
@@ -723,6 +725,10 @@ export class ApiClient {
 
   async hideExcludedVideos(): Promise<{ hidden: number; message: string }> {
     return this.request(`/admin/videos/hide-excluded`, { method: 'POST' });
+  }
+
+  async hideGreekLifeVideos(): Promise<{ hidden: number; message: string }> {
+    return this.request(`/admin/videos/hide-greek-life`, { method: 'POST' });
   }
 
   async recategorizeOtherVideos(): Promise<{ updated: number; message: string }> {

@@ -37,7 +37,7 @@ export async function seedEvents(prisma: PrismaClient): Promise<void> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   // Load data file
-  const eventsPath = path.resolve(process.cwd(), 'prisma/seed-data/events.json');
+  const eventsPath = path.resolve(__dirname, '../seed-data/events.json');
   const events: EventSeedData[] = JSON.parse(fs.readFileSync(eventsPath, 'utf-8'));
 
   console.log(`📊 Data loaded: ${events.length} events\n`);

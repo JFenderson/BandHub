@@ -29,20 +29,39 @@ const BATCH_SIZE = 500;
 // ---------------------------------------------------------------------------
 
 const CATEGORY_RULES: Array<{ slug: string; pattern: RegExp }> = [
-  { slug: '5th-quarter',   pattern: /\b(5th\s*quarter|fifth\s*quarter|post\s*game|after\s*the\s*game)\b/i },
-  { slug: 'stand-battle',  pattern: /\b(stand\s*battle|battle\s*of\s*(the\s*)?bands|band\s*battle|stands?\s*vs\.?)\b/i },
-  { slug: 'field-show',    pattern: /\b(field\s*show|marching\s*show|formation|drill\s*team)\b/i },
-  { slug: 'halftime',      pattern: /\b(halftime|half\s*time|half-time)\b/i },
-  { slug: 'pregame',       pattern: /\b(pregame|pre\s*game|before\s*the\s*game)\b/i },
-  { slug: 'entrance',      pattern: /\b(entrance|entering|arrival)\b/i },
-  { slug: 'parade',        pattern: /\b(parade|homecoming\s*parade|mardi\s*gras)\b/i },
-  { slug: 'practice',      pattern: /\b(practice|rehearsal|sectional|band\s*camp|band\s*room)\b/i },
-  { slug: 'concert-band',  pattern: /\b(concert|symphonic|spring\s*show|indoor)\b/i },
+  // High school first — overrides all other categories
+  { slug: 'high-school',        pattern: /\b(high\s*school|hs\s*band|jr\.?\s*high|middle\s*school|prep\s*school|h\.?s\.?\s*marching)\b/i },
+  // Game-timing categories — zero quarter (before game) before 5th quarter (after game)
+  { slug: 'zero-quarter',       pattern: /\b(zero[\s-]quarter|0[\s-]quarter|0th[\s-]quarter)\b/i },
+  { slug: '5th-quarter',        pattern: /\b(5th\s*quarter|fifth\s*quarter|post\s*game|after\s*the\s*game)\b/i },
+  // Stand battle — BOTB is the abbreviation for Battle of the Bands events; section instrument
+  // battles (trombone, trumpet, etc.) are stand content even without the word "battle"
+  { slug: 'stand-battle',       pattern: /\b(stand\s*battle|battle\s*of\s*(the\s*)?bands|band\s*battle|stands?\s*vs\.?|stands|botb|bita)\b|\b(trombone|trumpet|saxophone|sax|flute|clarinet|tuba|brass|woodwind)\s*(battle|vs\.?|feature|section)\b/i },
+  // Percussion showcase — "stick tape" is the HBCU community term; plain "drumline" catches
+  // channel-style highlight videos ("GSU Drumline Highlights")
+  { slug: 'percussion-feature', pattern: /\b(stick[\s-]tape|drum\s*feature|percussion\s*feature|drumline\s*feature|snare\s*feature|tenor\s*feature|quad\s*feature|bass\s*feature|drumline)\b/i },
+  { slug: 'field-playing',      pattern: /\b(field\s*show|marching\s*show|formation|drill\s*team|field\s*playing|on[\s-]field)\b/i },
+  { slug: 'halftime-show',      pattern: /\b(halftime|half\s*time|half-time)\b/i },
+  // entrance: "marching in" is the standard HBCU title format for entering the stadium
+  { slug: 'entrance',           pattern: /\b(entrance|entering|arrival|pregame|pre\s*game|before\s*the\s*game|marching\s+in)\b/i },
+  // exit: "marching out" is the mirror of "marching in"; plain "exit" is too generic
+  { slug: 'exit',               pattern: /\b(march(ing)?\s*[\s-]?out|exit\s*march|band\s*exit|leaving\s*the\s*field)\b/i },
+  { slug: 'parade',             pattern: /\b(parade|homecoming\s*parade|mardi\s*gras)\b/i },
+  // practice: jamborees and scrimmages are rehearsal-type events
+  { slug: 'practice',           pattern: /\b(practice|rehearsal|sectional|band\s*camp|band\s*room|jamboree|scrimmage)\b/i },
+  { slug: 'concert',            pattern: /\b(concert|symphonic|spring\s*show|indoor)\b/i },
+  // performance: song-performance videos that use the "Song | Band Year" title format common
+  // on HBCU channels, or explicit performance/showcase keywords — placed last so more specific
+  // categories take priority
+  { slug: 'performance',        pattern: /\bperformance\b|\bshowcase\b|\bspotlight\b|\bperforms?\b|.+\|.+20\d\d/i },
 ];
 
-function detectCategorySlug(title: string, description: string): string {
+function detectCategorySlug(title: string, description: string, bandType?: string): string {
   const text = `${title} ${description}`.toLowerCase();
   for (const { slug, pattern } of CATEGORY_RULES) {
+    // Never tag HBCU/ALL_STAR band videos as high-school — the title may reference
+    // a high-school opponent or event (e.g. "High School Day", "vs X High School")
+    if (slug === 'high-school' && bandType && bandType !== 'HIGH_SCHOOL') continue;
     if (pattern.test(text)) return slug;
   }
   return 'other';
@@ -92,7 +111,7 @@ async function main() {
         ...(uncategorizedOnly ? { categoryId: null } : {}),
         ...(lastId ? { id: { gt: lastId } } : {}),
       },
-      select: { id: true, title: true, description: true },
+      select: { id: true, title: true, description: true, band: { select: { bandType: true } } },
       orderBy: { id: 'asc' },
       take: BATCH_SIZE,
     });
@@ -106,7 +125,7 @@ async function main() {
 
     for (const video of videos) {
       try {
-        const slug = detectCategorySlug(video.title, video.description || '');
+        const slug = detectCategorySlug(video.title, video.description || '', (video as any).band?.bandType);
         const catId = categoryMap.get(slug);
         if (catId) {
           const ids = categoryGroups.get(catId) ?? [];

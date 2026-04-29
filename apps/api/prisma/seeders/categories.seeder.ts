@@ -1,7 +1,5 @@
 import { PrismaClient, BandType } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
 const categories = [
   {
     name: 'Stand Battle',
@@ -74,10 +72,22 @@ const categories = [
     applicableTypes: [BandType.HBCU],
   },
   {
+    name: 'Performance',
+    slug: 'performance',
+    description: 'Song performances and band showcases',
+    applicableTypes: [BandType.HBCU, BandType.ALL_STAR],
+  },
+  {
     name: 'Other',
     slug: 'other',
     description: 'Other band-related content',
     applicableTypes: [BandType.HBCU, BandType.ALL_STAR],
+  },
+  {
+    name: 'High School',
+    slug: 'high-school',
+    description: 'High school marching band performances',
+    applicableTypes: [BandType.HIGH_SCHOOL],
   },
 ];
 

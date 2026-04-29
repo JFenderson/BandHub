@@ -9,6 +9,7 @@ export type VideoCategory =
   | 'HALFTIME'
   | 'ENTRANCE'
   | 'PREGAME'
+  | 'HIGH_SCHOOL'
   | 'OTHER';
 
 // Category pattern matching for auto-categorization
