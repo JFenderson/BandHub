@@ -28,7 +28,15 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:newpassword123@localhost:5432/hbcu_band_hub?schema=public\" npx prisma generate --schema packages/database/prisma/schema.prisma)",
       "Bash(node -e ' *)",
       "Bash(npm run *)",
-      "Bash(npx --env-file=apps/api/.env prisma migrate deploy --schema=packages/database/prisma/schema.prisma)"
+      "Bash(npx --env-file=apps/api/.env prisma migrate deploy --schema=packages/database/prisma/schema.prisma)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(command -v expect)",
+      "Bash(command -v python3)",
+      "Bash(ssh *)",
+      "Bash(export SSH_ASKPASS=\"/c/Users/josep/AppData/Local/Temp/claude/C--Users-josep-source-BandHub/8b4487de-84d5-469d-bd23-5b755c7de583/scratchpad/askpass.sh\")",
+      "Bash(export SSH_ASKPASS_REQUIRE=force)",
+      "Bash(echo '---sample ids---')"
     ]
   }
 }

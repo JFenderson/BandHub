@@ -60,7 +60,7 @@
     "googleapis": "^166.0.0",
     "ioredis": "^5.4.0",
     "multer": "^2.1.1",
-    "opossum": "^7.0.0",
+    "opossum": "^8.5.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "prom-client": "^14.0.1",
