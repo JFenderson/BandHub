@@ -1,16 +1,15 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QueueName } from '@hbcu-band-hub/shared-types';
-import { PrismaService } from '@bandhub/database'; // Use shared package
-@Processor(QueueName.MAINTENANCE)
-export class CleanupProcessor extends WorkerHost {
-  private readonly logger = new Logger(CleanupProcessor.name);
-  constructor(private readonly prisma: PrismaService) {
-    super();
-  }
-  async process(job: Job): Promise<void> {
-    this.logger.log(`Processing cleanup job ${ job.id }`);
+import { PrismaService } from '@bandhub/database';
+
+@Injectable()
+export class CleanupHandler {
+  private readonly logger = new Logger(CleanupHandler.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  async handle(job: Job): Promise<void> {
+    this.logger.log(`Processing cleanup job ${job.id}`);
     try {
       switch (job.name) {
         case 'cleanup-old-videos':
@@ -27,6 +26,7 @@ export class CleanupProcessor extends WorkerHost {
       throw error;
     }
   }
+
   private async cleanupOldVideos() {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -39,6 +39,7 @@ export class CleanupProcessor extends WorkerHost {
 
     this.logger.log(`Cleaned up ${result.count} old low-view videos`);
   }
+
   private async cleanupHiddenVideos() {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);

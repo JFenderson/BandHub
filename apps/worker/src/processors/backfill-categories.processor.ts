@@ -1,7 +1,6 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QueueName, JobType, CategorizeVideosJobData } from '@hbcu-band-hub/shared-types';
+import { JobType, CategorizeVideosJobData } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 
 interface CategorizeResult {
@@ -20,16 +19,14 @@ interface CategorizeResult {
  * Iterates through videos with no category (or all videos when uncategorizedOnly=false),
  * applies pattern-based detection, and bulk-updates them by category.
  */
-@Processor(QueueName.MAINTENANCE, { concurrency: 1 })
-export class BackfillCategoriesProcessor extends WorkerHost {
-  private readonly logger = new Logger(BackfillCategoriesProcessor.name);
+@Injectable()
+export class BackfillCategoriesHandler {
+  private readonly logger = new Logger(BackfillCategoriesHandler.name);
   private readonly BATCH_SIZE = 500;
 
-  constructor(private readonly databaseService: DatabaseService) {
-    super();
-  }
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  async process(job: Job<CategorizeVideosJobData>): Promise<CategorizeResult> {
+  async handle(job: Job<CategorizeVideosJobData>): Promise<CategorizeResult> {
     const { uncategorizedOnly = true } = job.data;
     const startTime = Date.now();
 
@@ -150,15 +147,5 @@ export class BackfillCategoriesProcessor extends WorkerHost {
     this.logger.log(`Breakdown: ${JSON.stringify(result.breakdown)}`);
 
     return result;
-  }
-
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(`Job ${job.id} completed`);
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} failed: ${error.message}`, error.stack);
   }
 }

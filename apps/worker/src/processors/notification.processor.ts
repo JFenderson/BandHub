@@ -1,7 +1,5 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QueueName } from '@hbcu-band-hub/shared-types';
 import { PrismaService } from '@bandhub/database';
 
 interface NewVideoNotificationJobData {
@@ -16,19 +14,17 @@ interface WeeklyDigestJobData {
   type: 'WEEKLY_DIGEST';
 }
 
-type NotificationJobData = NewVideoNotificationJobData | WeeklyDigestJobData;
+export type NotificationJobData = NewVideoNotificationJobData | WeeklyDigestJobData;
 
-@Processor(QueueName.MAINTENANCE)
-export class NotificationProcessor extends WorkerHost {
-  private readonly logger = new Logger(NotificationProcessor.name);
-  
+@Injectable()
+export class NotificationHandler {
+  private readonly logger = new Logger(NotificationHandler.name);
+
   constructor(
     private prisma: PrismaService,
-  ) {
-    super();
-  }
-  
-  async process(job: Job<NotificationJobData>): Promise<void> {
+  ) {}
+
+  async handle(job: Job<NotificationJobData>): Promise<void> {
     const { data } = job;
     
     this.logger.log(`Processing notification job: ${data.type}`);
@@ -175,15 +171,5 @@ export class NotificationProcessor extends WorkerHost {
       this.logger.error(`Failed to process weekly digest`, error);
       throw error;
     }
-  }
-  
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(`Notification job ${job.id} completed`);
-  }
-  
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Notification job ${job.id} failed`, error.stack);
   }
 }
