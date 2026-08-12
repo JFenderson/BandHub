@@ -1,8 +1,6 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import {
-  QueueName,
   SyncBandJobData,
   SyncJobResult,
   SyncMode,
@@ -17,21 +15,17 @@ function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
-@Processor(QueueName.VIDEO_SYNC, {
-  concurrency: 3,
-})
-export class SyncBandProcessor extends WorkerHost {
-  private readonly logger = new Logger(SyncBandProcessor.name);
+@Injectable()
+export class SyncBandHandler {
+  private readonly logger = new Logger(SyncBandHandler.name);
 
   constructor(
     private youtubeService: YouTubeService,
     private databaseService: DatabaseService,
     private queueService: QueueService,
-  ) {
-    super();
-  }
-  
-  async process(job: Job<SyncBandJobData>): Promise<SyncJobResult> {
+  ) {}
+
+  async handle(job: Job<SyncBandJobData>): Promise<SyncJobResult> {
     const { bandId, mode, triggeredBy } = job.data;
     const startTime = Date.now();
     
@@ -246,15 +240,5 @@ export class SyncBandProcessor extends WorkerHost {
   
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
-  
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(`Job ${job.id} completed for band ${job.data.bandId}`);
-  }
-  
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} failed for band ${job.data.bandId}`, error.stack);
   }
 }

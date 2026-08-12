@@ -15,19 +15,20 @@ import { QueueModule } from './queue/queue.module';
 import { YouTubeService } from './services/youtube.service';
 import { CircuitBreakerService } from './external/circuit-breaker.service';
 // Processors
-import { SyncBandProcessor } from './processors/sync-band.processor';
-import { SyncAllBandsProcessor } from './processors/sync-all-bands.processor';
+import { SyncBandHandler } from './processors/sync-band.processor';
+import { SyncAllBandsHandler } from './processors/sync-all-bands.processor';
 import { ProcessVideoHandler } from './processors/process-video.processor';
 import { CleanupProcessor } from './processors/cleanup.processor';
 import { NotificationProcessor } from './processors/notification.processor';
-import { BackfillCreatorsProcessor } from './processors/backfill-creators.processor';
-import { BackfillBandsProcessor } from './processors/backfill-bands.processor';
+import { BackfillCreatorsHandler } from './processors/backfill-creators.processor';
+import { BackfillBandsHandler } from './processors/backfill-bands.processor';
 import { MatchVideosHandler } from './processors/match-videos.processor';
 import { PromoteVideosHandler } from './processors/promote-videos.processor';
 import { BackfillCategoriesProcessor } from './processors/backfill-categories.processor';
 import { ClassifyVideosHandler } from './processors/classify-videos.processor';
 import { RematchVideosHandler } from './processors/rematch-videos.processor';
 import { VideoProcessingQueueProcessor } from './processors/video-processing-queue.processor';
+import { VideoSyncQueueProcessor } from './processors/video-sync-queue.processor';
 import { BandLibrarianService } from './services/band-librarian.service';
 // Scheduler
 import { SyncScheduler } from './scheduler/sync.scheduler';
@@ -118,19 +119,20 @@ YouTubeService,
 CircuitBreakerService,
 BandLibrarianService,
 // Processors
-SyncBandProcessor,
-SyncAllBandsProcessor,
+SyncBandHandler,
+SyncAllBandsHandler,
 ProcessVideoHandler,
 CleanupProcessor,
 NotificationProcessor,
-BackfillCreatorsProcessor,
-BackfillBandsProcessor,
+BackfillCreatorsHandler,
+BackfillBandsHandler,
 MatchVideosHandler,
 PromoteVideosHandler,
 BackfillCategoriesProcessor,
 ClassifyVideosHandler,
 RematchVideosHandler,
 VideoProcessingQueueProcessor,
+VideoSyncQueueProcessor,
 
 // Scheduler
 SyncScheduler,

@@ -1,9 +1,7 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { 
-  QueueName, 
-  JobType, 
+import {
+  JobType,
   BackfillCreatorsJobData,
 } from '@hbcu-band-hub/shared-types';
 import { SyncStatus } from '@prisma/client';
@@ -27,30 +25,27 @@ interface BackfillResult {
   duration: number;
 }
 
-@Processor(QueueName.VIDEO_SYNC, {
-  concurrency: 1, // Run one at a time to manage quota
-})
-export class BackfillCreatorsProcessor extends WorkerHost {
-  private readonly logger = new Logger(BackfillCreatorsProcessor.name);
+@Injectable()
+export class BackfillCreatorsHandler {
+  private readonly logger = new Logger(BackfillCreatorsHandler.name);
   private youtube: youtube_v3.Youtube;
   private quotaUsed = 0;
   private readonly DAILY_QUOTA_LIMIT: number;
   private readonly RATE_LIMIT_DELAY_MS = 1000;
-  
+
   constructor(
     private youtubeService: YouTubeService,
     private databaseService: DatabaseService,
     private configService: ConfigService,
   ) {
-    super();
     this.DAILY_QUOTA_LIMIT = parseInt(this.configService.get<string>('YOUTUBE_QUOTA_LIMIT', '10000'));
     this.youtube = google.youtube({
       version: 'v3',
       auth: this.configService.get<string>('YOUTUBE_API_KEY'),
     });
   }
-  
-  async process(job: Job<BackfillCreatorsJobData>): Promise<BackfillResult> {
+
+  async handle(job: Job<BackfillCreatorsJobData>): Promise<BackfillResult> {
     const { triggeredBy, creatorId, limit } = job.data;
     const startTime = Date.now();
     
@@ -341,15 +336,5 @@ export class BackfillCreatorsProcessor extends WorkerHost {
   
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-  
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(`Job ${job.id} completed`);
-  }
-  
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} failed`, error.stack);
   }
 }

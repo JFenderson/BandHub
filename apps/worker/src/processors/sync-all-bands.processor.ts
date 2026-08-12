@@ -1,38 +1,27 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
-import { 
-  QueueName, 
-  JobType, 
-  SyncAllBandsJobData, 
+import {
+  QueueName,
+  JobType,
+  SyncAllBandsJobData,
   SyncBandJobData,
   JobPriority,
 } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 
 
-@Processor(QueueName.VIDEO_SYNC, {
-  concurrency: 1,  // Only one sync-all job at a time
-})
-export class SyncAllBandsProcessor extends WorkerHost {
-  private readonly logger = new Logger(SyncAllBandsProcessor.name);
-  
+@Injectable()
+export class SyncAllBandsHandler {
+  private readonly logger = new Logger(SyncAllBandsHandler.name);
+
   constructor(
     private databaseService: DatabaseService,
     @InjectQueue(QueueName.VIDEO_SYNC)
     private videoSyncQueue: Queue,
-  ) {
-    super();
-  }
-  
-  async process(job: Job<SyncAllBandsJobData>) {
-    // This processor handles the SYNC_ALL_BANDS job type
-    // The base class routes based on job name, so we need to check
-    if (job.name !== JobType.SYNC_ALL_BANDS) {
-      return;  // Let other processors handle it
-    }
-    
+  ) {}
+
+  async handle(job: Job<SyncAllBandsJobData>) {
     const { mode, triggeredBy, batchSize = 5 } = job.data;
     
     this.logger.log(`Starting sync for all bands (mode: ${mode}, triggered by: ${triggeredBy})`);
