@@ -46,6 +46,32 @@ describe('VideoSyncQueueProcessor', () => {
     expect(handlers.syncBandHandler.handle).not.toHaveBeenCalled();
   });
 
+  it('routes a sync-all-bands job only to SyncAllBandsHandler', async () => {
+    const { processor, handlers } = buildProcessor();
+    const job = jobNamed(JobType.SYNC_ALL_BANDS);
+
+    const result = await processor.process(job);
+
+    expect(handlers.syncAllBandsHandler.handle).toHaveBeenCalledWith(job);
+    expect(handlers.syncBandHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.backfillCreatorsHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.backfillBandsHandler.handle).not.toHaveBeenCalled();
+    expect(result).toBe('sync-all-bands-result');
+  });
+
+  it('routes a backfill-bands job only to BackfillBandsHandler', async () => {
+    const { processor, handlers } = buildProcessor();
+    const job = jobNamed(JobType.BACKFILL_BANDS);
+
+    const result = await processor.process(job);
+
+    expect(handlers.backfillBandsHandler.handle).toHaveBeenCalledWith(job);
+    expect(handlers.syncBandHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.syncAllBandsHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.backfillCreatorsHandler.handle).not.toHaveBeenCalled();
+    expect(result).toBe('backfill-bands-result');
+  });
+
   it('logs and skips an update-stats job without calling any handler', async () => {
     const { processor, handlers } = buildProcessor();
     const warnSpy = jest.spyOn((processor as any).logger, 'warn').mockImplementation(() => undefined);

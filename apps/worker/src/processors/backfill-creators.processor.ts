@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import {
-  JobType,
   BackfillCreatorsJobData,
 } from '@hbcu-band-hub/shared-types';
 import { SyncStatus } from '@prisma/client';
@@ -29,7 +28,6 @@ interface BackfillResult {
 export class BackfillCreatorsHandler {
   private readonly logger = new Logger(BackfillCreatorsHandler.name);
   private youtube: youtube_v3.Youtube;
-  private quotaUsed = 0;
   private readonly DAILY_QUOTA_LIMIT: number;
   private readonly RATE_LIMIT_DELAY_MS = 1000;
 
@@ -48,10 +46,10 @@ export class BackfillCreatorsHandler {
   async handle(job: Job<BackfillCreatorsJobData>): Promise<BackfillResult> {
     const { triggeredBy, creatorId, limit } = job.data;
     const startTime = Date.now();
-    
+    let quotaUsed = 0;
+
     this.logger.log(`Starting creator videos backfill (triggered by: ${triggeredBy})`);
-    this.quotaUsed = 0;
-    
+
     const result: BackfillResult = {
       creatorsProcessed: 0,
       videosAdded: 0,
@@ -83,8 +81,8 @@ export class BackfillCreatorsHandler {
       
       for (const [index, creator] of creators.entries()) {
         // Check quota
-        if (this.quotaUsed >= this.DAILY_QUOTA_LIMIT * 0.9) {
-          this.logger.warn(`Approaching daily quota limit (${this.quotaUsed}/${this.DAILY_QUOTA_LIMIT})`);
+        if (quotaUsed >= this.DAILY_QUOTA_LIMIT * 0.9) {
+          this.logger.warn(`Approaching daily quota limit (${quotaUsed}/${this.DAILY_QUOTA_LIMIT})`);
           result.errors.push('Quota limit reached');
           break;
         }
@@ -97,6 +95,7 @@ export class BackfillCreatorsHandler {
           result.videosUpdated += creatorResult.updated;
           result.videosSkipped += creatorResult.skipped;
           result.quotaUsed += creatorResult.quotaUsed;
+          quotaUsed += creatorResult.quotaUsed;
           result.creatorsProcessed++;
           
           this.logger.log(`   ✅ Added: ${creatorResult.added}, Updated: ${creatorResult.updated}, Skipped: ${creatorResult.skipped}`);
@@ -179,8 +178,7 @@ export class BackfillCreatorsHandler {
         id: [creator.youtubeChannelId],
       });
       creatorQuotaUsed += 1;
-      this.quotaUsed += 1;
-      
+
       const uploadsPlaylistId = channelResponse.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
       if (!uploadsPlaylistId) {
         this.logger.warn(`No uploads playlist found for channel ${creator.youtubeChannelId}`);
@@ -199,8 +197,7 @@ export class BackfillCreatorsHandler {
           pageToken,
         });
         creatorQuotaUsed += 1;
-        this.quotaUsed += 1;
-        
+
         allVideoItems.push(...(playlistResponse.data.items || []));
         pageToken = playlistResponse.data.nextPageToken || undefined;
         
@@ -226,8 +223,7 @@ export class BackfillCreatorsHandler {
             id: videoIds,
           });
           creatorQuotaUsed += 1;
-          this.quotaUsed += 1;
-          
+
           for (const item of detailsResponse.data.items || []) {
             if (item.id) {
               videoDetails.set(item.id, {

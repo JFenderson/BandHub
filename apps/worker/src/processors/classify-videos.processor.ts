@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { JobType, ClassifyVideosJobData } from '@hbcu-band-hub/shared-types';
+import { ClassifyVideosJobData } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 import { BandLibrarianService } from '../services/band-librarian.service';
 

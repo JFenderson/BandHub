@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { JobType, CategorizeVideosJobData } from '@hbcu-band-hub/shared-types';
+import { CategorizeVideosJobData } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 
 interface CategorizeResult {
@@ -13,7 +13,7 @@ interface CategorizeResult {
 }
 
 /**
- * BackfillCategoriesProcessor
+ * BackfillCategoriesHandler
  *
  * Runs entirely against the database — no YouTube API quota consumed.
  * Iterates through videos with no category (or all videos when uncategorizedOnly=false),

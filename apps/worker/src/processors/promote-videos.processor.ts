@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import {
-  JobType,
   PromoteVideosJobData,
   LibrarianExtraction,
 } from '@hbcu-band-hub/shared-types';

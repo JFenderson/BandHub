@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import {
-  JobType,
   BackfillBandsJobData,
 } from '@hbcu-band-hub/shared-types';
 import { SyncStatus } from '@prisma/client';
@@ -26,11 +25,11 @@ interface BackfillResult {
 }
 
 /**
- * BackfillBandsProcessor
- * 
+ * BackfillBandsHandler
+ *
  * Pulls videos from official HBCU band YouTube channels.
- * 
- * Key Difference from BackfillCreatorsProcessor:
+ *
+ * Key Difference from BackfillCreatorsHandler:
  * - Videos from official band channels get bandId set immediately (since we know the band)
  * - Videos from creator channels have bandId = null (need matching later)
  * 
@@ -40,7 +39,6 @@ interface BackfillResult {
 export class BackfillBandsHandler {
   private readonly logger = new Logger(BackfillBandsHandler.name);
   private youtube: youtube_v3.Youtube;
-  private quotaUsed = 0;
   private readonly DAILY_QUOTA_LIMIT: number;
   private readonly RATE_LIMIT_DELAY_MS = 1000;
 
@@ -59,10 +57,10 @@ export class BackfillBandsHandler {
   async handle(job: Job<BackfillBandsJobData>): Promise<BackfillResult> {
     const { triggeredBy, bandId, limit } = job.data;
     const startTime = Date.now();
-    
+    let quotaUsed = 0;
+
     this.logger.log(`Starting band videos backfill (triggered by: ${triggeredBy})`);
-    this.quotaUsed = 0;
-    
+
     const result: BackfillResult = {
       bandsProcessed: 0,
       videosAdded: 0,
@@ -94,8 +92,8 @@ export class BackfillBandsHandler {
       
       for (const [index, band] of bands.entries()) {
         // Check quota
-        if (this.quotaUsed >= this.DAILY_QUOTA_LIMIT * 0.9) {
-          this.logger.warn(`Approaching daily quota limit (${this.quotaUsed}/${this.DAILY_QUOTA_LIMIT})`);
+        if (quotaUsed >= this.DAILY_QUOTA_LIMIT * 0.9) {
+          this.logger.warn(`Approaching daily quota limit (${quotaUsed}/${this.DAILY_QUOTA_LIMIT})`);
           result.errors.push('Quota limit reached');
           break;
         }
@@ -108,6 +106,7 @@ export class BackfillBandsHandler {
           result.videosUpdated += bandResult.updated;
           result.videosSkipped += bandResult.skipped;
           result.quotaUsed += bandResult.quotaUsed;
+          quotaUsed += bandResult.quotaUsed;
           result.bandsProcessed++;
           
           this.logger.log(`   ✅ Added: ${bandResult.added}, Updated: ${bandResult.updated}, Skipped: ${bandResult.skipped}`);
@@ -194,8 +193,7 @@ export class BackfillBandsHandler {
         id: [band.youtubeChannelId],
       });
       bandQuotaUsed += 1;
-      this.quotaUsed += 1;
-      
+
       const uploadsPlaylistId = channelResponse.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
       if (!uploadsPlaylistId) {
         this.logger.warn(`No uploads playlist found for channel ${band.youtubeChannelId}`);
@@ -214,8 +212,7 @@ export class BackfillBandsHandler {
           pageToken,
         });
         bandQuotaUsed += 1;
-        this.quotaUsed += 1;
-        
+
         allVideoItems.push(...(playlistResponse.data.items || []));
         pageToken = playlistResponse.data.nextPageToken || undefined;
         
@@ -241,8 +238,7 @@ export class BackfillBandsHandler {
             id: videoIds,
           });
           bandQuotaUsed += 1;
-          this.quotaUsed += 1;
-          
+
           for (const item of detailsResponse.data.items || []) {
             if (item.id) {
               videoDetails.set(item.id, {

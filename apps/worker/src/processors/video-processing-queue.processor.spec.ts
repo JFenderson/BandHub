@@ -59,6 +59,34 @@ describe('VideoProcessingQueueProcessor', () => {
     expect(handlers.processVideoHandler.handle).not.toHaveBeenCalled();
   });
 
+  it('routes a classify-videos job only to ClassifyVideosHandler', async () => {
+    const { processor, handlers } = buildProcessor();
+    const job = jobNamed(JobType.CLASSIFY_VIDEOS);
+
+    const result = await processor.process(job);
+
+    expect(handlers.classifyVideosHandler.handle).toHaveBeenCalledWith(job);
+    expect(handlers.processVideoHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.matchVideosHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.promoteVideosHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.rematchVideosHandler.handle).not.toHaveBeenCalled();
+    expect(result).toBe('classify-videos-result');
+  });
+
+  it('routes a rematch-videos job only to RematchVideosHandler', async () => {
+    const { processor, handlers } = buildProcessor();
+    const job = jobNamed(JobType.REMATCH_VIDEOS);
+
+    const result = await processor.process(job);
+
+    expect(handlers.rematchVideosHandler.handle).toHaveBeenCalledWith(job);
+    expect(handlers.processVideoHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.classifyVideosHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.matchVideosHandler.handle).not.toHaveBeenCalled();
+    expect(handlers.promoteVideosHandler.handle).not.toHaveBeenCalled();
+    expect(result).toBe('rematch-videos-result');
+  });
+
   it('logs a warning and calls no handler for an unknown job name', async () => {
     const { processor, handlers } = buildProcessor();
     const warnSpy = jest.spyOn((processor as any).logger, 'warn').mockImplementation(() => undefined);
