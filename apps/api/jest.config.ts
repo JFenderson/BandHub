@@ -21,7 +21,12 @@ const config: Config = {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
   
-  collectCoverageFrom: ['<rootDir>/src/**/*.(t|j)s'],
+  collectCoverageFrom: [
+    '<rootDir>/src/**/*.(t|j)s',
+    '!<rootDir>/src/**/*.spec.ts',
+    '!<rootDir>/src/**/*.d.ts',
+    '!<rootDir>/src/**/index.ts',
+  ],
   coverageDirectory: '<rootDir>/test/coverage',
   coverageReporters: ['lcov', 'text-summary', 'html'], // Added 'html' for better reports
   
@@ -29,6 +34,7 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   
   moduleNameMapper: {
+    '^src/(.*)$': '<rootDir>/src/$1',
     '^@hbcu-band-hub/shared-types$': '<rootDir>/../../libs/shared/types/src/index.ts',
   },
   

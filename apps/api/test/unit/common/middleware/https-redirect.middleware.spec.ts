@@ -18,6 +18,8 @@ describe('HttpsRedirectMiddleware', () => {
     // Reset mocks
     mockNext = jest.fn();
     mockResponse = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
       redirect: jest.fn(),
     };
   });
@@ -64,21 +66,21 @@ describe('HttpsRedirectMiddleware', () => {
     it('should redirect HTTP to HTTPS with 301 status', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'bandhub.com',
+        host: 'hbcubandhub.tech',
         path: '/api/bands',
         url: '/api/bands',
       });
 
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://bandhub.com/api/bands');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://hbcubandhub.tech/api/bands');
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it('should preserve URL path and query parameters', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'bandhub.com',
+        host: 'hbcubandhub.tech',
         path: '/api/bands',
         url: '/api/bands?name=test&limit=10',
         originalUrl: '/api/bands?name=test&limit=10',
@@ -88,7 +90,7 @@ describe('HttpsRedirectMiddleware', () => {
 
       expect(mockResponse.redirect).toHaveBeenCalledWith(
         301,
-        'https://bandhub.com/api/bands?name=test&limit=10'
+        'https://hbcubandhub.tech/api/bands?name=test&limit=10'
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -96,7 +98,7 @@ describe('HttpsRedirectMiddleware', () => {
     it('should preserve complex query strings', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'api.bandhub.com',
+        host: 'api.hbcubandhub.tech',
         path: '/api/videos',
         url: '/api/videos?category=performance&sort=date&order=desc',
         originalUrl: '/api/videos?category=performance&sort=date&order=desc',
@@ -106,7 +108,7 @@ describe('HttpsRedirectMiddleware', () => {
 
       expect(mockResponse.redirect).toHaveBeenCalledWith(
         301,
-        'https://api.bandhub.com/api/videos?category=performance&sort=date&order=desc'
+        'https://api.hbcubandhub.tech/api/videos?category=performance&sort=date&order=desc'
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -197,7 +199,7 @@ describe('HttpsRedirectMiddleware', () => {
     it('should handle POST requests', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'bandhub.com',
+        host: 'hbcubandhub.tech',
         path: '/api/bands',
         url: '/api/bands',
         method: 'POST',
@@ -205,28 +207,28 @@ describe('HttpsRedirectMiddleware', () => {
 
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://bandhub.com/api/bands');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://hbcubandhub.tech/api/bands');
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it('should handle requests with port numbers', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'bandhub.com:8080',
+        host: 'hbcubandhub.tech:8080',
         path: '/api/bands',
         url: '/api/bands',
       });
 
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://bandhub.com:8080/api/bands');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://hbcubandhub.tech:8080/api/bands');
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it('should use originalUrl when available', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'bandhub.com',
+        host: 'hbcubandhub.tech',
         path: '/api/bands',
         url: '/bands', // shortened
         originalUrl: '/api/bands?full=true',
@@ -234,7 +236,7 @@ describe('HttpsRedirectMiddleware', () => {
 
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://bandhub.com/api/bands?full=true');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://hbcubandhub.tech/api/bands?full=true');
       expect(mockNext).not.toHaveBeenCalled();
     });
 
@@ -274,14 +276,14 @@ describe('HttpsRedirectMiddleware', () => {
     it('should allow subdomains of allowed hosts', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'sub.bandhub.com',
+        host: 'sub.hbcubandhub.tech',
         path: '/api/bands',
         url: '/api/bands',
       });
 
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://sub.bandhub.com/api/bands');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://sub.hbcubandhub.tech/api/bands');
       expect(mockNext).not.toHaveBeenCalled();
     });
   });
@@ -359,21 +361,21 @@ describe('HttpsRedirectMiddleware', () => {
     it('should handle root path', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'bandhub.com',
+        host: 'hbcubandhub.tech',
         path: '/',
         url: '/',
       });
 
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://bandhub.com/');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://hbcubandhub.tech/');
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it('should handle paths with special characters', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'api.bandhub.com',
+        host: 'api.hbcubandhub.tech',
         path: '/api/bands/search',
         url: '/api/bands/search?name=Test%20Band&city=New%20York',
         originalUrl: '/api/bands/search?name=Test%20Band&city=New%20York',
@@ -383,7 +385,7 @@ describe('HttpsRedirectMiddleware', () => {
 
       expect(mockResponse.redirect).toHaveBeenCalledWith(
         301,
-        'https://api.bandhub.com/api/bands/search?name=Test%20Band&city=New%20York'
+        'https://api.hbcubandhub.tech/api/bands/search?name=Test%20Band&city=New%20York'
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -391,7 +393,7 @@ describe('HttpsRedirectMiddleware', () => {
     it('should handle paths with hash fragments', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'bandhub.com',
+        host: 'hbcubandhub.tech',
         path: '/api/docs',
         url: '/api/docs#section-1',
         originalUrl: '/api/docs#section-1',
@@ -399,14 +401,14 @@ describe('HttpsRedirectMiddleware', () => {
 
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://bandhub.com/api/docs#section-1');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://hbcubandhub.tech/api/docs#section-1');
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it('should handle already HTTPS requests correctly', () => {
       mockRequest = createMockRequest({
         secure: true,
-        host: 'bandhub.com',
+        host: 'hbcubandhub.tech',
         path: '/api/bands',
         url: '/api/bands',
         protocol: 'https',
@@ -421,7 +423,7 @@ describe('HttpsRedirectMiddleware', () => {
     it('should handle empty query string correctly', () => {
       mockRequest = createMockRequest({
         secure: false,
-        host: 'bandhub.com',
+        host: 'hbcubandhub.tech',
         path: '/api/bands',
         url: '/api/bands?',
         originalUrl: '/api/bands?',
@@ -429,7 +431,7 @@ describe('HttpsRedirectMiddleware', () => {
 
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://bandhub.com/api/bands?');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://hbcubandhub.tech/api/bands?');
       expect(mockNext).not.toHaveBeenCalled();
     });
   });
@@ -469,7 +471,7 @@ describe('HttpsRedirectMiddleware', () => {
       
       mockRequest = createMockRequest({
         secure: false,
-        host: 'api.bandhub.com',
+        host: 'api.hbcubandhub.tech',
         path: '/api/bands',
         url: '/api/bands',
         ip: '192.168.1.100',
@@ -478,7 +480,7 @@ describe('HttpsRedirectMiddleware', () => {
       middleware.use(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(logSpy).toHaveBeenCalled();
-      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://api.bandhub.com/api/bands');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(301, 'https://api.hbcubandhub.tech/api/bands');
     });
 
     it('should log warning when host header is missing', () => {

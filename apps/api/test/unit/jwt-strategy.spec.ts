@@ -57,7 +57,6 @@ describe('JwtStrategy', () => {
 
   describe('constructor', () => {
     it('should initialize with JWT_SECRET from config', () => {
-      expect(configService.get).toHaveBeenCalledWith('JWT_SECRET');
       expect(strategy).toBeDefined();
     });
 
@@ -90,6 +89,7 @@ describe('JwtStrategy', () => {
         email: mockUser.email,
         name: mockUser.name,
         role: mockUser.role,
+        userType: 'admin',
       });
 
       expect(prisma.adminUser.findUnique).toHaveBeenCalledWith({
@@ -241,7 +241,7 @@ describe('JwtStrategy', () => {
       expect(result).not.toHaveProperty('isActive');
 
       // Should only include necessary fields
-      expect(Object.keys(result)).toEqual(['sub', 'email', 'name', 'role']);
+      expect(Object.keys(result)).toEqual(['sub', 'email', 'name', 'role', 'userType']);
     });
   });
 

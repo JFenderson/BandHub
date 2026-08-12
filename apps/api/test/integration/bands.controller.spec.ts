@@ -7,11 +7,15 @@ import {
 } from '@nestjs/common';
 import request from 'supertest';
 import { BandsController } from '../../src/modules/bands/controllers/bands.controller';
+import { TrendingController } from '../../src/modules/bands/controllers/trending.controller';
 import { BandsService } from '../../src/modules/bands/services/bands.service';
 import { FeaturedRecommendationsService } from '../../src/modules/bands/services/featured-recommendations.service';
+import { TrendingService } from '../../src/modules/bands/services/trending.service';
 import { JwtAuthGuard } from '../../src/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../src/common/guards/roles.guard';
+import { OptionalAuthGuard } from '../../src/common/guards/optional-auth.guard';
 import { AdminRole } from '@prisma/client';
+import { PrismaService } from '@bandhub/database';
 
 /**
  * COMPREHENSIVE INTEGRATION TESTS FOR BANDSCONTROLLER
@@ -86,13 +90,27 @@ describe('BandsController (Integration)', () => {
     getRecommendations: jest.fn(),
   };
 
+  const mockTrendingService = {
+    getTrendingBands: jest.fn(),
+  };
+
+  const mockPrismaService = {
+    userBandFavorite: {
+      create: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    bandShare: {
+      create: jest.fn(),
+    },
+  };
+
   // ========================================
   // TEST SETUP
   // ========================================
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [BandsController],
+      controllers: [BandsController, TrendingController],
       providers: [
         {
           provide: BandsService,
@@ -101,6 +119,14 @@ describe('BandsController (Integration)', () => {
         {
           provide: FeaturedRecommendationsService,
           useValue: mockFeaturedRecommendationsService,
+        },
+        {
+          provide: TrendingService,
+          useValue: mockTrendingService,
+        },
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
         },
       ],
     })
@@ -147,6 +173,10 @@ describe('BandsController (Integration)', () => {
           const userRole = request.user.role || request.headers['x-user-role'];
           return requiredRoles.includes(userRole);
         },
+      })
+      .overrideGuard(OptionalAuthGuard)
+      .useValue({
+        canActivate: jest.fn(() => true),
       })
       .compile();
 
@@ -432,9 +462,10 @@ describe('BandsController (Integration)', () => {
 
   describe('POST /api/bands', () => {
     const validCreateDto = {
-      name: 'New Band',
-      city: 'Atlanta',
-      state: 'GA',
+      name: 'Sonic Boom of the South',
+      schoolName: 'Jackson State University',
+      city: 'Jackson',
+      state: 'Mississippi',
       conference: 'SWAC',
     };
 
@@ -450,9 +481,9 @@ describe('BandsController (Integration)', () => {
         .expect(201);
 
       expect(response.body).toMatchObject({
-        name: 'New Band',
-        city: 'Atlanta',
-        state: 'GA',
+        name: 'Sonic Boom of the South',
+        city: 'Jackson',
+        state: 'Mississippi',
       });
       expect(mockBandsService.create).toHaveBeenCalledWith(
         expect.objectContaining(validCreateDto)
@@ -515,8 +546,8 @@ describe('BandsController (Integration)', () => {
         .set('x-user-role', AdminRole.MODERATOR)
         .send({
           name: 'New Band',
-          city: 'Atlanta',
-          state: 'GA',
+          city: 'Jackson',
+          state: 'Mississippi',
           foundedYear: 'not-a-number', // Invalid type
         })
         .expect(400);
@@ -532,8 +563,8 @@ describe('BandsController (Integration)', () => {
         .set('x-user-role', AdminRole.MODERATOR)
         .send({
           name: 'New Band',
-          city: 'Atlanta',
-          state: 'GA',
+          city: 'Jackson',
+          state: 'Mississippi',
           logoUrl: 'not-a-valid-url', // Invalid URL
         })
         .expect(400);
@@ -549,8 +580,8 @@ describe('BandsController (Integration)', () => {
         .set('x-user-role', AdminRole.MODERATOR)
         .send({
           name: 'New Band',
-          city: 'Atlanta',
-          state: 'GA',
+          city: 'Jackson',
+          state: 'Mississippi',
           foundedYear: 1500, // Before 1800
         })
         .expect(400);
@@ -561,16 +592,15 @@ describe('BandsController (Integration)', () => {
 
     it('should accept complete valid data', async () => {
       const completeDto = {
-        name: 'Complete Band',
-        schoolName: 'Complete University',
-        city: 'Atlanta',
-        state: 'GA',
+        name: 'Sonic Boom of the South',
+        schoolName: 'Jackson State University',
+        city: 'Jackson',
+        state: 'Mississippi',
         conference: 'SWAC',
         logoUrl: 'https://example.com/logo.png',
         bannerUrl: 'https://example.com/banner.png',
         description: 'Band description',
         foundedYear: 1946,
-        youtubeChannelId: 'UC1234567890',
         youtubePlaylistIds: ['PL1234', 'PL5678'],
         isActive: true,
         isFeatured: false,
@@ -587,8 +617,8 @@ describe('BandsController (Integration)', () => {
         .expect(201);
 
       expect(response.body).toMatchObject({
-        name: 'Complete Band',
-        city: 'Atlanta',
+        name: 'Sonic Boom of the South',
+        city: 'Jackson',
       });
     });
   });
@@ -788,7 +818,7 @@ describe('BandsController (Integration)', () => {
         .expect(200);
 
       expect(mockBandsService.updateFeaturedOrder).toHaveBeenCalledWith(
-        expect.objectContaining(orderDto)
+        { bandIds: ['band-1', 'band-2'] }
       );
     });
 
@@ -845,9 +875,9 @@ describe('BandsController (Integration)', () => {
         .set('Authorization', 'Bearer valid-token')
         .set('x-user-role', AdminRole.MODERATOR)
         .send({
-          name: 'Test Band',
-          city: 'Test City',
-          state: 'TS',
+          name: 'Sonic Boom of the South',
+          city: 'Jackson',
+          state: 'Mississippi',
         })
         .expect(400);
 
@@ -929,8 +959,13 @@ describe('BandsController (Integration)', () => {
 
 describe('GET /api/bands/trending', () => {
   it('should return bands sorted by trending score', async () => {
+    mockTrendingService.getTrendingBands.mockResolvedValue([
+      { id: 'band-1', metrics: { trendingScore: 100 } },
+      { id: 'band-2', metrics: { trendingScore: 80 } },
+    ]);
+
     const response = await request(app.getHttpServer())
-      .get('/bands/trending?timeframe=week')
+      .get('/api/bands/trending?timeframe=week')
       .expect(200);
 
     const bands = response.body;
@@ -939,6 +974,10 @@ describe('GET /api/bands/trending', () => {
         bands[i].metrics.trendingScore
       );
     }
+
+    expect(mockTrendingService.getTrendingBands).toHaveBeenCalledWith(
+      expect.objectContaining({ timeframe: 'week', limit: 20 })
+    );
   });
 });
 

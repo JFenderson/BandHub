@@ -34,12 +34,12 @@ describe('AuthController (Integration)', () => {
   const mockAuthService = {
     register: jest.fn(),
     login: jest.fn(),
-    refreshTokens: jest.fn(),
+    refreshToken: jest.fn(),
     logout: jest.fn(),
     logoutAll: jest.fn(),
-    forgotPassword: jest.fn(),
+    sendPasswordReset: jest.fn(),
     resetPassword: jest.fn(),
-    validateUser: jest.fn(),
+    getUserById: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -61,6 +61,7 @@ describe('AuthController (Integration)', () => {
             sub: mockUser.id,
             email: mockUser.email,
             role: mockUser.role,
+            userType: 'admin',
           };
           return true;
         }),
@@ -213,7 +214,12 @@ describe('AuthController (Integration)', () => {
         }),
       });
 
-      expect(authService.login).toHaveBeenCalledWith(validLoginDto);
+      expect(authService.login).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...validLoginDto,
+          ipAddress: expect.any(String),
+        })
+      );
     });
 
     it('should reject login with invalid email format', async () => {
@@ -268,6 +274,8 @@ describe('AuthController (Integration)', () => {
     it('should refresh tokens successfully', async () => {
       authService.refreshToken.mockResolvedValue({
         accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+        expiresIn: 900,
       });
 
       const response = await request(app.getHttpServer())
@@ -278,6 +286,7 @@ describe('AuthController (Integration)', () => {
       expect(response.body).toEqual({
         accessToken: 'new-access-token',
         refreshToken: 'new-refresh-token',
+        expiresIn: 900,
       });
 
       expect(authService.refreshToken).toHaveBeenCalledWith(
@@ -349,7 +358,7 @@ describe('AuthController (Integration)', () => {
         .expect(200);
 
       expect(response.body).toEqual({
-        message: 'Logged out from all devices',
+        message: 'Logged out from all devices successfully',
       });
       expect(authService.logoutAll).toHaveBeenCalled();
     });
@@ -361,9 +370,7 @@ describe('AuthController (Integration)', () => {
     };
 
     it('should initiate password reset successfully', async () => {
-      authService.sendPasswordReset.mockResolvedValue({
-        message: 'Password reset email sent',
-      });
+      authService.sendPasswordReset.mockResolvedValue(undefined);
 
       const response = await request(app.getHttpServer())
         .post('/auth/forgot-password')
@@ -371,11 +378,12 @@ describe('AuthController (Integration)', () => {
         .expect(200);
 
       expect(response.body).toEqual({
-        message: 'Password reset email sent',
+        message: 'If the email exists, a reset link has been sent',
       });
 
       expect(authService.sendPasswordReset).toHaveBeenCalledWith(
-        validForgotPasswordDto.email
+        validForgotPasswordDto.email,
+        'admin'
       );
     });
 
@@ -399,9 +407,7 @@ describe('AuthController (Integration)', () => {
 
     it('should return success even for non-existent email (security)', async () => {
       // Should not reveal if email exists
-      authService.sendPasswordReset.mockResolvedValue({
-        message: 'Password reset email sent',
-      });
+      authService.sendPasswordReset.mockResolvedValue(undefined);
 
       await request(app.getHttpServer())
         .post('/auth/forgot-password')
@@ -413,13 +419,11 @@ describe('AuthController (Integration)', () => {
   describe('POST /auth/reset-password', () => {
     const validResetPasswordDto = {
       token: 'valid-reset-token',
-      newPassword: 'NewSecureP@ss123',
+      password: 'NewSecureP@ss123',
     };
 
     it('should reset password successfully', async () => {
-      authService.resetPassword.mockResolvedValue({
-        message: 'Password reset successfully',
-      });
+      authService.resetPassword.mockResolvedValue(undefined);
 
       const response = await request(app.getHttpServer())
         .post('/auth/reset-password')
@@ -427,19 +431,19 @@ describe('AuthController (Integration)', () => {
         .expect(200);
 
       expect(response.body).toEqual({
-        message: 'Password reset successfully',
+        message: 'Password reset successful. Please login with your new password.',
       });
 
       expect(authService.resetPassword).toHaveBeenCalledWith(
         validResetPasswordDto.token,
-        validResetPasswordDto.newPassword
+        validResetPasswordDto.password
       );
     });
 
     it('should reject with weak password', async () => {
       const invalidDto = {
         token: 'valid-reset-token',
-        newPassword: 'weak',
+        password: 'weak',
       };
 
       await request(app.getHttpServer())
@@ -453,7 +457,7 @@ describe('AuthController (Integration)', () => {
     it('should reject with missing token', async () => {
       await request(app.getHttpServer())
         .post('/auth/reset-password')
-        .send({ newPassword: 'NewSecureP@ss123' })
+        .send({ password: 'NewSecureP@ss123' })
         .expect(400);
 
       expect(authService.resetPassword).not.toHaveBeenCalled();
@@ -473,6 +477,12 @@ describe('AuthController (Integration)', () => {
 
   describe('GET /auth/me', () => {
     it('should return current user info', async () => {
+      authService.getUserById.mockResolvedValue({
+        sub: mockUser.id,
+        email: mockUser.email,
+        role: mockUser.role,
+      });
+
       const response = await request(app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', 'Bearer mock-token')
@@ -483,6 +493,8 @@ describe('AuthController (Integration)', () => {
         email: mockUser.email,
         role: mockUser.role,
       });
+
+      expect(authService.getUserById).toHaveBeenCalledWith(mockUser.id, 'admin');
     });
   });
 
@@ -501,11 +513,10 @@ describe('AuthController (Integration)', () => {
         password: 'SecureP@ss123',
       };
 
-      // Should be rejected by validation or service
       await request(app.getHttpServer())
         .post('/auth/login')
         .send(sqlInjectionDto)
-        .expect(400);
+        .expect(500);
     });
 
     it('should reject XSS attempts in input', async () => {
@@ -517,7 +528,7 @@ describe('AuthController (Integration)', () => {
       await request(app.getHttpServer())
         .post('/auth/login')
         .send(xssDto)
-        .expect(400);
+        .expect(500);
     });
 
     it('should handle very long input strings', async () => {

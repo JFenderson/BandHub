@@ -195,7 +195,7 @@ describe('SecurityAuditService (unit)', () => {
         take: 50,
         skip: 10,
         include: {
-          user: {
+          adminUser: {
             select: { id: true, email: true, name: true },
           },
         },

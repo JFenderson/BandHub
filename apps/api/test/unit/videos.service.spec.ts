@@ -106,7 +106,7 @@ describe('VideosService (comprehensive unit tests)', () => {
       expect(videosRepository).toBeDefined();
       expect(cacheService).toBeDefined();
       expect(configService).toBeDefined();
-      expect(databaseService).toBeDefined();
+      expect(prismaService).toBeDefined();
     });
   });
 

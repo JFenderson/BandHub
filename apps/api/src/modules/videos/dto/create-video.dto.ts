@@ -1,7 +1,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNumber, IsArray, IsOptional, IsUrl, Min, Max } from 'class-validator';
-import { IsYouTubeVideoId } from 'src/common';
+import { IsYouTubeVideoId } from '../../../common';
 
 export class CreateVideoDto {
 @ApiProperty({ 

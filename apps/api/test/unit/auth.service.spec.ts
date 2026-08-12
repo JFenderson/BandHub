@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../../src/modules/auth/auth.service';
 import { DatabaseService } from '../../src/database/database.service';
 import { EmailService } from '../../src/modules/email/email.service';
+import { CacheStrategyService } from '@bandhub/cache';
 import { RegisterDto } from '../../src/modules/auth/dto/register.dto';
 import { LoginDto } from '../../src/modules/auth/dto/login.dto';
 import * as bcrypt from 'bcrypt';
@@ -100,11 +101,20 @@ const createMocks = () => {
   const emailService = {
     sendAdminPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
     sendPasswordChangedEmail: jest.fn().mockResolvedValue(undefined),
+    sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
   } as any;
 
-  const service = new AuthService(prisma, jwtService, configService, emailService);
+  const cacheStrategy = {
+    get: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+    del: jest.fn(),
+    delPattern: jest.fn(),
+  } as any;
 
-  return { service, prisma, jwtService, configService, emailService };
+  const service = new AuthService(prisma, jwtService, configService, cacheStrategy, emailService);
+
+  return { service, prisma, jwtService, configService, cacheStrategy, emailService };
 };
 
 describe('AuthService (comprehensive unit tests)', () => {
@@ -112,6 +122,7 @@ describe('AuthService (comprehensive unit tests)', () => {
   let prisma: any;
   let jwtService: any;
   let configService: any;
+  let cacheStrategy: any;
   let emailService: any;
 
   beforeEach(() => {
@@ -120,6 +131,7 @@ describe('AuthService (comprehensive unit tests)', () => {
     prisma = mocks.prisma;
     jwtService = mocks.jwtService;
     configService = mocks.configService;
+    cacheStrategy = mocks.cacheStrategy;
     emailService = mocks.emailService;
     
     jest.clearAllMocks();
@@ -153,6 +165,7 @@ describe('AuthService (comprehensive unit tests)', () => {
       expect(prisma).toBeDefined();
       expect(jwtService).toBeDefined();
       expect(configService).toBeDefined();
+      expect(cacheStrategy).toBeDefined();
       expect(emailService).toBeDefined();
     });
   });
