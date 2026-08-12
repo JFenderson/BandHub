@@ -23,7 +23,7 @@
 - Modify: `apps/worker/package.json`
 
 **Interfaces:**
-- Produces: a working `pnpm --filter hbcu-band-hub-worker test` command that later tasks' `*.spec.ts` files will run under.
+- Produces: a working `npm test --workspace=apps/worker` command that later tasks' `*.spec.ts` files will run under.
 
 - [ ] **Step 1: Add Jest devDependencies and config to `apps/worker/package.json`**
 
@@ -89,18 +89,18 @@ Read the current file, then apply this diff (add `"test": "jest"` to `scripts`, 
 
 - [ ] **Step 2: Install dependencies**
 
-Run: `pnpm install`
+Run: `npm install`
 Expected: `jest`, `ts-jest`, `@types/jest` added to `apps/worker/node_modules` (or hoisted root `node_modules`), lockfile updated.
 
 - [ ] **Step 3: Verify the test command runs (no test files yet)**
 
-Run: `pnpm --filter hbcu-band-hub-worker test`
+Run: `npm test --workspace=apps/worker`
 Expected: Jest starts, reports `No tests found` (exit code 1 is fine here — there are no `*.spec.ts` files yet; Task 2 adds the first one). Confirm there is no *configuration* error (e.g. "Cannot find module 'ts-jest'" or "Unknown option" would mean the config is wrong).
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add apps/worker/package.json pnpm-lock.yaml
+git add apps/worker/package.json package-lock.json
 git commit -m "chore(worker): add jest test infrastructure"
 ```
 
@@ -458,7 +458,7 @@ describe('VideoProcessingQueueProcessor', () => {
 
 - [ ] **Step 8: Run the test and verify it passes**
 
-Run: `pnpm --filter hbcu-band-hub-worker test -- video-processing-queue.processor.spec.ts`
+Run: `npm test --workspace=apps/worker -- video-processing-queue.processor.spec.ts`
 Expected: 4 passing tests.
 
 - [ ] **Step 9: Update `worker.module.ts` for this queue's classes**
@@ -474,7 +474,7 @@ In `apps/worker/src/worker.module.ts`:
 
 - [ ] **Step 10: Verify the worker builds**
 
-Run: `pnpm --filter hbcu-band-hub-worker build`
+Run: `npm run build --workspace=apps/worker`
 Expected: `nest build` completes with no TypeScript errors.
 
 - [ ] **Step 11: Commit**
@@ -709,7 +709,7 @@ describe('VideoSyncQueueProcessor', () => {
 
 - [ ] **Step 7: Run the test and verify it passes**
 
-Run: `pnpm --filter hbcu-band-hub-worker test -- video-sync-queue.processor.spec.ts`
+Run: `npm test --workspace=apps/worker -- video-sync-queue.processor.spec.ts`
 Expected: 4 passing tests.
 
 - [ ] **Step 8: Update `worker.module.ts` for this queue's classes**
@@ -724,7 +724,7 @@ In `apps/worker/src/worker.module.ts`:
 
 - [ ] **Step 9: Verify the worker builds**
 
-Run: `pnpm --filter hbcu-band-hub-worker build`
+Run: `npm run build --workspace=apps/worker`
 Expected: no TypeScript errors.
 
 - [ ] **Step 10: Commit**
@@ -974,7 +974,7 @@ describe('MaintenanceQueueProcessor', () => {
 
 - [ ] **Step 6: Run the test and verify it passes**
 
-Run: `pnpm --filter hbcu-band-hub-worker test -- maintenance-queue.processor.spec.ts`
+Run: `npm test --workspace=apps/worker -- maintenance-queue.processor.spec.ts`
 Expected: 4 passing tests.
 
 - [ ] **Step 7: Update `worker.module.ts` for this queue's classes**
@@ -988,10 +988,10 @@ In `apps/worker/src/worker.module.ts`:
 
 - [ ] **Step 8: Verify the worker builds and the full test suite passes**
 
-Run: `pnpm --filter hbcu-band-hub-worker build`
+Run: `npm run build --workspace=apps/worker`
 Expected: no TypeScript errors.
 
-Run: `pnpm --filter hbcu-band-hub-worker test`
+Run: `npm test --workspace=apps/worker`
 Expected: all 12 tests across the 3 dispatcher spec files pass, no other test files exist yet to fail.
 
 - [ ] **Step 9: Commit**
@@ -1019,7 +1019,7 @@ Expected: exactly 3 matches — `video-processing-queue.processor.ts` → `Queue
 
 - [ ] **Step 3: Full worker test suite and build**
 
-Run: `pnpm --filter hbcu-band-hub-worker test && pnpm --filter hbcu-band-hub-worker build`
+Run: `npm test --workspace=apps/worker && npm run build --workspace=apps/worker`
 Expected: all tests pass, build succeeds.
 
 - [ ] **Step 4: Report readiness for deploy**
