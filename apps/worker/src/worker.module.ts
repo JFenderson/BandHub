@@ -17,16 +17,17 @@ import { CircuitBreakerService } from './external/circuit-breaker.service';
 // Processors
 import { SyncBandProcessor } from './processors/sync-band.processor';
 import { SyncAllBandsProcessor } from './processors/sync-all-bands.processor';
-import { ProcessVideoProcessor } from './processors/process-video.processor';
+import { ProcessVideoHandler } from './processors/process-video.processor';
 import { CleanupProcessor } from './processors/cleanup.processor';
 import { NotificationProcessor } from './processors/notification.processor';
 import { BackfillCreatorsProcessor } from './processors/backfill-creators.processor';
 import { BackfillBandsProcessor } from './processors/backfill-bands.processor';
-import { MatchVideosProcessor } from './processors/match-videos.processor';
-import { PromoteVideosProcessor } from './processors/promote-videos.processor';
+import { MatchVideosHandler } from './processors/match-videos.processor';
+import { PromoteVideosHandler } from './processors/promote-videos.processor';
 import { BackfillCategoriesProcessor } from './processors/backfill-categories.processor';
-import { ClassifyVideosProcessor } from './processors/classify-videos.processor';
-import { RematchVideosProcessor } from './processors/rematch-videos.processor';
+import { ClassifyVideosHandler } from './processors/classify-videos.processor';
+import { RematchVideosHandler } from './processors/rematch-videos.processor';
+import { VideoProcessingQueueProcessor } from './processors/video-processing-queue.processor';
 import { BandLibrarianService } from './services/band-librarian.service';
 // Scheduler
 import { SyncScheduler } from './scheduler/sync.scheduler';
@@ -119,16 +120,17 @@ BandLibrarianService,
 // Processors
 SyncBandProcessor,
 SyncAllBandsProcessor,
-ProcessVideoProcessor,
+ProcessVideoHandler,
 CleanupProcessor,
 NotificationProcessor,
 BackfillCreatorsProcessor,
 BackfillBandsProcessor,
-MatchVideosProcessor,
-PromoteVideosProcessor,
+MatchVideosHandler,
+PromoteVideosHandler,
 BackfillCategoriesProcessor,
-ClassifyVideosProcessor,
-RematchVideosProcessor,
+ClassifyVideosHandler,
+RematchVideosHandler,
+VideoProcessingQueueProcessor,
 
 // Scheduler
 SyncScheduler,

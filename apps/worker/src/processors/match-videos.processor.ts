@@ -1,5 +1,4 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import {
   QueueName,
@@ -64,20 +63,16 @@ const MARCH_SIGNALS = [
   'botb', 'fifth quarter', 'pregame', 'stand battle', 'half time',
 ];
 
-@Processor(QueueName.VIDEO_PROCESSING, {
-  concurrency: 2,
-})
-export class MatchVideosProcessor extends WorkerHost {
-  private readonly logger = new Logger(MatchVideosProcessor.name);
+@Injectable()
+export class MatchVideosHandler {
+  private readonly logger = new Logger(MatchVideosHandler.name);
 
   constructor(
     private databaseService: DatabaseService,
     private bandLibrarian: BandLibrarianService,
-  ) {
-    super();
-  }
+  ) {}
 
-  async process(job: Job<MatchVideosJobData>): Promise<MatchingResult> {
+  async handle(job: Job<MatchVideosJobData>): Promise<MatchingResult> {
     const { triggeredBy, limit } = job.data;
     const startTime = Date.now();
 
@@ -683,15 +678,5 @@ export class MatchVideosProcessor extends WorkerHost {
 
   private escapeRegex(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(`Job ${job.id} completed`);
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} failed`, error.stack);
   }
 }

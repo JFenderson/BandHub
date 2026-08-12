@@ -1,9 +1,8 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { QueueName, JobType, RematchVideosJobData, MatchVideosJobData, JobPriority } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
-import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
 function getErrorMessage(error: unknown): string {
@@ -18,21 +17,17 @@ interface RematchResult {
   duration: number;
 }
 
-@Processor(QueueName.VIDEO_PROCESSING, {
-  concurrency: 1,
-})
-export class RematchVideosProcessor extends WorkerHost {
-  private readonly logger = new Logger(RematchVideosProcessor.name);
+@Injectable()
+export class RematchVideosHandler {
+  private readonly logger = new Logger(RematchVideosHandler.name);
 
   constructor(
     private databaseService: DatabaseService,
     @InjectQueue(QueueName.VIDEO_PROCESSING)
     private videoProcessingQueue: Queue,
-  ) {
-    super();
-  }
+  ) {}
 
-  async process(job: Job<RematchVideosJobData>): Promise<RematchResult> {
+  async handle(job: Job<RematchVideosJobData>): Promise<RematchResult> {
     const { triggeredBy, filter, qualityScoreThreshold = 50, limit } = job.data;
     const startTime = Date.now();
 
@@ -150,15 +145,5 @@ export class RematchVideosProcessor extends WorkerHost {
         // Never re-process MANUAL matches
         return { matchSource: { notIn: ['MANUAL'] } } as any;
     }
-  }
-
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(`Job ${job.id} completed`);
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} failed`, error.stack);
   }
 }

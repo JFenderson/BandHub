@@ -1,26 +1,21 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QueueName, ProcessVideoJobData } from '@hbcu-band-hub/shared-types';
+import { ProcessVideoJobData } from '@hbcu-band-hub/shared-types';
 import { DatabaseService, VideoUpsertResult } from '../services/database.service';
 import { BandLibrarianService } from '../services/band-librarian.service';
 import { ConfigService } from '@nestjs/config';
 
-@Processor(QueueName.VIDEO_PROCESSING, {
-  concurrency: 10,
-})
-export class ProcessVideoProcessor extends WorkerHost {
-  private readonly logger = new Logger(ProcessVideoProcessor.name);
+@Injectable()
+export class ProcessVideoHandler {
+  private readonly logger = new Logger(ProcessVideoHandler.name);
 
   constructor(
     private databaseService: DatabaseService,
     private bandLibrarian: BandLibrarianService,
     private configService: ConfigService,
-  ) {
-    super();
-  }
+  ) {}
 
-  async process(job: Job<ProcessVideoJobData>): Promise<VideoUpsertResult> {
+  async handle(job: Job<ProcessVideoJobData>): Promise<VideoUpsertResult> {
     const { videoId, bandId, rawMetadata, isUpdate } = job.data;
 
     this.logger.debug(

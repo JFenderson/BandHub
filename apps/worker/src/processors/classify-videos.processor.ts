@@ -1,7 +1,6 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QueueName, JobType, ClassifyVideosJobData } from '@hbcu-band-hub/shared-types';
+import { JobType, ClassifyVideosJobData } from '@hbcu-band-hub/shared-types';
 import { DatabaseService } from '../services/database.service';
 import { BandLibrarianService } from '../services/band-librarian.service';
 
@@ -30,22 +29,18 @@ interface ClassifyResult {
   duration: number;
 }
 
-@Processor(QueueName.VIDEO_PROCESSING, {
-  concurrency: 1,
-})
-export class ClassifyVideosProcessor extends WorkerHost {
-  private readonly logger = new Logger(ClassifyVideosProcessor.name);
+@Injectable()
+export class ClassifyVideosHandler {
+  private readonly logger = new Logger(ClassifyVideosHandler.name);
   private readonly BATCH_SIZE = 20;
   private readonly SUB_BATCH_SIZE = 5; // Videos per Claude API call
 
   constructor(
     private databaseService: DatabaseService,
     private bandLibrarian: BandLibrarianService,
-  ) {
-    super();
-  }
+  ) {}
 
-  async process(job: Job<ClassifyVideosJobData>): Promise<ClassifyResult> {
+  async handle(job: Job<ClassifyVideosJobData>): Promise<ClassifyResult> {
     const { triggeredBy, limit } = job.data;
     const startTime = Date.now();
 
@@ -152,15 +147,5 @@ export class ClassifyVideosProcessor extends WorkerHost {
     );
 
     return result;
-  }
-
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(`Job ${job.id} completed`);
-  }
-
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} failed`, error.stack);
   }
 }

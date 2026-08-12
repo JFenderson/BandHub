@@ -1,8 +1,6 @@
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import {
-  QueueName,
   JobType,
   PromoteVideosJobData,
   LibrarianExtraction,
@@ -22,19 +20,15 @@ interface PromoteResult {
   duration: number;
 }
 
-@Processor(QueueName.VIDEO_PROCESSING, {
-  concurrency: 2,
-})
-export class PromoteVideosProcessor extends WorkerHost {
-  private readonly logger = new Logger(PromoteVideosProcessor.name);
-  
+@Injectable()
+export class PromoteVideosHandler {
+  private readonly logger = new Logger(PromoteVideosHandler.name);
+
   constructor(
     private databaseService: DatabaseService,
-  ) {
-    super();
-  }
-  
-  async process(job: Job<PromoteVideosJobData>): Promise<PromoteResult> {
+  ) {}
+
+  async handle(job: Job<PromoteVideosJobData>): Promise<PromoteResult> {
     const { triggeredBy, limit } = job.data;
     const startTime = Date.now();
     
@@ -275,15 +269,5 @@ export class PromoteVideosProcessor extends WorkerHost {
     }
 
     return 'other';
-  }
-  
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job) {
-    this.logger.log(`Job ${job.id} completed`);
-  }
-  
-  @OnWorkerEvent('failed')
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} failed`, error.stack);
   }
 }
